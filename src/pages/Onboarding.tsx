@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -32,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Upload, Image, FileSignature, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Steps for the onboarding process
@@ -51,6 +50,11 @@ const steps = [
     id: "contact",
     name: "Contact Details",
     fields: ["address", "city", "postalCode", "province", "phone", "website"],
+  },
+  {
+    id: "branding",
+    name: "Company Assets",
+    fields: ["companyLogo", "companyStamp", "signature", "initials"],
   },
   {
     id: "preferences",
@@ -76,6 +80,10 @@ const formSchema = z.object({
   province: z.string().min(2, "Province is required"),
   phone: z.string().min(2, "Phone number is required"),
   website: z.string().optional(),
+  companyLogo: z.any().optional(),
+  companyStamp: z.any().optional(),
+  signature: z.any().optional(),
+  initials: z.any().optional(),
   industry: z.string().min(1, "Industry is required"),
   employeeCount: z.string().min(1, "Employee count is required"),
   annualRevenue: z.string().min(1, "Annual revenue is required"),
@@ -86,9 +94,21 @@ type OnboardingFormValues = z.infer<typeof formSchema>;
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [assetPreviews, setAssetPreviews] = useState<{
+    companyLogo?: string;
+    companyStamp?: string;
+    signature?: string;
+    initials?: string;
+  }>({});
   const { toast } = useToast();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  
+  // References for file inputs
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const stampInputRef = useRef<HTMLInputElement>(null);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
+  const initialsInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize form with default values
   const form = useForm<OnboardingFormValues>({
@@ -109,11 +129,39 @@ const Onboarding = () => {
       province: "",
       phone: "",
       website: "",
+      companyLogo: undefined,
+      companyStamp: undefined,
+      signature: undefined,
+      initials: undefined,
       industry: "",
       employeeCount: "",
       annualRevenue: "",
     },
   });
+  
+  // Function to handle file selection
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Update form value
+      form.setValue(fieldName as any, file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAssetPreviews(prev => ({
+          ...prev,
+          [fieldName]: e.target?.result as string
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Function to trigger file input click
+  const triggerFileInput = (inputRef: React.RefObject<HTMLInputElement>) => {
+    inputRef.current?.click();
+  };
 
   // Move to next step
   const nextStep = async () => {
@@ -142,36 +190,71 @@ const Onboarding = () => {
   const onSubmit = (values: OnboardingFormValues) => {
     setIsSubmitting(true);
     
-    // Save the business profile to localStorage
-    try {
-      const businessProfile = {
-        ...values,
-        userId: currentUser?.id || '',
-        createdAt: new Date().toISOString()
+    // Process file uploads and convert to base64
+    const processFiles = async () => {
+      const convertFileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
       };
       
-      localStorage.setItem("mokmzansiBusinessProfile", JSON.stringify(businessProfile));
+      const processed = { ...values };
       
-      // Simulate form submission
-      setTimeout(() => {
+      // Convert each file to base64 if it exists
+      if (values.companyLogo instanceof File) {
+        processed.companyLogo = await convertFileToBase64(values.companyLogo);
+      }
+      
+      if (values.companyStamp instanceof File) {
+        processed.companyStamp = await convertFileToBase64(values.companyStamp);
+      }
+      
+      if (values.signature instanceof File) {
+        processed.signature = await convertFileToBase64(values.signature);
+      }
+      
+      if (values.initials instanceof File) {
+        processed.initials = await convertFileToBase64(values.initials);
+      }
+      
+      return processed;
+    };
+    
+    // Save the business profile to localStorage
+    processFiles().then(processedValues => {
+      try {
+        const businessProfile = {
+          ...processedValues,
+          userId: currentUser?.id || '',
+          createdAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem("mokmzansiBusinessProfile", JSON.stringify(businessProfile));
+        
+        // Simulate form submission
+        setTimeout(() => {
+          setIsSubmitting(false);
+          
+          toast({
+            title: "Onboarding complete!",
+            description: "Your business profile has been set up.",
+          });
+          
+          navigate("/dashboard");
+        }, 1500);
+      } catch (error) {
+        console.error("Error saving business profile:", error);
         setIsSubmitting(false);
-        
         toast({
-          title: "Onboarding complete!",
-          description: "Your business profile has been set up.",
+          title: "Something went wrong",
+          description: "Could not save your business profile. Please try again.",
+          variant: "destructive"
         });
-        
-        navigate("/dashboard");
-      }, 1500);
-    } catch (error) {
-      console.error("Error saving business profile:", error);
-      setIsSubmitting(false);
-      toast({
-        title: "Something went wrong",
-        description: "Could not save your business profile. Please try again.",
-        variant: "destructive"
-      });
-    }
+      }
+    });
   };
 
   return (
@@ -495,8 +578,197 @@ const Onboarding = () => {
                   </div>
                 )}
 
-                {/* Step 4: Preferences */}
+                {/* New Step: Company Assets */}
                 {currentStep === 3 && (
+                  <div className="space-y-6">
+                    <div className="text-sm text-gray-500 mb-4">
+                      Upload company assets that will be used on your invoices and official documents.
+                    </div>
+                    
+                    {/* Company Logo */}
+                    <div className="space-y-4">
+                      <div className="font-medium">Company Logo</div>
+                      <div className="flex items-start space-x-4">
+                        <div 
+                          className={`w-32 h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors ${assetPreviews.companyLogo ? 'border-gray-300' : 'border-gray-300'}`}
+                          onClick={() => triggerFileInput(logoInputRef)}
+                        >
+                          {assetPreviews.companyLogo ? (
+                            <img 
+                              src={assetPreviews.companyLogo} 
+                              alt="Company Logo" 
+                              className="max-w-full max-h-full object-contain"
+                            />
+                          ) : (
+                            <>
+                              <Image className="w-8 h-8 text-gray-400 mb-2" />
+                              <span className="text-xs text-gray-500">Upload logo</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            ref={logoInputRef}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleFileChange(e, 'companyLogo')}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-500">
+                            Your company logo will appear on all invoices and quotes. For best results, use a PNG or JPG file with a transparent background.
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            className="mt-2" 
+                            size="sm"
+                            onClick={() => triggerFileInput(logoInputRef)}
+                          >
+                            <Upload className="mr-2 h-4 w-4" />
+                            Select file
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Company Stamp */}
+                    <div className="space-y-4">
+                      <div className="font-medium">Company Stamp</div>
+                      <div className="flex items-start space-x-4">
+                        <div 
+                          className={`w-32 h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors ${assetPreviews.companyStamp ? 'border-gray-300' : 'border-gray-300'}`}
+                          onClick={() => triggerFileInput(stampInputRef)}
+                        >
+                          {assetPreviews.companyStamp ? (
+                            <img 
+                              src={assetPreviews.companyStamp} 
+                              alt="Company Stamp" 
+                              className="max-w-full max-h-full object-contain"
+                            />
+                          ) : (
+                            <>
+                              <FileText className="w-8 h-8 text-gray-400 mb-2" />
+                              <span className="text-xs text-gray-500">Upload stamp</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            ref={stampInputRef}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleFileChange(e, 'companyStamp')}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-500">
+                            Your company stamp or seal for official documents. For best results, use a PNG file with a transparent background.
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            className="mt-2" 
+                            size="sm"
+                            onClick={() => triggerFileInput(stampInputRef)}
+                          >
+                            <Upload className="mr-2 h-4 w-4" />
+                            Select file
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Signature */}
+                    <div className="space-y-4">
+                      <div className="font-medium">Signature</div>
+                      <div className="flex items-start space-x-4">
+                        <div 
+                          className={`w-32 h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors ${assetPreviews.signature ? 'border-gray-300' : 'border-gray-300'}`}
+                          onClick={() => triggerFileInput(signatureInputRef)}
+                        >
+                          {assetPreviews.signature ? (
+                            <img 
+                              src={assetPreviews.signature} 
+                              alt="Signature" 
+                              className="max-w-full max-h-full object-contain"
+                            />
+                          ) : (
+                            <>
+                              <FileSignature className="w-8 h-8 text-gray-400 mb-2" />
+                              <span className="text-xs text-gray-500">Upload signature</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            ref={signatureInputRef}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleFileChange(e, 'signature')}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-500">
+                            A digital version of your signature for invoices and documents. For best results, use a PNG file with a transparent background.
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            className="mt-2" 
+                            size="sm"
+                            onClick={() => triggerFileInput(signatureInputRef)}
+                          >
+                            <Upload className="mr-2 h-4 w-4" />
+                            Select file
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Initials */}
+                    <div className="space-y-4">
+                      <div className="font-medium">Initials</div>
+                      <div className="flex items-start space-x-4">
+                        <div 
+                          className={`w-32 h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors ${assetPreviews.initials ? 'border-gray-300' : 'border-gray-300'}`}
+                          onClick={() => triggerFileInput(initialsInputRef)}
+                        >
+                          {assetPreviews.initials ? (
+                            <img 
+                              src={assetPreviews.initials} 
+                              alt="Initials" 
+                              className="max-w-full max-h-full object-contain"
+                            />
+                          ) : (
+                            <>
+                              <FileSignature className="w-8 h-8 text-gray-400 mb-2" />
+                              <span className="text-xs text-gray-500">Upload initials</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            ref={initialsInputRef}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleFileChange(e, 'initials')}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-500">
+                            Your initials for marking pages of multi-page documents. For best results, use a PNG file with a transparent background.
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            className="mt-2" 
+                            size="sm"
+                            onClick={() => triggerFileInput(initialsInputRef)}
+                          >
+                            <Upload className="mr-2 h-4 w-4" />
+                            Select file
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Preferences */}
+                {currentStep === 4 && (
                   <div className="space-y-4">
                     <FormField
                       control={form.control}
