@@ -10,9 +10,11 @@ const Logo = ({ className = "", variant = "full" }: LogoProps) => {
   return (
     <Link to="/" className={`flex items-center ${className}`}>
       <div className="relative mr-2">
-        <span className="flex h-10 w-10 rounded-full bg-gradient-to-br from-brand-pink via-brand-purple to-brand-blue items-center justify-center">
-          <span className="text-white font-bold text-lg">M</span>
-        </span>
+        <img 
+          src="/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png" 
+          alt="MOKMzansi Logo" 
+          className="h-10 w-10"
+        />
       </div>
       {variant === "full" && (
         <div className="font-bold text-xl">
