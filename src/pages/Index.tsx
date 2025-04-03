@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -113,8 +114,8 @@ const Index = () => {
               <div className="relative">
                 <div className="rounded-lg shadow-xl overflow-hidden border border-gray-100 bg-white">
                   <img
-                    src="/lovable-uploads/4cd88a29-db2d-4b84-80ba-9a9625c71335.png"
-                    alt="MOKMzansiBooks Logo"
+                    src="/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+                    alt="South African Business Collaboration"
                     className="w-full h-auto object-cover rounded-lg"
                   />
                 </div>
