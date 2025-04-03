@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Building2,
   User,
@@ -15,6 +15,8 @@ import {
   MapPin,
   Clock,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
 
 const mockClients = {
   companies: [
@@ -67,6 +69,16 @@ const mockClients = {
 const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("companies");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newClientData, setNewClientData] = useState({
+    name: "",
+    contactPerson: "",
+    email: "",
+    phone: "",
+    address: "",
+    type: "company",
+  });
+  const { toast } = useToast();
 
   const clientCount = {
     companies: mockClients.companies.length,
@@ -122,6 +134,31 @@ const Clients = () => {
     }
   };
 
+  const handleAddClient = () => {
+    toast({
+      title: "Client added",
+      description: `${newClientData.name} has been added successfully.`,
+    });
+    
+    setIsDialogOpen(false);
+    setNewClientData({
+      name: "",
+      contactPerson: "",
+      email: "",
+      phone: "",
+      address: "",
+      type: "company",
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewClientData({
+      ...newClientData,
+      [name]: value,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -131,9 +168,106 @@ const Clients = () => {
             Manage your companies, individuals, and vendors
           </p>
         </div>
-        <Button variant="default" className="bg-brand-purple hover:bg-brand-purple/80 font-semibold shadow-md">
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Client
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="default" className="bg-brand-purple hover:bg-brand-purple/80 font-semibold shadow-md">
+              <PlusCircle className="mr-2 h-4 w-4" /> Add New Client
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Client</DialogTitle>
+              <DialogDescription>
+                Enter the details of the new client below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="clientType" className="text-right">
+                  Type
+                </Label>
+                <select
+                  id="type"
+                  name="type"
+                  className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={newClientData.type}
+                  onChange={handleInputChange}
+                >
+                  <option value="company">Company</option>
+                  <option value="individual">Individual</option>
+                  <option value="vendor">Vendor</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  className="col-span-3"
+                  value={newClientData.name}
+                  onChange={handleInputChange}
+                />
+              </div>
+              {newClientData.type !== "individual" && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="contactPerson" className="text-right">
+                    Contact Person
+                  </Label>
+                  <Input
+                    id="contactPerson"
+                    name="contactPerson"
+                    className="col-span-3"
+                    value={newClientData.contactPerson}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              )}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  className="col-span-3"
+                  value={newClientData.email}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="phone" className="text-right">
+                  Phone
+                </Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  className="col-span-3"
+                  value={newClientData.phone}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="address" className="text-right">
+                  Address
+                </Label>
+                <Input
+                  id="address"
+                  name="address"
+                  className="col-span-3"
+                  value={newClientData.address}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" onClick={handleAddClient}>Add Client</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
