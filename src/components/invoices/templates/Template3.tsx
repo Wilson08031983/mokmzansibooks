@@ -48,9 +48,9 @@ const Template3 = ({ data, preview = false }: TemplateProps) => {
   const displayData = preview ? previewData : data;
   
   return (
-    <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans relative overflow-hidden">
+    <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans relative overflow-hidden" style={{ minHeight: '297mm' }}>
       {/* Diagonal Background */}
-      <div className="absolute top-0 right-0 w-1/3 h-screen bg-blue-600 transform rotate-6 origin-top-left translate-x-20 -translate-y-20 z-0"></div>
+      <div className="absolute top-0 right-0 w-1/3 h-full bg-blue-600 transform rotate-6 origin-top-left translate-x-20 -translate-y-20 z-0"></div>
       
       {/* Header */}
       <div className="relative z-10 flex justify-between items-start">

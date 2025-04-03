@@ -48,7 +48,7 @@ const Template2 = ({ data, preview = false }: TemplateProps) => {
   const displayData = preview ? previewData : data;
   
   return (
-    <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans">
+    <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans" style={{ minHeight: '297mm' }}>
       {/* Header with color bar */}
       <div className="border-t-8 border-purple-600 pt-4">
         <div className="flex justify-between items-center">

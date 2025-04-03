@@ -48,7 +48,7 @@ const Template4 = ({ data, preview = false }: TemplateProps) => {
   const displayData = preview ? previewData : data;
   
   return (
-    <div className="w-[210mm] h-[297mm] bg-white shadow-lg mx-auto font-sans">
+    <div className="w-[210mm] h-[297mm] bg-white shadow-lg mx-auto font-sans" style={{ minHeight: '297mm' }}>
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-green-600 to-teal-500 text-white p-8">
         <div className="flex justify-between items-center">

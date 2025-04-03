@@ -48,10 +48,10 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
   const displayData = preview ? previewData : data;
   
   return (
-    <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans">
+    <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans" style={{ minHeight: '297mm' }}>
       {/* Left sidebar */}
       <div className="flex h-full">
-        <div className="w-1/3 bg-gray-800 text-white p-6 rounded-l-lg">
+        <div className="w-1/3 bg-gray-800 text-white p-6 rounded-l-lg h-full">
           <div className="mb-8">
             {displayData.company.logo ? (
               <img src={displayData.company.logo} alt="Company Logo" className="h-16 mb-6" />
@@ -109,7 +109,7 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
         </div>
         
         {/* Main content */}
-        <div className="w-2/3 p-6 rounded-r-lg border-r border-t border-b border-gray-200">
+        <div className="w-2/3 p-6 rounded-r-lg border-r border-t border-b border-gray-200 h-full">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-1">INVOICE</h1>
             <p className="text-sm text-gray-500 border-b pb-4 border-gray-200">{displayData.invoiceNumber}</p>
