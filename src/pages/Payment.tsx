@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -53,6 +53,27 @@ const Payment = () => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    setIsProcessing(true);
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      setIsProcessing(false);
+      setPaymentSuccess(true);
+      
+      toast({
+        title: "Payment successful!",
+        description: "Your subscription has been activated.",
+      });
+      
+      // Redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 2000);
+    }, 2000);
+  };
+
+  // Handler for PayFast button click
+  const handlePayFastClick = () => {
     setIsProcessing(true);
     
     // Simulate payment processing
@@ -226,7 +247,7 @@ const Payment = () => {
                         Pay securely through PayFast, South Africa's trusted payment gateway
                       </p>
                     </div>
-                    <Button className="w-full" disabled={isProcessing} onClick={onSubmit}>
+                    <Button className="w-full" disabled={isProcessing} onClick={handlePayFastClick}>
                       {isProcessing ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -273,7 +294,7 @@ const Payment = () => {
                 You now have access to all premium features.
               </p>
               <Button asChild className="w-full">
-                <a href="/dashboard">Go to Dashboard</a>
+                <Link to="/dashboard">Go to Dashboard</Link>
               </Button>
             </CardContent>
           </Card>

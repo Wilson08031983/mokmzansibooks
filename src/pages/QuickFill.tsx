@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -58,7 +58,6 @@ const QuickFill = () => {
   
   const isPremiumUser = currentUser?.subscriptionStatus === "active";
 
-  // Simulated file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -66,7 +65,6 @@ const QuickFill = () => {
     setIsUploading(true);
     setUploadProgress(0);
     
-    // Simulate upload progress
     const interval = setInterval(() => {
       setUploadProgress((prev) => {
         const nextProgress = prev + 10;
@@ -82,7 +80,6 @@ const QuickFill = () => {
             setIsUploading(false);
             setProcessingStatus("processing");
             
-            // Simulate document processing
             setTimeout(() => {
               setProcessingStatus("completed");
             }, 2000);
@@ -93,7 +90,6 @@ const QuickFill = () => {
     }, 300);
   };
 
-  // Simulated price search
   const handleSearch = () => {
     if (!isPremiumUser) {
       toast({
@@ -107,7 +103,6 @@ const QuickFill = () => {
     setIsSearching(true);
     setSearchResults([]);
     
-    // Simulate search delay
     setTimeout(() => {
       setIsSearching(false);
       setSearchResults([
