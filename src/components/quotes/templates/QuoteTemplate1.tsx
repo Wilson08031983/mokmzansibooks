@@ -1,6 +1,12 @@
-
 import { TemplateProps } from "@/types/quote";
-import { formatDate, formatCurrency, formatPercentage } from "@/utils/formatters";
+import { 
+  formatDate, 
+  formatCurrency, 
+  formatPercentage, 
+  renderCompanyLogo,
+  renderCompanyStamp,
+  renderSignature
+} from "@/utils/formatters";
 import Logo from "@/components/Logo";
 
 const QuoteTemplate1 = ({ data, preview = false }: TemplateProps) => {
@@ -163,7 +169,7 @@ const QuoteTemplate1 = ({ data, preview = false }: TemplateProps) => {
         <div className="flex flex-col items-end">
           <h3 className="font-bold text-gray-700">Signature:</h3>
           <div className="border-b border-gray-400 w-64 h-16 mt-2">
-            {displayData.signature && <img src={displayData.signature} alt="Signature" className="h-full object-contain" />}
+            {renderSignature(displayData.signature)}
           </div>
           <p className="text-sm text-gray-600 mt-1">Authorized Signature</p>
         </div>
@@ -175,11 +181,7 @@ const QuoteTemplate1 = ({ data, preview = false }: TemplateProps) => {
           <p className="text-sm font-semibold text-gray-700">Initials: _________</p>
         </div>
         <div className="border border-dashed border-gray-400 w-24 h-24 flex items-center justify-center">
-          {displayData.company.stamp ? (
-            <img src={displayData.company.stamp} alt="Company Stamp" className="max-h-20 max-w-20" />
-          ) : (
-            <span className="text-gray-400 text-xs">Company Stamp</span>
-          )}
+          {renderCompanyStamp(displayData.company.stamp)}
         </div>
       </div>
     </div>

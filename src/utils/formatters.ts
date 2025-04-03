@@ -24,3 +24,30 @@ export const formatCurrency = (amount: number | string): string => {
 export const formatPercentage = (value: number): string => {
   return `${value}%`;
 };
+
+// Helper functions for company assets
+export const renderCompanyLogo = (logo?: string) => {
+  return logo ? (
+    <img src={logo} alt="Company Logo" className="h-16" />
+  ) : (
+    <div className="h-16 w-16 bg-gray-200 flex items-center justify-center rounded">
+      <span className="text-gray-400 text-xs">Logo</span>
+    </div>
+  );
+};
+
+export const renderCompanyStamp = (stamp?: string) => {
+  return stamp ? (
+    <img src={stamp} alt="Company Stamp" className="max-h-20 max-w-20" />
+  ) : (
+    <span className="text-gray-400 text-xs text-center">Company Stamp</span>
+  );
+};
+
+export const renderSignature = (signature?: string) => {
+  return signature ? (
+    <img src={signature} alt="Signature" className="h-full object-contain" />
+  ) : (
+    <span className="text-gray-400 text-xs">Signature</span>
+  );
+};
