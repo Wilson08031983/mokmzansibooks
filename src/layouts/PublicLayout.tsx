@@ -15,7 +15,7 @@ const PublicLayout = () => {
           <div 
             className="absolute inset-0 bg-cover bg-center z-0 opacity-15"
             style={{ 
-              backgroundImage: 'url("/lovable-uploads/7f6acf42-5ff2-4e30-aa2c-8d324abca9b5.png")',
+              backgroundImage: 'url("/lovable-uploads/fe0d1798-c79c-4326-bda0-8d24514a5874.png")',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               pointerEvents: 'none'
