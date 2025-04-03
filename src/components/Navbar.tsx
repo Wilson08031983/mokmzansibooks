@@ -58,6 +58,19 @@ const Navbar = () => {
     return location.pathname.includes(section);
   };
 
+  // Scroll to section handler for smooth scrolling
+  const scrollToSection = (event: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    if (location.pathname === '/') {
+      event.preventDefault();
+      const section = document.getElementById(sectionId);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+        // Update URL without page reload
+        window.history.pushState({}, '', `/#${sectionId}`);
+      }
+    }
+  };
+
   return (
     <header
       className={`sticky top-0 z-40 w-full transition-all duration-200 ${
@@ -83,6 +96,7 @@ const Navbar = () => {
                           ? "bg-accent/70 text-primary font-medium" 
                           : ""
                       }`}
+                      onClick={(e) => scrollToSection(e, item.href.split('#')[1])}
                     >
                       {item.title}
                     </Link>
@@ -170,7 +184,10 @@ const Navbar = () => {
                     ? "bg-gray-100 text-primary font-semibold"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
-                onClick={() => setIsMenuOpen(false)}
+                onClick={(e) => {
+                  scrollToSection(e, item.href.split('#')[1]);
+                  setIsMenuOpen(false);
+                }}
               >
                 {item.title}
               </Link>

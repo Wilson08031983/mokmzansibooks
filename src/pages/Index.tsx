@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -304,7 +305,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Founder Section */}
+      {/* About Section */}
       <section id="about" className="py-16 md:py-24 bg-purple-50">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -335,6 +336,66 @@ const Index = () => {
               <div className="pt-4">
                 <p className="font-medium">Wilson Mokgethwa Moabelo</p>
                 <p className="text-gray-500">CEO & Founder, MOKMzansiBooks</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Get in <span className="gradient-text">Touch</span>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Have questions? Want to learn more about our services? Contact us today!
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-100">
+              <h3 className="text-xl font-bold mb-4">Contact Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="font-medium">Address</p>
+                  <p className="text-gray-600">
+                    123 Main Street, Pretoria<br />
+                    Gauteng, South Africa
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium">Email</p>
+                  <p className="text-gray-600">info@mokmzansibooks.co.za</p>
+                </div>
+                <div>
+                  <p className="font-medium">Phone</p>
+                  <p className="text-gray-600">+27 12 345 6789</p>
+                </div>
+                <div>
+                  <p className="font-medium">Business Hours</p>
+                  <p className="text-gray-600">
+                    Monday - Friday: 8:00 AM - 5:00 PM<br />
+                    Saturday: 9:00 AM - 1:00 PM<br />
+                    Sunday: Closed
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col justify-center">
+              <p className="text-lg mb-6">
+                Whether you're looking to streamline your business operations, need help with tender documents, or want to learn more about our services, our team is here to help.
+              </p>
+              <p className="text-lg mb-6">
+                Reach out to us today and discover how MOKMzansiBooks can transform your business operations and help you succeed in the South African market.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button asChild size="lg" className="text-base">
+                  <Link to="/signup">Start Free Trial</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="text-base">
+                  <a href="mailto:info@mokmzansibooks.co.za">Email Us</a>
+                </Button>
               </div>
             </div>
           </div>
