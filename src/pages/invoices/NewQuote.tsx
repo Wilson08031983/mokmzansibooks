@@ -96,8 +96,7 @@ const NewQuote = () => {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    toast({
-      title: "You submitted the following values:",
+    toast("Quote Submitted", {
       description: (
         <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
           <code className="text-white">{JSON.stringify(values, null, 2)}</code>
@@ -196,7 +195,6 @@ const NewQuote = () => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Form Fields */}
             <div>
               <Card className="p-6">
                 <FormField
@@ -434,7 +432,6 @@ const NewQuote = () => {
               </Card>
             </div>
             
-            {/* Quote Preview */}
             <div>
               <h2 className="text-lg font-semibold mb-4">Quote Preview</h2>
               <div className="scale-[0.45] origin-top-left bg-gray-100 p-4 rounded-lg border border-gray-200 h-[590px] overflow-hidden">
