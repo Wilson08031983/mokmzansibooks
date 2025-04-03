@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -27,6 +28,12 @@ const Navbar = () => {
     { title: "Contact", href: "/#contact" },
   ];
 
+  // Determine if a link is active
+  const isActive = (href: string) => {
+    const path = location.pathname + location.hash;
+    return path === href || (path === "/" && href === "/#features");
+  };
+
   return (
     <header
       className={`sticky top-0 z-40 w-full transition-all duration-200 ${
@@ -40,12 +47,19 @@ const Navbar = () => {
           <Logo />
           
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
               <Link
                 key={item.title}
                 to={item.href}
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                className={`text-sm font-medium relative px-1 py-2 transition-all duration-200
+                  ${isActive(item.href) 
+                    ? "text-primary font-semibold" 
+                    : "text-gray-600 hover:text-gray-900"}
+                  after:content-[''] after:absolute after:w-0 after:h-0.5 after:bg-primary 
+                  after:left-0 after:bottom-0 after:transition-all after:duration-300
+                  hover:after:w-full ${isActive(item.href) ? "after:w-full" : ""}
+                `}
               >
                 {item.title}
               </Link>
@@ -93,13 +107,17 @@ const Navbar = () => {
               <Link
                 key={item.title}
                 to={item.href}
-                className="text-sm font-medium text-gray-600 hover:text-gray-900 p-2"
+                className={`text-sm font-medium p-2 rounded-md transition-colors ${
+                  isActive(item.href)
+                    ? "bg-gray-100 text-primary font-semibold"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.title}
               </Link>
             ))}
-            <hr className="my-2" />
+            <Separator className="my-2" />
             {isAuthenticated ? (
               <Button
                 asChild
