@@ -48,21 +48,26 @@ const SelectQuoteTemplate = () => {
     },
     items: [
       {
+        itemNo: "ITEM-001",
         description: "Consultation Services",
         quantity: 10,
-        rate: 1500,
-        amount: 15000
+        unitPrice: 1500,
+        discount: 5,
+        amount: 14250
       },
       {
+        itemNo: "ITEM-002",
         description: "Equipment Rental",
         quantity: 5,
-        rate: 2000,
+        unitPrice: 2000,
+        discount: 0,
         amount: 10000
       }
     ],
-    subtotal: 25000,
-    tax: 3750,
-    total: 28750,
+    subtotal: 24250,
+    vatRate: 0,
+    tax: 0,
+    total: 24250,
     notes: "This quotation is valid for 30 days.",
     terms: "50% deposit required to commence work.",
     signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"

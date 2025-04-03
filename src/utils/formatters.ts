@@ -20,3 +20,7 @@ export const formatCurrency = (amount: number | string): string => {
     minimumFractionDigits: 2,
   }).format(num);
 };
+
+export const formatPercentage = (value: number): string => {
+  return `${value}%`;
+};

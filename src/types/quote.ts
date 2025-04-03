@@ -18,12 +18,16 @@ export interface QuoteData {
     stamp?: string;
   };
   items: {
+    itemNo?: string;
     description: string;
     quantity: number;
-    rate: number;
+    unitPrice?: number;
+    rate?: number;
+    discount?: number;
     amount: number;
   }[];
   subtotal: number;
+  vatRate?: number;
   tax: number;
   total: number;
   notes?: string;

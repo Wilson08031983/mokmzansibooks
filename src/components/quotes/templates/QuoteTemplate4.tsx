@@ -1,6 +1,6 @@
 
 import { TemplateProps } from "@/types/quote";
-import { formatDate, formatCurrency } from "@/utils/formatters";
+import { formatDate, formatCurrency, formatPercentage } from "@/utils/formatters";
 import Logo from "@/components/Logo";
 
 const QuoteTemplate4 = ({ data, preview = false }: TemplateProps) => {
@@ -25,21 +25,26 @@ const QuoteTemplate4 = ({ data, preview = false }: TemplateProps) => {
     },
     items: [
       {
+        itemNo: "ITEM-001",
         description: "Consultation Services",
         quantity: 10,
-        rate: 1500,
+        unitPrice: 1500,
+        discount: 0,
         amount: 15000
       },
       {
+        itemNo: "ITEM-002",
         description: "Equipment Rental",
         quantity: 5,
-        rate: 2000,
+        unitPrice: 2000,
+        discount: 0,
         amount: 10000
       }
     ],
     subtotal: 25000,
-    tax: 3750,
-    total: 28750,
+    vatRate: 0,
+    tax: 0,
+    total: 25000,
     notes: "This quotation is valid for 30 days.",
     terms: "50% deposit required to commence work.",
     signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
@@ -107,18 +112,22 @@ const QuoteTemplate4 = ({ data, preview = false }: TemplateProps) => {
         <table className="w-full rounded-lg overflow-hidden">
           <thead>
             <tr className="bg-cyan-600 text-white">
-              <th className="py-3 px-4 text-left">Item Description</th>
+              <th className="py-3 px-4 text-left">Item No.</th>
+              <th className="py-3 px-4 text-left">Description</th>
               <th className="py-3 px-4 text-center">Qty</th>
-              <th className="py-3 px-4 text-right">Rate</th>
+              <th className="py-3 px-4 text-right">Unit Price</th>
+              <th className="py-3 px-4 text-right">Discount</th>
               <th className="py-3 px-4 text-right">Amount</th>
             </tr>
           </thead>
           <tbody>
             {displayData.items.map((item, i) => (
               <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-cyan-50"}>
+                <td className="py-3 px-4 border-b border-cyan-100">{item.itemNo || `ITEM-${i+1}`}</td>
                 <td className="py-3 px-4 border-b border-cyan-100">{item.description}</td>
                 <td className="py-3 px-4 text-center border-b border-cyan-100">{item.quantity}</td>
-                <td className="py-3 px-4 text-right border-b border-cyan-100">{formatCurrency(item.rate)}</td>
+                <td className="py-3 px-4 text-right border-b border-cyan-100">{formatCurrency(item.unitPrice || item.rate)}</td>
+                <td className="py-3 px-4 text-right border-b border-cyan-100">{formatPercentage(item.discount || 0)}</td>
                 <td className="py-3 px-4 text-right border-b border-cyan-100">{formatCurrency(item.amount)}</td>
               </tr>
             ))}
@@ -132,7 +141,7 @@ const QuoteTemplate4 = ({ data, preview = false }: TemplateProps) => {
               <span>{formatCurrency(displayData.subtotal)}</span>
             </div>
             <div className="bg-white px-4 py-2 flex justify-between">
-              <span>VAT (15%)</span>
+              <span>VAT ({displayData.vatRate || 0}%)</span>
               <span>{formatCurrency(displayData.tax)}</span>
             </div>
             <div className="bg-cyan-600 text-white px-4 py-2 flex justify-between font-bold">

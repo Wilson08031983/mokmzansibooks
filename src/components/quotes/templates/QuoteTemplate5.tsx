@@ -1,6 +1,6 @@
 
 import { TemplateProps } from "@/types/quote";
-import { formatDate, formatCurrency } from "@/utils/formatters";
+import { formatDate, formatCurrency, formatPercentage } from "@/utils/formatters";
 import Logo from "@/components/Logo";
 
 const QuoteTemplate5 = ({ data, preview = false }: TemplateProps) => {
@@ -25,21 +25,26 @@ const QuoteTemplate5 = ({ data, preview = false }: TemplateProps) => {
     },
     items: [
       {
+        itemNo: "ITEM-001",
         description: "Consultation Services",
         quantity: 10,
-        rate: 1500,
+        unitPrice: 1500,
+        discount: 0,
         amount: 15000
       },
       {
+        itemNo: "ITEM-002",
         description: "Equipment Rental",
         quantity: 5,
-        rate: 2000,
+        unitPrice: 2000,
+        discount: 0,
         amount: 10000
       }
     ],
     subtotal: 25000,
-    tax: 3750,
-    total: 28750,
+    vatRate: 0,
+    tax: 0,
+    total: 25000,
     notes: "This quotation is valid for 30 days.",
     terms: "50% deposit required to commence work.",
     signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
@@ -97,7 +102,7 @@ const QuoteTemplate5 = ({ data, preview = false }: TemplateProps) => {
                 <span>{formatCurrency(displayData.subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">VAT (15%):</span>
+                <span className="text-gray-400">VAT ({displayData.vatRate || 0}%):</span>
                 <span>{formatCurrency(displayData.tax)}</span>
               </div>
               <div className="flex justify-between text-xl font-bold mt-4">
@@ -120,18 +125,22 @@ const QuoteTemplate5 = ({ data, preview = false }: TemplateProps) => {
             <table className="w-full">
               <thead>
                 <tr className="text-left text-gray-500 border-b-2 border-gray-200">
+                  <th className="pb-2">Item No.</th>
                   <th className="pb-2">Description</th>
                   <th className="pb-2 text-right">Qty</th>
-                  <th className="pb-2 text-right">Rate</th>
-                  <th className="pb-2 text-right">Amount</th>
+                  <th className="pb-2 text-right">Unit Price</th>
+                  <th className="pb-2 text-right">Discount</th>
+                  <th className="pb-2 text-right">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {displayData.items.map((item, i) => (
                   <tr key={i} className="border-b border-gray-100">
+                    <td className="py-3">{item.itemNo || `ITEM-${i+1}`}</td>
                     <td className="py-3">{item.description}</td>
                     <td className="py-3 text-right">{item.quantity}</td>
-                    <td className="py-3 text-right">{formatCurrency(item.rate)}</td>
+                    <td className="py-3 text-right">{formatCurrency(item.unitPrice || item.rate)}</td>
+                    <td className="py-3 text-right">{formatPercentage(item.discount || 0)}</td>
                     <td className="py-3 text-right font-medium">{formatCurrency(item.amount)}</td>
                   </tr>
                 ))}
