@@ -76,6 +76,10 @@ const Clients = () => {
     email: "",
     phone: "",
     address: "",
+    addressLine2: "",
+    city: "",
+    province: "",
+    postalCode: "",
     type: "company",
   });
   const { toast } = useToast();
@@ -147,6 +151,10 @@ const Clients = () => {
       email: "",
       phone: "",
       address: "",
+      addressLine2: "",
+      city: "",
+      province: "",
+      postalCode: "",
       type: "company",
     });
   };
@@ -256,8 +264,58 @@ const Clients = () => {
                 <Input
                   id="address"
                   name="address"
+                  placeholder="Street address"
                   className="col-span-3"
                   value={newClientData.address}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="addressLine2" className="text-right">
+                  Address Line 2
+                </Label>
+                <Input
+                  id="addressLine2"
+                  name="addressLine2"
+                  placeholder="Apt, Suite, Unit, etc."
+                  className="col-span-3"
+                  value={newClientData.addressLine2}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="city" className="text-right">
+                  City
+                </Label>
+                <Input
+                  id="city"
+                  name="city"
+                  className="col-span-3"
+                  value={newClientData.city}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="province" className="text-right">
+                  Province
+                </Label>
+                <Input
+                  id="province"
+                  name="province"
+                  className="col-span-3"
+                  value={newClientData.province}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="postalCode" className="text-right">
+                  Postal Code
+                </Label>
+                <Input
+                  id="postalCode"
+                  name="postalCode"
+                  className="col-span-3"
+                  value={newClientData.postalCode}
                   onChange={handleInputChange}
                 />
               </div>
