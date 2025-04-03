@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -312,8 +311,8 @@ const Index = () => {
             <div>
               <div className="rounded-lg overflow-hidden shadow-xl">
                 <img
-                  src="/lovable-uploads/7f6acf42-5ff2-4e30-aa2c-8d324abca9b5.png"
-                  alt="South Africa - MOKMzansiBooks"
+                  src="/lovable-uploads/44062e3c-e3b2-47ea-9869-37a2dc71b5d8.png"
+                  alt="Wilson Mokgethwa Moabelo - CEO & Founder"
                   className="w-full h-auto object-cover"
                 />
               </div>
