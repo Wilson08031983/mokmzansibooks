@@ -6,6 +6,16 @@ import Logo from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -28,10 +38,24 @@ const Navbar = () => {
     { title: "Contact", href: "/#contact" },
   ];
 
+  // Dropdown menu items for services
+  const serviceItems = [
+    { title: "Accounting", href: "/accounting" },
+    { title: "Tax Services", href: "/tax" },
+    { title: "Invoicing", href: "/invoices" },
+    { title: "Client Management", href: "/clients" },
+    { title: "Reporting", href: "/reports" },
+  ];
+
   // Determine if a link is active
   const isActive = (href: string) => {
     const path = location.pathname + location.hash;
     return path === href || (path === "/" && href === "/#features");
+  };
+
+  // Check if current route is in a specific section
+  const isInSection = (section: string) => {
+    return location.pathname.includes(section);
   };
 
   return (
@@ -46,25 +70,59 @@ const Navbar = () => {
         <div className="flex h-16 items-center justify-between">
           <Logo />
           
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.title}
-                to={item.href}
-                className={`text-sm font-medium relative px-1 py-2 transition-all duration-200
-                  ${isActive(item.href) 
-                    ? "text-primary font-semibold" 
-                    : "text-gray-600 hover:text-gray-900"}
-                  after:content-[''] after:absolute after:w-0 after:h-0.5 after:bg-primary 
-                  after:left-0 after:bottom-0 after:transition-all after:duration-300
-                  hover:after:w-full ${isActive(item.href) ? "after:w-full" : ""}
-                `}
-              >
-                {item.title}
-              </Link>
-            ))}
-          </nav>
+          {/* Desktop Navigation with NavigationMenu */}
+          <div className="hidden md:flex items-center space-x-4">
+            <NavigationMenu>
+              <NavigationMenuList>
+                {navItems.map((item) => (
+                  <NavigationMenuItem key={item.title}>
+                    <Link
+                      to={item.href}
+                      className={`${navigationMenuTriggerStyle()} ${
+                        isActive(item.href) 
+                          ? "bg-accent/70 text-primary font-medium" 
+                          : ""
+                      }`}
+                    >
+                      {item.title}
+                    </Link>
+                  </NavigationMenuItem>
+                ))}
+                
+                {/* Services dropdown */}
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger 
+                    className={isInSection("services") ? "bg-accent/70 text-primary font-medium" : ""}
+                  >
+                    Services
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                      {serviceItems.map((item) => (
+                        <li key={item.title}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={item.href}
+                              className={cn(
+                                "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                                isInSection(item.href.substring(1)) && "bg-accent/70 text-primary font-medium"
+                              )}
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <div className="text-sm font-medium leading-none">{item.title}</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Professional {item.title.toLowerCase()} services for your business
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
           
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
@@ -117,6 +175,26 @@ const Navbar = () => {
                 {item.title}
               </Link>
             ))}
+            
+            {/* Mobile services section */}
+            <div className="space-y-2">
+              <p className="text-sm font-semibold px-2 pt-2">Services</p>
+              {serviceItems.map((item) => (
+                <Link
+                  key={item.title}
+                  to={item.href}
+                  className={`text-sm ml-2 block p-2 rounded-md transition-colors ${
+                    isInSection(item.href.substring(1))
+                      ? "bg-gray-100 text-primary font-semibold"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.title}
+                </Link>
+              ))}
+            </div>
+            
             <Separator className="my-2" />
             {isAuthenticated ? (
               <Button
