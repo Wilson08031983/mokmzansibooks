@@ -3,22 +3,24 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { Link } from "react-router-dom";
-import { QuoteData } from "@/types/quote";
-
-// Import template previews
 import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
 import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
 import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate3";
 import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
 import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
+import { QuoteData } from "@/types/quote";
 
 const SelectQuoteTemplate = () => {
   const navigate = useNavigate();
   const [selectedTemplate, setSelectedTemplate] = useState<number>(1);
 
-  // Sample data for template previews
+  const handleSelectTemplate = () => {
+    navigate("/invoices/quotes/new", { state: { templateId: selectedTemplate } });
+  };
+
+  // Sample data for template preview
   const previewData: QuoteData = {
     quoteNumber: "QT-2025-0001",
     issueDate: "2025-04-03",
@@ -59,57 +61,56 @@ const SelectQuoteTemplate = () => {
     signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
   };
 
-  const handleContinue = () => {
-    navigate("/invoices/quotes/new", { state: { templateId: selectedTemplate } });
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Button variant="ghost" asChild>
-            <Link to="/invoices/quotes">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Quotes
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-bold ml-4">Select Quotation Template</h1>
-        </div>
+      <div className="flex items-center">
+        <Button variant="ghost" size="sm" asChild className="mr-2">
+          <Link to="/invoices/quotes">
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back
+          </Link>
+        </Button>
+        <h1 className="text-2xl font-bold">Select Quote Template</h1>
       </div>
 
-      <p className="text-muted-foreground">
-        Choose from one of our professional quotation templates below
-      </p>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[1, 2, 3, 4, 5].map((id) => (
-          <Card 
-            key={id}
-            className={`cursor-pointer transition-all hover:shadow-md ${
-              selectedTemplate === id ? "ring-2 ring-primary" : ""
+        {[1, 2, 3, 4, 5].map((templateId) => (
+          <Card
+            key={templateId}
+            className={`relative overflow-hidden cursor-pointer hover:shadow-lg transition-shadow ${
+              selectedTemplate === templateId ? "ring-2 ring-primary" : ""
             }`}
-            onClick={() => setSelectedTemplate(id)}
+            onClick={() => setSelectedTemplate(templateId)}
           >
+            {selectedTemplate === templateId && (
+              <div className="absolute top-2 right-2 z-10 bg-primary text-white rounded-full p-1">
+                <Check className="h-4 w-4" />
+              </div>
+            )}
             <CardContent className="p-4">
-              <div className="aspect-[1/1.414] bg-white border rounded-md overflow-hidden flex items-center justify-center">
-                <div className="transform scale-[0.25] origin-center w-full h-full">
-                  {id === 1 && <QuoteTemplate1 data={previewData} preview />}
-                  {id === 2 && <QuoteTemplate2 data={previewData} preview />}
-                  {id === 3 && <QuoteTemplate3 data={previewData} preview />}
-                  {id === 4 && <QuoteTemplate4 data={previewData} preview />}
-                  {id === 5 && <QuoteTemplate5 data={previewData} preview />}
+              <div className="text-center font-medium mb-2">
+                Template {templateId}
+              </div>
+              <div className="bg-gray-50 rounded-md overflow-hidden">
+                <div
+                  className="transform scale-[0.15] origin-top-left"
+                  style={{ height: "150px", width: "100%", overflow: "hidden" }}
+                >
+                  {templateId === 1 && <QuoteTemplate1 data={previewData} preview={true} />}
+                  {templateId === 2 && <QuoteTemplate2 data={previewData} preview={true} />}
+                  {templateId === 3 && <QuoteTemplate3 data={previewData} preview={true} />}
+                  {templateId === 4 && <QuoteTemplate4 data={previewData} preview={true} />}
+                  {templateId === 5 && <QuoteTemplate5 data={previewData} preview={true} />}
                 </div>
               </div>
-              <p className="mt-2 text-center font-medium">Template {id}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="flex justify-end gap-4">
-        <Button variant="outline" asChild>
-          <Link to="/invoices/quotes">Cancel</Link>
+      <div className="flex justify-end">
+        <Button onClick={handleSelectTemplate}>
+          Continue with Template {selectedTemplate}
         </Button>
-        <Button onClick={handleContinue}>Continue with Template {selectedTemplate}</Button>
       </div>
     </div>
   );
