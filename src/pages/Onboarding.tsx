@@ -32,6 +32,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Check, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Steps for the onboarding process
 const steps = [
@@ -69,14 +70,17 @@ const formSchema = z.object({
   annualRevenue: z.string().min(1, "Annual revenue is required"),
 });
 
+type OnboardingFormValues = z.infer<typeof formSchema>;
+
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
-  // Initialize form
-  const form = useForm<z.infer<typeof formSchema>>({
+  // Initialize form with default values
+  const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       companyName: "",
@@ -97,13 +101,14 @@ const Onboarding = () => {
 
   // Move to next step
   const nextStep = async () => {
-    const fields = steps[currentStep].fields;
-    const output = await form.trigger(fields as any);
+    const fields = steps[currentStep].fields as Array<keyof OnboardingFormValues>;
+    const output = await form.trigger(fields);
     
     if (!output) return;
     
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
+      window.scrollTo(0, 0); // Scroll to top when changing steps
     } else {
       onSubmit(form.getValues());
     }
@@ -113,24 +118,44 @@ const Onboarding = () => {
   const prevStep = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      window.scrollTo(0, 0); // Scroll to top when changing steps
     }
   };
 
   // Submit form
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: OnboardingFormValues) => {
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
+    // Save the business profile to localStorage
+    try {
+      const businessProfile = {
+        ...values,
+        userId: currentUser?.id || '',
+        createdAt: new Date().toISOString()
+      };
+      
+      localStorage.setItem("mokmzansiBusinessProfile", JSON.stringify(businessProfile));
+      
+      // Simulate form submission
+      setTimeout(() => {
+        setIsSubmitting(false);
+        
+        toast({
+          title: "Onboarding complete!",
+          description: "Your business profile has been set up.",
+        });
+        
+        navigate("/dashboard");
+      }, 1500);
+    } catch (error) {
+      console.error("Error saving business profile:", error);
       setIsSubmitting(false);
-      
       toast({
-        title: "Onboarding complete!",
-        description: "Your business profile has been set up.",
+        title: "Something went wrong",
+        description: "Could not save your business profile. Please try again.",
+        variant: "destructive"
       });
-      
-      navigate("/dashboard");
-    }, 2000);
+    }
   };
 
   return (
@@ -192,7 +217,7 @@ const Onboarding = () => {
 
             {/* Form */}
             <Form {...form}>
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                 {/* Step 1: Business Information */}
                 {currentStep === 0 && (
                   <div className="space-y-4">
