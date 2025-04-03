@@ -126,5 +126,18 @@ export default {
             }
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		require("tailwindcss-animate"),
+		function({ addUtilities }) {
+			addUtilities({
+				'.gradient-text': {
+					background: 'linear-gradient(to right, #8B5CF6, #EC4899)',
+					'-webkit-background-clip': 'text',
+					'-webkit-text-fill-color': 'transparent',
+					'background-clip': 'text',
+					'text-fill-color': 'transparent'
+				}
+			});
+		}
+	],
 } satisfies Config;

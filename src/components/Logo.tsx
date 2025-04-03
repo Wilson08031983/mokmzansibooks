@@ -1,9 +1,11 @@
 
 import { Link } from "react-router-dom";
+
 interface LogoProps {
   className?: string;
   variant?: "full" | "icon";
 }
+
 const Logo = ({
   className = "",
   variant = "full"
@@ -18,4 +20,5 @@ const Logo = ({
         </div>}
     </Link>;
 };
+
 export default Logo;
