@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -114,8 +113,8 @@ const Index = () => {
               <div className="relative">
                 <div className="rounded-lg shadow-xl overflow-hidden border border-gray-100 bg-white">
                   <img
-                    src="/lovable-uploads/b8cc4e45-2048-42c1-9ab3-566ea881dcd8.png"
-                    alt="MOKMzansiBooks Dashboard"
+                    src="/lovable-uploads/4cd88a29-db2d-4b84-80ba-9a9625c71335.png"
+                    alt="MOKMzansiBooks Logo"
                     className="w-full h-auto object-cover rounded-lg"
                   />
                 </div>
@@ -312,8 +311,8 @@ const Index = () => {
             <div>
               <div className="rounded-lg overflow-hidden shadow-xl">
                 <img
-                  src="/lovable-uploads/2f5e8ece-7f15-4ee3-9af6-8a29b9c50fa0.png"
-                  alt="Wilson Mokgethwa Moabelo - Founder of MOKMzansiBooks"
+                  src="/lovable-uploads/7f6acf42-5ff2-4e30-aa2c-8d324abca9b5.png"
+                  alt="South Africa - MOKMzansiBooks"
                   className="w-full h-auto object-cover"
                 />
               </div>

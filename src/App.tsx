@@ -1,5 +1,4 @@
 
-import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,46 +31,44 @@ import ProtectedRoute from "./components/ProtectedRoute";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route element={<PublicLayout />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/signin" element={<SignIn />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/payment" element={<Payment />} />
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <TooltipProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/payment" element={<Payment />} />
+            </Route>
+            
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/clients" element={<Clients />} />
+                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/invoices/quotes" element={<Quotes />} />
+                <Route path="/quickfill" element={<QuickFill />} />
+                <Route path="/accounting" element={<Accounting />} />
+                <Route path="/tax" element={<Tax />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/settings" element={<Settings />} />
               </Route>
-              
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route element={<DashboardLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/clients" element={<Clients />} />
-                  <Route path="/invoices" element={<Invoices />} />
-                  <Route path="/invoices/quotes" element={<Quotes />} />
-                  <Route path="/quickfill" element={<QuickFill />} />
-                  <Route path="/accounting" element={<Accounting />} />
-                  <Route path="/tax" element={<Tax />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Route>
-              </Route>
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-          <Toaster />
-          <Sonner />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </React.StrictMode>
+            </Route>
+            
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+        <Toaster />
+        <Sonner />
+      </TooltipProvider>
+    </AuthProvider>
+  </QueryClientProvider>
 );
 
 export default App;
