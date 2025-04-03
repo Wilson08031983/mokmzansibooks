@@ -1,7 +1,7 @@
 
 import { TemplateProps } from "@/types/invoice";
 import { formatDate, formatCurrency } from "@/utils/formatters";
-import { Logo } from "@/components/Logo";
+import Logo from "@/components/Logo";
 
 const Template2 = ({ data, preview = false }: TemplateProps) => {
   // Sample data for preview mode
@@ -19,7 +19,9 @@ const Template2 = ({ data, preview = false }: TemplateProps) => {
       name: "MOKMzansi Holdings",
       address: "456 Business Ave, Johannesburg, 2000",
       email: "contact@mokmzansi.co.za",
-      phone: "011 987 6543"
+      phone: "011 987 6543",
+      logo: "/lovable-uploads/44062e3c-e3b2-47ea-9869-37a2dc71b5d8.png",
+      stamp: "/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png"
     },
     items: [
       {
@@ -39,7 +41,8 @@ const Template2 = ({ data, preview = false }: TemplateProps) => {
     tax: 3750,
     total: 28750,
     notes: "Thank you for your business!",
-    terms: "Payment due within 14 days of invoice date."
+    terms: "Payment due within 14 days of invoice date.",
+    signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
   };
 
   const displayData = preview ? previewData : data;
