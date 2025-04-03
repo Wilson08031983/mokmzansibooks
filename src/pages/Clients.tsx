@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,7 +131,7 @@ const Clients = () => {
             Manage your companies, individuals, and vendors
           </p>
         </div>
-        <Button>
+        <Button variant="default" className="bg-brand-purple hover:bg-brand-purple/80 font-semibold shadow-md">
           <PlusCircle className="mr-2 h-4 w-4" /> Add New Client
         </Button>
       </div>
