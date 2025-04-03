@@ -141,7 +141,7 @@ const Invoices = () => {
         </div>
         <div className="flex flex-wrap gap-3">
           <Button asChild>
-            <Link to="/invoices/new">
+            <Link to="/invoices/select-template">
               <PlusCircle className="mr-2 h-4 w-4" /> New Invoice
             </Link>
           </Button>

@@ -18,6 +18,7 @@ import Invoices from "./pages/Invoices";
 import Quotes from "./pages/invoices/Quotes";
 import NewInvoice from "./pages/invoices/NewInvoice";
 import NewQuote from "./pages/invoices/NewQuote";
+import SelectTemplate from "./pages/invoices/SelectTemplate";
 import QuickFill from "./pages/QuickFill";
 import Accounting from "./pages/Accounting";
 import Tax from "./pages/Tax";
@@ -54,6 +55,7 @@ const App = () => (
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/invoices" element={<Invoices />} />
                 <Route path="/invoices/new" element={<NewInvoice />} />
+                <Route path="/invoices/select-template" element={<SelectTemplate />} />
                 <Route path="/invoices/quotes" element={<Quotes />} />
                 <Route path="/invoices/quotes/new" element={<NewQuote />} />
                 <Route path="/quickfill" element={<QuickFill />} />
