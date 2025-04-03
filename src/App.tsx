@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import Invoices from "./pages/Invoices";
 import Quotes from "./pages/invoices/Quotes";
+import NewInvoice from "./pages/invoices/NewInvoice";
 import QuickFill from "./pages/QuickFill";
 import Accounting from "./pages/Accounting";
 import Tax from "./pages/Tax";
@@ -51,6 +52,7 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/invoices" element={<Invoices />} />
+                <Route path="/invoices/new" element={<NewInvoice />} />
                 <Route path="/invoices/quotes" element={<Quotes />} />
                 <Route path="/quickfill" element={<QuickFill />} />
                 <Route path="/accounting" element={<Accounting />} />
