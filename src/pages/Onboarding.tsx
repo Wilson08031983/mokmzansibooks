@@ -17,6 +17,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,7 +40,12 @@ const steps = [
   {
     id: "business",
     name: "Business Information",
-    fields: ["companyName", "businessType", "registrationNumber", "vatNumber"],
+    fields: ["companyName", "registrationNumber", "taxNumber", "vatNumber", "csdNumber", "businessType"],
+  },
+  {
+    id: "director",
+    name: "Director Details",
+    fields: ["directorFirstName", "directorLastName", "email"],
   },
   {
     id: "contact",
@@ -56,9 +62,14 @@ const steps = [
 // Form schema definition
 const formSchema = z.object({
   companyName: z.string().min(2, "Company name is required"),
+  registrationNumber: z.string().min(2, "Registration number is required"),
   businessType: z.string().min(1, "Business type is required"),
-  registrationNumber: z.string().optional(),
+  directorFirstName: z.string().min(2, "Director's first name is required"),
+  directorLastName: z.string().min(2, "Director's last name is required"),
+  email: z.string().email("Valid email is required"),
+  taxNumber: z.string().min(2, "Tax number is required"),
   vatNumber: z.string().optional(),
+  csdNumber: z.string().optional(),
   address: z.string().min(2, "Address is required"),
   city: z.string().min(2, "City is required"),
   postalCode: z.string().min(2, "Postal code is required"),
@@ -84,9 +95,14 @@ const Onboarding = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       companyName: "",
-      businessType: "",
       registrationNumber: "",
+      businessType: "",
+      directorFirstName: "",
+      directorLastName: "",
+      email: "",
+      taxNumber: "",
       vatNumber: "",
+      csdNumber: "",
       address: "",
       city: "",
       postalCode: "",
@@ -237,6 +253,63 @@ const Onboarding = () => {
 
                     <FormField
                       control={form.control}
+                      name="registrationNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Registration Number *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g. 2018/421571/07" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="taxNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tax Number *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g. 9012345678" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="vatNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>VAT Number (if applicable)</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="e.g. 4220195865" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="csdNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>CSD Number (if applicable)</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="e.g. MAAA0123456" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
                       name="businessType"
                       render={({ field }) => (
                         <FormItem>
@@ -262,16 +335,21 @@ const Onboarding = () => {
                         </FormItem>
                       )}
                     />
+                  </div>
+                )}
 
+                {/* Step 2: Director Details */}
+                {currentStep === 1 && (
+                  <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="registrationNumber"
+                        name="directorFirstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Registration Number</FormLabel>
+                            <FormLabel>Director's First Name *</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="e.g. 2018/421571/07" />
+                              <Input {...field} placeholder="First name" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -279,23 +357,37 @@ const Onboarding = () => {
                       />
                       <FormField
                         control={form.control}
-                        name="vatNumber"
+                        name="directorLastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>VAT Number (if applicable)</FormLabel>
+                            <FormLabel>Director's Last Name *</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="e.g. 4220195865" />
+                              <Input {...field} placeholder="Last name" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email *</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="email" placeholder="director@example.com" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 )}
 
-                {/* Step 2: Contact Details */}
-                {currentStep === 1 && (
+                {/* Step 3: Contact Details */}
+                {currentStep === 2 && (
                   <div className="space-y-4">
                     <FormField
                       control={form.control}
@@ -403,8 +495,8 @@ const Onboarding = () => {
                   </div>
                 )}
 
-                {/* Step 3: Preferences */}
-                {currentStep === 2 && (
+                {/* Step 4: Preferences */}
+                {currentStep === 3 && (
                   <div className="space-y-4">
                     <FormField
                       control={form.control}
