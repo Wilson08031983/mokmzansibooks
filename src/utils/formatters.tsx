@@ -1,6 +1,7 @@
 
 import React from "react";
 import { format } from "date-fns";
+import Logo from "@/components/Logo";
 
 export const formatDate = (dateString: string): string => {
   try {
@@ -31,9 +32,7 @@ export const renderCompanyLogo = (logo?: string) => {
   return logo ? (
     <img src={logo} alt="Company Logo" className="h-16" />
   ) : (
-    <div className="h-16 w-16 bg-gray-200 flex items-center justify-center rounded">
-      <span className="text-gray-400 text-xs">Logo</span>
-    </div>
+    <Logo className="h-16" />
   );
 };
 

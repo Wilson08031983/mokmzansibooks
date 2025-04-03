@@ -1,7 +1,6 @@
-
+import React from "react";
 import { TemplateProps } from "@/types/invoice";
-import { formatDate, formatCurrency } from "@/utils/formatters";
-import Logo from "@/components/Logo";
+import { formatDate, formatCurrency, renderCompanyLogo, renderCompanyStamp, renderSignature } from "@/utils/formatters";
 
 const Template5 = ({ data, preview = false }: TemplateProps) => {
   // Sample data for preview mode
@@ -53,12 +52,8 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
       <div className="flex h-full">
         <div className="w-1/3 bg-gray-800 text-white p-6 rounded-l-lg h-full">
           <div className="mb-8">
-            {displayData.company.logo ? (
-              <img src={displayData.company.logo} alt="Company Logo" className="h-16 mb-6" />
-            ) : (
-              <Logo className="h-16 mb-6 text-white" />
-            )}
-            <h3 className="font-bold text-lg mb-1">{displayData.company.name}</h3>
+            {renderCompanyLogo(displayData.company.logo)}
+            <h3 className="font-bold text-lg mt-6 mb-1">{displayData.company.name}</h3>
             <p className="text-sm text-gray-300 whitespace-pre-line">{displayData.company.address}</p>
             <p className="text-sm text-gray-300">{displayData.company.email}</p>
             <p className="text-sm text-gray-300">{displayData.company.phone}</p>
@@ -154,18 +149,14 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
             <div>
               <h3 className="font-medium text-gray-700 mb-4">Authorized Signature</h3>
               <div className="border-b border-gray-400 w-48 h-10 mb-1">
-                {displayData.signature && <img src={displayData.signature} alt="Signature" className="h-full object-contain" />}
+                {renderSignature(displayData.signature)}
               </div>
               <p className="text-xs text-gray-500">Signature</p>
             </div>
             <div className="flex items-end">
               <p className="text-sm mr-4">Initials: _________</p>
               <div className="border border-dashed border-gray-400 w-20 h-20 flex items-center justify-center">
-                {displayData.company.stamp ? (
-                  <img src={displayData.company.stamp} alt="Company Stamp" className="max-h-16 max-w-16" />
-                ) : (
-                  <span className="text-gray-400 text-xs text-center">Company Stamp</span>
-                )}
+                {renderCompanyStamp(displayData.company.stamp)}
               </div>
             </div>
           </div>

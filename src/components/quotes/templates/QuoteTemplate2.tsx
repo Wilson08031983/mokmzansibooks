@@ -1,7 +1,6 @@
-
+import React from "react";
 import { TemplateProps } from "@/types/quote";
-import { formatDate, formatCurrency, formatPercentage } from "@/utils/formatters";
-import Logo from "@/components/Logo";
+import { formatDate, formatCurrency, formatPercentage, renderCompanyLogo, renderCompanyStamp, renderSignature } from "@/utils/formatters";
 
 const QuoteTemplate2 = ({ data, preview = false }: TemplateProps) => {
   // Sample data for preview mode
@@ -62,11 +61,7 @@ const QuoteTemplate2 = ({ data, preview = false }: TemplateProps) => {
             <p className="text-gray-600">#{displayData.quoteNumber}</p>
           </div>
           <div>
-            {displayData.company.logo ? (
-              <img src={displayData.company.logo} alt="Company Logo" className="h-16" />
-            ) : (
-              <Logo className="h-16" />
-            )}
+            {renderCompanyLogo(displayData.company.logo)}
           </div>
         </div>
       </div>
@@ -163,18 +158,14 @@ const QuoteTemplate2 = ({ data, preview = false }: TemplateProps) => {
         <div className="w-1/3">
           <div className="border-t-2 border-gray-400 pt-1">
             <p className="text-sm font-medium">Authorized Signature</p>
-            {displayData.signature && <img src={displayData.signature} alt="Signature" className="h-10 object-contain" />}
+            {renderSignature(displayData.signature)}
           </div>
         </div>
         
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">Initials: _________</p>
           <div className="border-2 border-dashed border-gray-400 rounded p-2 w-24 h-24 flex items-center justify-center">
-            {displayData.company.stamp ? (
-              <img src={displayData.company.stamp} alt="Company Stamp" className="max-h-20 max-w-20" />
-            ) : (
-              <span className="text-gray-400 text-xs text-center">Company Stamp</span>
-            )}
+            {renderCompanyStamp(displayData.company.stamp)}
           </div>
         </div>
       </div>

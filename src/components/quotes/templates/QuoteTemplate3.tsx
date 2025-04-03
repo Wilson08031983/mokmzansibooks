@@ -1,7 +1,6 @@
-
+import React from "react";
 import { TemplateProps } from "@/types/quote";
-import { formatDate, formatCurrency, formatPercentage } from "@/utils/formatters";
-import Logo from "@/components/Logo";
+import { formatDate, formatCurrency, formatPercentage, renderCompanyLogo, renderCompanyStamp, renderSignature } from "@/utils/formatters";
 
 const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
   // Sample data for preview mode
@@ -66,11 +65,7 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
           <p className="text-sm ml-1 mt-2">#{displayData.quoteNumber}</p>
         </div>
         <div className="bg-white p-2 rounded shadow-sm">
-          {displayData.company.logo ? (
-            <img src={displayData.company.logo} alt="Company Logo" className="h-16" />
-          ) : (
-            <Logo className="h-16" />
-          )}
+          {renderCompanyLogo(displayData.company.logo)}
         </div>
       </div>
 
@@ -177,7 +172,7 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
         <div>
           <h3 className="font-medium text-indigo-600 mb-6">Authorized Signature:</h3>
           <div className="border-b-2 border-gray-300 w-48 h-10 mb-1">
-            {displayData.signature && <img src={displayData.signature} alt="Signature" className="h-full object-contain" />}
+            {renderSignature(displayData.signature)}
           </div>
           <p className="text-xs text-gray-500">Signature</p>
         </div>
@@ -185,11 +180,7 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
           <div className="flex flex-col items-end">
             <p className="text-sm mb-2">Initials: _________</p>
             <div className="border-2 border-dashed border-gray-300 rounded-lg w-24 h-24 flex items-center justify-center">
-              {displayData.company.stamp ? (
-                <img src={displayData.company.stamp} alt="Company Stamp" className="max-h-20 max-w-20" />
-              ) : (
-                <span className="text-gray-400 text-xs text-center">Company Stamp</span>
-              )}
+              {renderCompanyStamp(displayData.company.stamp)}
             </div>
           </div>
         </div>
