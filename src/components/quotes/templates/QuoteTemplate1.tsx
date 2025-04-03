@@ -1,3 +1,5 @@
+
+import React from "react";
 import { TemplateProps } from "@/types/quote";
 import { 
   formatDate, 
@@ -67,11 +69,7 @@ const QuoteTemplate1 = ({ data, preview = false }: TemplateProps) => {
           <p className="text-sm text-gray-500"># {displayData.quoteNumber}</p>
         </div>
         <div className="flex items-center">
-          {displayData.company.logo ? (
-            <img src={displayData.company.logo} alt="Company Logo" className="h-16" />
-          ) : (
-            <Logo className="h-16" />
-          )}
+          {renderCompanyLogo(displayData.company.logo)}
         </div>
       </div>
 
@@ -128,7 +126,7 @@ const QuoteTemplate1 = ({ data, preview = false }: TemplateProps) => {
                 <td className="py-2 px-4">{item.itemNo || `ITEM-${i+1}`}</td>
                 <td className="py-2 px-4">{item.description}</td>
                 <td className="py-2 px-4 text-right">{item.quantity}</td>
-                <td className="py-2 px-4 text-right">{formatCurrency(item.unitPrice || item.rate)}</td>
+                <td className="py-2 px-4 text-right">{formatCurrency(item.unitPrice || item.rate || 0)}</td>
                 <td className="py-2 px-4 text-right">{formatPercentage(item.discount || 0)}</td>
                 <td className="py-2 px-4 text-right">{formatCurrency(item.amount)}</td>
               </tr>

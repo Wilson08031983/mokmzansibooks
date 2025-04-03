@@ -33,7 +33,6 @@ import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate3";
 import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
 import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
 import { QuoteData } from "@/types/quote";
-import { formatDate } from "@/utils/formatters";
 
 const formSchema = z.object({
   client: z.string().min(1, "Client name is required"),
@@ -92,11 +91,11 @@ const NewQuote = () => {
     }
   };
 
-  const createPreviewData = () => {
+  const createPreviewData = (): QuoteData => {
     return {
       quoteNumber: "QT-2025-0001",
-      issueDate: formatDate(form.watch("issueDate")),
-      expiryDate: formatDate(form.watch("expiryDate")),
+      issueDate: form.watch("issueDate"),
+      expiryDate: form.watch("expiryDate"),
       client: {
         name: form.watch("client") || "Client Name",
         address: "Client Address",
