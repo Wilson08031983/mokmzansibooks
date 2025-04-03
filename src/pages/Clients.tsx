@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,6 @@ import {
   Clock,
 } from "lucide-react";
 
-// Mock data
 const mockClients = {
   companies: [
     {
@@ -170,170 +168,184 @@ const Clients = () => {
                     Vendors ({clientCount.vendors})
                   </TabsTrigger>
                 </TabsList>
+              
+                <div className="hidden">
+                  <TabsContent value="companies">
+                    {/* Content hidden but needed for proper structure */}
+                  </TabsContent>
+                  <TabsContent value="individuals">
+                    {/* Content hidden but needed for proper structure */}
+                  </TabsContent>
+                  <TabsContent value="vendors">
+                    {/* Content hidden but needed for proper structure */}
+                  </TabsContent>
+                </div>
               </Tabs>
             </CardContent>
           </Card>
         </div>
 
         <div className="w-full md:w-3/4">
-          <TabsContent value="companies" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Companies ({clientCount.companies})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredClients("companies").length > 0 ? (
-                    filteredClients("companies").map((client) => (
-                      <div
-                        key={client.id}
-                        className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100">
-                          {getClientIcon(client.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <h3 className="text-lg font-medium truncate">{client.name}</h3>
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Clock className="mr-1 h-4 w-4" />
-                              Last interaction: {formatDate(client.lastInteraction)}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsContent value="companies" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Companies ({clientCount.companies})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {filteredClients("companies").length > 0 ? (
+                      filteredClients("companies").map((client) => (
+                        <div
+                          key={client.id}
+                          className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100">
+                            {getClientIcon(client.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                              <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                              <div className="flex items-center text-sm text-gray-500">
+                                <Clock className="mr-1 h-4 w-4" />
+                                Last interaction: {formatDate(client.lastInteraction)}
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              Contact: {client.contactPerson}
+                            </p>
+                            <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
+                              <div className="flex items-center">
+                                <Mail className="mr-1 h-4 w-4" />
+                                {client.email}
+                              </div>
+                              <div className="flex items-center">
+                                <Phone className="mr-1 h-4 w-4" />
+                                {client.phone}
+                              </div>
+                              <div className="flex items-center">
+                                <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
+                                <span className="truncate">{client.address}</span>
+                              </div>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600">
-                            Contact: {client.contactPerson}
-                          </p>
-                          <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
-                            <div className="flex items-center">
-                              <Mail className="mr-1 h-4 w-4" />
-                              {client.email}
-                            </div>
-                            <div className="flex items-center">
-                              <Phone className="mr-1 h-4 w-4" />
-                              {client.phone}
-                            </div>
-                            <div className="flex items-center">
-                              <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
-                              <span className="truncate">{client.address}</span>
-                            </div>
-                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No companies found matching your search
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No companies found matching your search
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="individuals" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Individuals ({clientCount.individuals})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredClients("individuals").length > 0 ? (
-                    filteredClients("individuals").map((client) => (
-                      <div
-                        key={client.id}
-                        className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100">
-                          {getClientIcon(client.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <h3 className="text-lg font-medium truncate">{client.name}</h3>
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Clock className="mr-1 h-4 w-4" />
-                              Last interaction: {formatDate(client.lastInteraction)}
+            <TabsContent value="individuals" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Individuals ({clientCount.individuals})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {filteredClients("individuals").length > 0 ? (
+                      filteredClients("individuals").map((client) => (
+                        <div
+                          key={client.id}
+                          className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100">
+                            {getClientIcon(client.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                              <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                              <div className="flex items-center text-sm text-gray-500">
+                                <Clock className="mr-1 h-4 w-4" />
+                                Last interaction: {formatDate(client.lastInteraction)}
+                              </div>
+                            </div>
+                            <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
+                              <div className="flex items-center">
+                                <Mail className="mr-1 h-4 w-4" />
+                                {client.email}
+                              </div>
+                              <div className="flex items-center">
+                                <Phone className="mr-1 h-4 w-4" />
+                                {client.phone}
+                              </div>
+                              <div className="flex items-center">
+                                <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
+                                <span className="truncate">{client.address}</span>
+                              </div>
                             </div>
                           </div>
-                          <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
-                            <div className="flex items-center">
-                              <Mail className="mr-1 h-4 w-4" />
-                              {client.email}
-                            </div>
-                            <div className="flex items-center">
-                              <Phone className="mr-1 h-4 w-4" />
-                              {client.phone}
-                            </div>
-                            <div className="flex items-center">
-                              <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
-                              <span className="truncate">{client.address}</span>
-                            </div>
-                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No individuals found matching your search
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No individuals found matching your search
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="vendors" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Vendors ({clientCount.vendors})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredClients("vendors").length > 0 ? (
-                    filteredClients("vendors").map((client) => (
-                      <div
-                        key={client.id}
-                        className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100">
-                          {getClientIcon(client.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <h3 className="text-lg font-medium truncate">{client.name}</h3>
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Clock className="mr-1 h-4 w-4" />
-                              Last interaction: {formatDate(client.lastInteraction)}
+            <TabsContent value="vendors" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Vendors ({clientCount.vendors})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {filteredClients("vendors").length > 0 ? (
+                      filteredClients("vendors").map((client) => (
+                        <div
+                          key={client.id}
+                          className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100">
+                            {getClientIcon(client.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                              <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                              <div className="flex items-center text-sm text-gray-500">
+                                <Clock className="mr-1 h-4 w-4" />
+                                Last interaction: {formatDate(client.lastInteraction)}
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              Contact: {client.contactPerson}
+                            </p>
+                            <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
+                              <div className="flex items-center">
+                                <Mail className="mr-1 h-4 w-4" />
+                                {client.email}
+                              </div>
+                              <div className="flex items-center">
+                                <Phone className="mr-1 h-4 w-4" />
+                                {client.phone}
+                              </div>
+                              <div className="flex items-center">
+                                <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
+                                <span className="truncate">{client.address}</span>
+                              </div>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600">
-                            Contact: {client.contactPerson}
-                          </p>
-                          <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
-                            <div className="flex items-center">
-                              <Mail className="mr-1 h-4 w-4" />
-                              {client.email}
-                            </div>
-                            <div className="flex items-center">
-                              <Phone className="mr-1 h-4 w-4" />
-                              {client.phone}
-                            </div>
-                            <div className="flex items-center">
-                              <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
-                              <span className="truncate">{client.address}</span>
-                            </div>
-                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No vendors found matching your search
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No vendors found matching your search
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
