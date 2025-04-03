@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +27,14 @@ import { toast } from "@/components/ui/use-toast";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 
+// Import Quote templates
+import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
+import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
+import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate3";
+import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
+import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
+import { QuoteData } from "@/types/quote";
+
 const formSchema = z.object({
   client: z.string().min(1, "Client name is required"),
   issueDate: z.string().min(1, "Issue date is required"),
@@ -37,6 +45,8 @@ const formSchema = z.object({
 
 const NewQuote = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const templateId = location.state?.templateId || 1;
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -58,6 +68,7 @@ const NewQuote = () => {
     try {
       // In a real app, this would save the quote to a database
       console.log("Creating quote with values:", values);
+      console.log("Using template:", templateId);
       
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -237,6 +248,204 @@ const NewQuote = () => {
           </Form>
         </CardContent>
       </Card>
+
+      <div className="mt-4">
+        <h2 className="text-xl font-semibold mb-4">Template Preview</h2>
+        <div className="border rounded-md overflow-hidden bg-gray-100">
+          <div className="scale-[0.5] origin-top transform-gpu -mt-40">
+            {templateId === 1 && (
+              <QuoteTemplate1
+                data={{
+                  quoteNumber: "QT-2025-0001",
+                  issueDate: form.watch("issueDate"),
+                  expiryDate: form.watch("expiryDate"),
+                  client: {
+                    name: form.watch("client") || "Client Name",
+                    address: "Client Address",
+                    email: "client@example.com",
+                    phone: "123-456-7890"
+                  },
+                  company: {
+                    name: "Your Company",
+                    address: "Your Company Address",
+                    email: "info@yourcompany.com",
+                    phone: "098-765-4321",
+                    logo: "/lovable-uploads/44062e3c-e3b2-47ea-9869-37a2dc71b5d8.png",
+                    stamp: "/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png"
+                  },
+                  items: [
+                    {
+                      description: "Sample Item",
+                      quantity: 1,
+                      rate: 1000,
+                      amount: 1000
+                    }
+                  ],
+                  subtotal: 1000,
+                  tax: 150,
+                  total: 1150,
+                  notes: form.watch("notes") || "Quote notes will appear here",
+                  terms: "Standard terms and conditions apply",
+                  signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+                }}
+                preview
+              />
+            )}
+            {templateId === 2 && (
+              <QuoteTemplate2
+                data={{
+                  quoteNumber: "QT-2025-0001",
+                  issueDate: form.watch("issueDate"),
+                  expiryDate: form.watch("expiryDate"),
+                  client: {
+                    name: form.watch("client") || "Client Name",
+                    address: "Client Address",
+                    email: "client@example.com",
+                    phone: "123-456-7890"
+                  },
+                  company: {
+                    name: "Your Company",
+                    address: "Your Company Address",
+                    email: "info@yourcompany.com",
+                    phone: "098-765-4321",
+                    logo: "/lovable-uploads/44062e3c-e3b2-47ea-9869-37a2dc71b5d8.png",
+                    stamp: "/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png"
+                  },
+                  items: [
+                    {
+                      description: "Sample Item",
+                      quantity: 1,
+                      rate: 1000,
+                      amount: 1000
+                    }
+                  ],
+                  subtotal: 1000,
+                  tax: 150,
+                  total: 1150,
+                  notes: form.watch("notes") || "Quote notes will appear here",
+                  terms: "Standard terms and conditions apply",
+                  signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+                }}
+                preview
+              />
+            )}
+            {templateId === 3 && (
+              <QuoteTemplate3
+                data={{
+                  quoteNumber: "QT-2025-0001",
+                  issueDate: form.watch("issueDate"),
+                  expiryDate: form.watch("expiryDate"),
+                  client: {
+                    name: form.watch("client") || "Client Name",
+                    address: "Client Address",
+                    email: "client@example.com",
+                    phone: "123-456-7890"
+                  },
+                  company: {
+                    name: "Your Company",
+                    address: "Your Company Address",
+                    email: "info@yourcompany.com",
+                    phone: "098-765-4321",
+                    logo: "/lovable-uploads/44062e3c-e3b2-47ea-9869-37a2dc71b5d8.png",
+                    stamp: "/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png"
+                  },
+                  items: [
+                    {
+                      description: "Sample Item",
+                      quantity: 1,
+                      rate: 1000,
+                      amount: 1000
+                    }
+                  ],
+                  subtotal: 1000,
+                  tax: 150,
+                  total: 1150,
+                  notes: form.watch("notes") || "Quote notes will appear here",
+                  terms: "Standard terms and conditions apply",
+                  signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+                }}
+                preview
+              />
+            )}
+            {templateId === 4 && (
+              <QuoteTemplate4
+                data={{
+                  quoteNumber: "QT-2025-0001",
+                  issueDate: form.watch("issueDate"),
+                  expiryDate: form.watch("expiryDate"),
+                  client: {
+                    name: form.watch("client") || "Client Name",
+                    address: "Client Address",
+                    email: "client@example.com",
+                    phone: "123-456-7890"
+                  },
+                  company: {
+                    name: "Your Company",
+                    address: "Your Company Address",
+                    email: "info@yourcompany.com",
+                    phone: "098-765-4321",
+                    logo: "/lovable-uploads/44062e3c-e3b2-47ea-9869-37a2dc71b5d8.png",
+                    stamp: "/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png"
+                  },
+                  items: [
+                    {
+                      description: "Sample Item",
+                      quantity: 1,
+                      rate: 1000,
+                      amount: 1000
+                    }
+                  ],
+                  subtotal: 1000,
+                  tax: 150,
+                  total: 1150,
+                  notes: form.watch("notes") || "Quote notes will appear here",
+                  terms: "Standard terms and conditions apply",
+                  signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+                }}
+                preview
+              />
+            )}
+            {templateId === 5 && (
+              <QuoteTemplate5
+                data={{
+                  quoteNumber: "QT-2025-0001",
+                  issueDate: form.watch("issueDate"),
+                  expiryDate: form.watch("expiryDate"),
+                  client: {
+                    name: form.watch("client") || "Client Name",
+                    address: "Client Address",
+                    email: "client@example.com",
+                    phone: "123-456-7890"
+                  },
+                  company: {
+                    name: "Your Company",
+                    address: "Your Company Address",
+                    email: "info@yourcompany.com",
+                    phone: "098-765-4321",
+                    logo: "/lovable-uploads/44062e3c-e3b2-47ea-9869-37a2dc71b5d8.png",
+                    stamp: "/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png"
+                  },
+                  items: [
+                    {
+                      description: "Sample Item",
+                      quantity: 1,
+                      rate: 1000,
+                      amount: 1000
+                    }
+                  ],
+                  subtotal: 1000,
+                  tax: 150,
+                  total: 1150,
+                  notes: form.watch("notes") || "Quote notes will appear here",
+                  terms: "Standard terms and conditions apply",
+                  signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+                }}
+                preview
+              />
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
