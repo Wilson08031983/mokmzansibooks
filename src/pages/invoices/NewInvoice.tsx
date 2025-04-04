@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -41,12 +42,15 @@ const formSchema = z.object({
   status: z.string(),
   items: z.array(
     z.object({
+      itemNo: z.number(),
       description: z.string().min(1, { message: "Description is required" }),
       quantity: z.number().min(1, { message: "Quantity is required" }),
       rate: z.number().min(0, { message: "Rate is required" }),
       amount: z.number(),
+      discount: z.number().min(0),
+      total: z.number(),
     })
-  ).default([{ description: "", quantity: 1, rate: 0, amount: 0 }]),
+  ).default([{ itemNo: 1, description: "", quantity: 1, rate: 0, amount: 0, discount: 0, total: 0 }]),
   notes: z.string().optional(),
   terms: z.string().optional(),
   subtotal: z.number(),
@@ -79,7 +83,7 @@ const NewInvoice = () => {
       issueDate: new Date().toISOString().split("T")[0],
       dueDate: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString().split("T")[0],
       status: "draft",
-      items: [{ description: "", quantity: 1, rate: 0, amount: 0 }],
+      items: [{ itemNo: 1, description: "", quantity: 1, rate: 0, amount: 0, discount: 0, total: 0 }],
       notes: "",
       terms: "Payment due within 14 days of invoice date.",
       subtotal: 0,
@@ -88,7 +92,7 @@ const NewInvoice = () => {
     },
   });
 
-  const [items, setItems] = useState([{ description: "", quantity: 1, rate: 0, amount: 0 }]);
+  const [items, setItems] = useState([{ itemNo: 1, description: "", quantity: 1, rate: 0, amount: 0, discount: 0, total: 0 }]);
   const [previewData, setPreviewData] = useState<InvoiceData | null>(null);
 
   useEffect(() => {
@@ -97,18 +101,28 @@ const NewInvoice = () => {
     }
   }, [location.state, navigate]);
 
-  const calculateLineTotal = (quantity: number, rate: number) => {
+  const calculateLineAmount = (quantity: number, rate: number) => {
     return quantity * rate;
   };
 
+  const calculateLineTotal = (amount: number, discount: number) => {
+    return amount - discount;
+  };
+
   const addItem = () => {
-    setItems([...items, { description: "", quantity: 1, rate: 0, amount: 0 }]);
+    setItems([...items, { itemNo: items.length + 1, description: "", quantity: 1, rate: 0, amount: 0, discount: 0, total: 0 }]);
   };
 
   const removeItem = (index: number) => {
     if (items.length > 1) {
       const newItems = [...items];
       newItems.splice(index, 1);
+      
+      // Reorder item numbers
+      newItems.forEach((item, idx) => {
+        item.itemNo = idx + 1;
+      });
+      
       setItems(newItems);
     }
   };
@@ -119,7 +133,7 @@ const NewInvoice = () => {
     
     let subtotal = 0;
     items.forEach(item => {
-      subtotal += item.amount;
+      subtotal += item.total;
     });
     const tax = subtotal * 0.15;
     const total = subtotal + tax;
@@ -304,16 +318,26 @@ const NewInvoice = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-12 gap-2 font-medium text-sm">
+                <div className="grid grid-cols-16 gap-2 font-medium text-sm">
+                  <div className="col-span-1">No</div>
                   <div className="col-span-5">Description</div>
                   <div className="col-span-2">Quantity</div>
                   <div className="col-span-2">Rate (R)</div>
                   <div className="col-span-2">Amount (R)</div>
+                  <div className="col-span-2">Discount (R)</div>
+                  <div className="col-span-1">Total (R)</div>
                   <div className="col-span-1"></div>
                 </div>
 
                 {items.map((item, index) => (
-                  <div key={index} className="grid grid-cols-12 gap-2">
+                  <div key={index} className="grid grid-cols-16 gap-2">
+                    <div className="col-span-1">
+                      <Input
+                        value={item.itemNo}
+                        readOnly
+                        className="bg-gray-50"
+                      />
+                    </div>
                     <div className="col-span-5">
                       <Input
                         placeholder="Item description"
@@ -332,8 +356,10 @@ const NewInvoice = () => {
                         value={item.quantity}
                         onChange={(e) => {
                           const newItems = [...items];
-                          newItems[index].quantity = parseInt(e.target.value);
-                          newItems[index].amount = calculateLineTotal(parseInt(e.target.value), item.rate);
+                          const quantity = parseInt(e.target.value);
+                          newItems[index].quantity = quantity;
+                          newItems[index].amount = calculateLineAmount(quantity, item.rate);
+                          newItems[index].total = calculateLineTotal(newItems[index].amount, item.discount);
                           setItems(newItems);
                         }}
                       />
@@ -346,8 +372,10 @@ const NewInvoice = () => {
                         value={item.rate}
                         onChange={(e) => {
                           const newItems = [...items];
-                          newItems[index].rate = parseFloat(e.target.value);
-                          newItems[index].amount = calculateLineTotal(item.quantity, parseFloat(e.target.value));
+                          const rate = parseFloat(e.target.value);
+                          newItems[index].rate = rate;
+                          newItems[index].amount = calculateLineAmount(item.quantity, rate);
+                          newItems[index].total = calculateLineTotal(newItems[index].amount, item.discount);
                           setItems(newItems);
                         }}
                       />
@@ -357,6 +385,30 @@ const NewInvoice = () => {
                         type="number"
                         readOnly
                         value={item.amount}
+                        className="bg-gray-50"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.discount}
+                        onChange={(e) => {
+                          const newItems = [...items];
+                          const discount = parseFloat(e.target.value);
+                          newItems[index].discount = discount;
+                          newItems[index].total = calculateLineTotal(item.amount, discount);
+                          setItems(newItems);
+                        }}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Input
+                        type="number"
+                        readOnly
+                        value={item.total}
+                        className="bg-gray-50"
                       />
                     </div>
                     <div className="col-span-1">

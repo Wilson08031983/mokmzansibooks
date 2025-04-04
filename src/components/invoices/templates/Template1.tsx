@@ -1,3 +1,4 @@
+
 import React from "react";
 import { TemplateProps } from "@/types/invoice";
 import { formatDate, formatCurrency, renderCompanyLogo, renderCompanyStamp, renderSignature } from "@/utils/formatters";
@@ -25,21 +26,27 @@ const Template1 = ({ data, preview = false }: TemplateProps) => {
     },
     items: [
       {
+        itemNo: 1,
         description: "Consultation Services",
         quantity: 10,
         rate: 1500,
-        amount: 15000
+        amount: 15000,
+        discount: 0,
+        total: 15000
       },
       {
+        itemNo: 2,
         description: "Equipment Rental",
         quantity: 5,
         rate: 2000,
-        amount: 10000
+        amount: 10000,
+        discount: 1000,
+        total: 9000
       }
     ],
-    subtotal: 25000,
-    tax: 3750,
-    total: 28750,
+    subtotal: 24000,
+    tax: 3600,
+    total: 27600,
     notes: "Thank you for your business!",
     terms: "Payment due within 14 days of invoice date.",
     signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
@@ -99,35 +106,41 @@ const Template1 = ({ data, preview = false }: TemplateProps) => {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-100">
+              <th className="py-2 px-2 text-left">Item No</th>
               <th className="py-2 px-4 text-left">Description</th>
-              <th className="py-2 px-4 text-right">Quantity</th>
-              <th className="py-2 px-4 text-right">Rate</th>
-              <th className="py-2 px-4 text-right">Amount</th>
+              <th className="py-2 px-2 text-right">Quantity</th>
+              <th className="py-2 px-2 text-right">Rate</th>
+              <th className="py-2 px-2 text-right">Amount</th>
+              <th className="py-2 px-2 text-right">Discount</th>
+              <th className="py-2 px-2 text-right">Total</th>
             </tr>
           </thead>
           <tbody>
             {displayData.items.map((item, i) => (
               <tr key={i} className="border-b">
+                <td className="py-2 px-2">{item.itemNo}</td>
                 <td className="py-2 px-4">{item.description}</td>
-                <td className="py-2 px-4 text-right">{item.quantity}</td>
-                <td className="py-2 px-4 text-right">{formatCurrency(item.rate)}</td>
-                <td className="py-2 px-4 text-right">{formatCurrency(item.amount)}</td>
+                <td className="py-2 px-2 text-right">{item.quantity}</td>
+                <td className="py-2 px-2 text-right">{formatCurrency(item.rate)}</td>
+                <td className="py-2 px-2 text-right">{formatCurrency(item.amount)}</td>
+                <td className="py-2 px-2 text-right">{formatCurrency(item.discount)}</td>
+                <td className="py-2 px-2 text-right">{formatCurrency(item.total)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={2}></td>
+              <td colSpan={5}></td>
               <td className="py-2 px-4 text-right font-semibold">Subtotal:</td>
               <td className="py-2 px-4 text-right">{formatCurrency(displayData.subtotal)}</td>
             </tr>
             <tr>
-              <td colSpan={2}></td>
+              <td colSpan={5}></td>
               <td className="py-2 px-4 text-right font-semibold">VAT (15%):</td>
               <td className="py-2 px-4 text-right">{formatCurrency(displayData.tax)}</td>
             </tr>
             <tr className="font-bold">
-              <td colSpan={2}></td>
+              <td colSpan={5}></td>
               <td className="py-2 px-4 text-right">Total:</td>
               <td className="py-2 px-4 text-right">{formatCurrency(displayData.total)}</td>
             </tr>

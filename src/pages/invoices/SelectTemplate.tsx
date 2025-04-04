@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -39,21 +38,27 @@ const SelectTemplate = () => {
     },
     items: [
       {
+        itemNo: 1,
         description: "Consultation Services",
         quantity: 10,
         rate: 1500,
-        amount: 15000
+        amount: 15000,
+        discount: 0,
+        total: 15000
       },
       {
+        itemNo: 2,
         description: "Equipment Rental",
         quantity: 5,
         rate: 2000,
-        amount: 10000
+        amount: 10000,
+        discount: 1000,
+        total: 9000
       }
     ],
-    subtotal: 25000,
-    tax: 3750,
-    total: 28750,
+    subtotal: 24000,
+    tax: 3600,
+    total: 27600,
     notes: "Thank you for your business!",
     terms: "Payment due within 14 days of invoice date.",
     signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"

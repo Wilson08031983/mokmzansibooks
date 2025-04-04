@@ -18,10 +18,13 @@ export interface InvoiceData {
     stamp?: string;
   };
   items: {
+    itemNo: number;
     description: string;
     quantity: number;
     rate: number;
     amount: number;
+    discount: number;
+    total: number;
   }[];
   subtotal: number;
   tax: number;
