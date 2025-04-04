@@ -423,11 +423,11 @@ const NewQuote = () => {
                     <thead className="sticky top-0 bg-white z-10">
                       <tr className="grid grid-cols-12 gap-4 mb-2 px-4 py-2 border-b">
                         <th className="col-span-2 text-left text-sm font-medium text-gray-500">Item No.</th>
-                        <th className="col-span-4 text-left text-sm font-medium text-gray-500">Description</th>
+                        <th className="col-span-3 text-left text-sm font-medium text-gray-500">Description</th>
                         <th className="col-span-1 text-center text-sm font-medium text-gray-500">Qty</th>
                         <th className="col-span-2 text-center text-sm font-medium text-gray-500">Unit Price</th>
                         <th className="col-span-1 text-center text-sm font-medium text-gray-500">Discount (%)</th>
-                        <th className="col-span-1 text-center text-sm font-medium text-gray-500">Amount</th>
+                        <th className="col-span-2 text-center text-sm font-medium text-gray-500">Amount</th>
                         <th className="col-span-1 text-center text-sm font-medium text-gray-500">Action</th>
                       </tr>
                     </thead>
@@ -442,7 +442,7 @@ const NewQuote = () => {
                               className="w-full"
                             />
                           </td>
-                          <td className="col-span-4">
+                          <td className="col-span-3">
                             <Input
                               type="text"
                               value={item.description}
@@ -501,7 +501,7 @@ const NewQuote = () => {
                               className="w-full text-center"
                             />
                           </td>
-                          <td className="col-span-1">
+                          <td className="col-span-2">
                             <Input
                               type="number"
                               value={calculateAmount(item)}
