@@ -3,14 +3,6 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import {
   Table,
   TableBody,
   TableCell,
@@ -37,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent } from "@/components/ui/card";
 
 import Template1 from "@/components/invoices/templates/Template1";
 import Template2 from "@/components/invoices/templates/Template2";
@@ -418,35 +411,45 @@ const Invoices = () => {
                           </TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Invoice</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Invoice
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadPdf(invoice.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Invoice</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive">
+                                    Delete Invoice
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -493,35 +496,45 @@ const Invoices = () => {
                           </TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Invoice</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Invoice
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadPdf(invoice.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Invoice</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive">
+                                    Delete Invoice
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -568,35 +581,45 @@ const Invoices = () => {
                           </TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Invoice</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Invoice
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadPdf(invoice.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Invoice</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive">
+                                    Delete Invoice
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -643,35 +666,45 @@ const Invoices = () => {
                           </TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Invoice</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Invoice
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadPdf(invoice.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Invoice</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive">
+                                    Delete Invoice
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
