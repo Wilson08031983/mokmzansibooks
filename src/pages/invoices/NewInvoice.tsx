@@ -420,8 +420,8 @@ const NewInvoice = () => {
               <CardTitle>Invoice Preview</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="h-[600px] overflow-auto flex items-center justify-center bg-gray-100">
-                <div className="transform scale-[0.35] origin-top" style={{ width: '210mm', minHeight: '297mm' }}>
+              <div className="h-[650px] overflow-auto flex items-center justify-center bg-gray-100">
+                <div className="transform scale-[0.4] origin-top mt-8" style={{ width: '210mm', height: '297mm' }}>
                   {renderTemplate()}
                 </div>
               </div>
