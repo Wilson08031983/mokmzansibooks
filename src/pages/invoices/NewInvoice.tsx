@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -39,6 +40,7 @@ const formSchema = z.object({
   invoiceNumber: z.string().min(1, { message: "Invoice number is required" }),
   issueDate: z.string().min(1, { message: "Issue date is required" }),
   dueDate: z.string().min(1, { message: "Due date is required" }),
+  shortDescription: z.string().optional(),
   status: z.string(),
   items: z.array(
     z.object({
@@ -82,6 +84,7 @@ const NewInvoice = () => {
       invoiceNumber: `INV-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`,
       issueDate: new Date().toISOString().split("T")[0],
       dueDate: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString().split("T")[0],
+      shortDescription: "",
       status: "draft",
       items: [{ itemNo: 1, description: "", quantity: 1, rate: 0, amount: 0, discount: 0, total: 0 }],
       notes: "",
@@ -142,6 +145,7 @@ const NewInvoice = () => {
       invoiceNumber: formValues.invoiceNumber,
       issueDate: formValues.issueDate,
       dueDate: formValues.dueDate,
+      shortDescription: formValues.shortDescription,
       client: {
         name: clientInfo?.name || "",
         address: "123 Client Street, Pretoria, South Africa",
@@ -303,6 +307,18 @@ const NewInvoice = () => {
                       {...form.register("dueDate")}
                       onChange={(e) => {
                         form.setValue("dueDate", e.target.value);
+                        updatePreview();
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="shortDescription">Short Description</Label>
+                    <Input
+                      id="shortDescription"
+                      placeholder="Brief description of the invoice"
+                      {...form.register("shortDescription")}
+                      onChange={(e) => {
+                        form.setValue("shortDescription", e.target.value);
                         updatePreview();
                       }}
                     />

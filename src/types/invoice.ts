@@ -3,6 +3,7 @@ export interface InvoiceData {
   invoiceNumber: string;
   issueDate: string;
   dueDate: string;
+  shortDescription?: string;
   client: {
     name: string;
     address: string;

@@ -22,6 +22,7 @@ const SelectTemplate = () => {
     invoiceNumber: "INV-2025-0001",
     issueDate: "2025-04-03",
     dueDate: "2025-04-17",
+    shortDescription: "Consulting services for Q2 2025",
     client: {
       name: "Pretoria Engineering",
       address: "123 Main St, Pretoria, 0001",
