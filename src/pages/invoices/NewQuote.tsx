@@ -427,7 +427,7 @@ const NewQuote = () => {
                 </div>
                 
                 <ScrollArea className="h-[300px] w-full overflow-hidden border rounded-md">
-                  <div className="pr-4">
+                  <div>
                     {items.map((item, index) => (
                       <div key={item.id} className="grid grid-cols-12 gap-4 mb-4 items-center">
                         <div className="col-span-1">
