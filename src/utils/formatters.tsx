@@ -44,4 +44,10 @@ export const renderCompanyStamp = (stamp?: string) => {
   );
 };
 
-// Removed the renderSignature function
+export const renderSignature = (signature?: string) => {
+  return signature ? (
+    <img src={signature} alt="Signature" className="h-full object-contain" />
+  ) : (
+    <span className="text-gray-400 text-xs">Signature</span>
+  );
+};
