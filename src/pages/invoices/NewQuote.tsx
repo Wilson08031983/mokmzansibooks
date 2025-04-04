@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +33,64 @@ import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate3";
 import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
 import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
 import { QuoteData } from "@/types/quote";
+
+// Mock client data from Clients page
+const mockClients = {
+  companies: [
+    {
+      id: "c1",
+      name: "ABC Construction Ltd",
+      contactPerson: "John Smith",
+      email: "john@abcconstruction.co.za",
+      phone: "+27 82 123 4567",
+      address: "45 Main Road, Cape Town, 8001",
+      lastInteraction: "2023-03-25",
+      type: "company",
+    },
+    {
+      id: "c2",
+      name: "Durban Electronics",
+      contactPerson: "Sarah Johnson",
+      email: "sarah@durbanelectronics.co.za",
+      phone: "+27 83 987 6543",
+      address: "12 Beach Avenue, Durban, 4001",
+      lastInteraction: "2023-03-20",
+      type: "company",
+    },
+  ],
+  individuals: [
+    {
+      id: "i1",
+      name: "Michael Ndlovu",
+      email: "michael@example.com",
+      phone: "+27 71 555 7890",
+      address: "78 Oak Street, Johannesburg, 2000",
+      lastInteraction: "2023-03-28",
+      type: "individual",
+    },
+  ],
+  vendors: [
+    {
+      id: "v1",
+      name: "SA Office Supplies",
+      contactPerson: "David Wilson",
+      email: "david@saoffice.co.za",
+      phone: "+27 11 222 3344",
+      address: "56 Commerce Park, Pretoria, 0002",
+      lastInteraction: "2023-03-15",
+      type: "vendor",
+    },
+  ],
+};
+
+// Function to get all clients for dropdown
+const getAllClients = () => {
+  return [
+    ...mockClients.companies,
+    ...mockClients.individuals,
+    ...mockClients.vendors,
+  ];
+};
 
 const formSchema = z.object({
   quoteNumber: z.string().min(2, {
@@ -81,6 +140,7 @@ const NewQuote = () => {
   ]);
   const navigate = useNavigate();
   const location = useLocation();
+  const allClients = getAllClients();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -88,7 +148,7 @@ const NewQuote = () => {
       quoteNumber: "QT-2025-0001",
       issueDate: format(new Date(), "yyyy-MM-dd"),
       expiryDate: format(addDays(new Date(), 30), "yyyy-MM-dd"),
-      client: "Pretoria Engineering",
+      client: "c1", // Default to first client ID
       vatRate: 0,
       notes: "This quotation is valid for 30 days.",
       terms: "50% deposit required to commence work.",
@@ -152,16 +212,24 @@ const NewQuote = () => {
     return parseFloat(total.toFixed(2));
   };
 
+  // Get client info by ID
+  const getSelectedClient = (clientId: string) => {
+    return allClients.find(client => client.id === clientId);
+  };
+
   const createPreviewData = (): QuoteData => {
+    const selectedClientId = form.watch("client");
+    const selectedClient = getSelectedClient(selectedClientId);
+    
     return {
       quoteNumber: "QT-2025-0001",
       issueDate: form.watch("issueDate"),
       expiryDate: form.watch("expiryDate"),
       client: {
-        name: form.watch("client") || "Client Name",
-        address: "Client Address",
-        email: "client@example.com",
-        phone: "012 345 6789"
+        name: selectedClient?.name || "Client Name",
+        address: selectedClient?.address || "Client Address",
+        email: selectedClient?.email || "client@example.com",
+        phone: selectedClient?.phone || "012 345 6789"
       },
       company: {
         name: "MOKMzansi Holdings",
@@ -245,9 +313,23 @@ const NewQuote = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Client Name" {...field} />
-                      </FormControl>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a client" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {allClients.map(client => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.name} {client.type !== 'individual' && client.contactPerson ? `(${client.contactPerson})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -259,7 +341,7 @@ const NewQuote = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>VAT Rate (%)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value.toString()}>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select VAT Rate" />
