@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -414,118 +413,105 @@ const NewQuote = () => {
 
               <Card className="mt-8 p-6 w-full">
                 <h3 className="text-lg font-semibold mb-4">Items</h3>
+                <div className="grid grid-cols-12 gap-4 mb-2 font-medium text-sm text-gray-500">
+                  <div className="col-span-1">Item No.</div>
+                  <div className="col-span-4">Description</div>
+                  <div className="col-span-1 text-center">Qty</div>
+                  <div className="col-span-2 text-center">Unit Price</div>
+                  <div className="col-span-2 text-center">Discount (%)</div>
+                  <div className="col-span-2 text-center">Amount</div>
+                </div>
                 {items.map((item, index) => (
-                  <div key={item.id} className="grid grid-cols-6 gap-4 mb-4 items-center">
+                  <div key={item.id} className="grid grid-cols-12 gap-4 mb-4 items-center">
                     <div className="col-span-1">
-                      <FormItem>
-                        <FormLabel>Item No.</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            value={item.itemNo}
-                            onChange={(e) => updateItem(item.id, "itemNo", e.target.value)}
-                          />
-                        </FormControl>
-                      </FormItem>
+                      <Input
+                        type="text"
+                        value={item.itemNo}
+                        onChange={(e) => updateItem(item.id, "itemNo", e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="col-span-4">
+                      <Input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          updateItem(item.id, "quantity", isNaN(value) ? 0 : value);
+                          updateItem(item.id, "amount", calculateAmount(
+                            {
+                              ...item,
+                              quantity: isNaN(value) ? 0 : value
+                            }
+                          ))
+                        }}
+                        className="w-full text-center"
+                      />
                     </div>
                     <div className="col-span-2">
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            value={item.description}
-                            onChange={(e) => updateItem(item.id, "description", e.target.value)}
-                          />
-                        </FormControl>
-                      </FormItem>
+                      <Input
+                        type="number"
+                        value={item.unitPrice}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          updateItem(item.id, "unitPrice", isNaN(value) ? 0 : value);
+                          updateItem(item.id, "amount", calculateAmount(
+                            {
+                              ...item,
+                              unitPrice: isNaN(value) ? 0 : value
+                            }
+                          ))
+                        }}
+                        className="w-full text-center"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Input
+                        type="number"
+                        value={item.discount}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          updateItem(item.id, "discount", isNaN(value) ? 0 : value);
+                          updateItem(item.id, "amount", calculateAmount(
+                            {
+                              ...item,
+                              discount: isNaN(value) ? 0 : value
+                            }
+                          ))
+                        }}
+                        className="w-full text-center"
+                      />
                     </div>
                     <div className="col-span-1">
-                      <FormItem>
-                        <FormLabel>Quantity</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value);
-                              updateItem(item.id, "quantity", isNaN(value) ? 0 : value);
-                              updateItem(item.id, "amount", calculateAmount(
-                                {
-                                  ...item,
-                                  quantity: isNaN(value) ? 0 : value
-                                }
-                              ))
-                            }}
-                          />
-                        </FormControl>
-                      </FormItem>
+                      <Input
+                        type="number"
+                        value={calculateAmount(item)}
+                        readOnly
+                        className="w-full text-center bg-gray-50"
+                      />
                     </div>
-                    <div className="col-span-1">
-                      <FormItem>
-                        <FormLabel>Unit Price</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            value={item.unitPrice}
-                            onChange={(e) => {
-                              const value = parseFloat(e.target.value);
-                              updateItem(item.id, "unitPrice", isNaN(value) ? 0 : value);
-                              updateItem(item.id, "amount", calculateAmount(
-                                {
-                                  ...item,
-                                  unitPrice: isNaN(value) ? 0 : value
-                                }
-                              ))
-                            }}
-                          />
-                        </FormControl>
-                      </FormItem>
+                    <div className="col-span-1 flex justify-center">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="h-8 w-8"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <div className="col-span-1">
-                      <FormItem>
-                        <FormLabel>Discount (%)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            value={item.discount}
-                            onChange={(e) => {
-                              const value = parseFloat(e.target.value);
-                              updateItem(item.id, "discount", isNaN(value) ? 0 : value);
-                              updateItem(item.id, "amount", calculateAmount(
-                                {
-                                  ...item,
-                                  discount: isNaN(value) ? 0 : value
-                                }
-                              ))
-                            }}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    </div>
-                    <div className="col-span-1">
-                      <FormItem>
-                        <FormLabel>Amount</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            value={calculateAmount(item)}
-                            readOnly
-                          />
-                        </FormControl>
-                      </FormItem>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleRemoveItem(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 ))}
-                <Button type="button" size="sm" onClick={handleAddItem}>
+                <Button type="button" size="sm" onClick={handleAddItem} className="mt-2">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Item
                 </Button>
