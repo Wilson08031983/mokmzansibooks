@@ -25,6 +25,7 @@ export interface QuoteData {
     rate?: number;
     discount?: number;
     amount: number;
+    websiteUrl?: string; // Added this field
   }[];
   subtotal: number;
   vatRate?: number;

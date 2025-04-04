@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Link } from "lucide-react";
 import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
 import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
 import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate3";
@@ -134,6 +133,7 @@ interface Item {
   unitPrice: number;
   discount: number;
   amount: number;
+  websiteUrl: string;
 }
 
 const NewQuote = () => {
@@ -147,6 +147,7 @@ const NewQuote = () => {
       unitPrice: 1500,
       discount: 0,
       amount: 15000,
+      websiteUrl: "",
     },
     {
       id: "2",
@@ -156,6 +157,7 @@ const NewQuote = () => {
       unitPrice: 2000,
       discount: 0,
       amount: 10000,
+      websiteUrl: "",
     },
   ]);
   const navigate = useNavigate();
@@ -194,6 +196,7 @@ const NewQuote = () => {
       unitPrice: 0,
       discount: 0,
       amount: 0,
+      websiteUrl: "",
     };
     setItems([...items, newItem]);
   };
@@ -419,21 +422,27 @@ const NewQuote = () => {
                 </div>
                 
                 <ScrollArea className="h-[500px] w-full overflow-hidden border rounded-md">
-                  <table className="w-full min-w-[900px] table-fixed">
+                  <table className="w-full min-w-[1100px] table-fixed">
                     <thead className="sticky top-0 bg-white z-10">
-                      <tr className="grid grid-cols-12 gap-4 mb-2 px-4 py-2 border-b">
+                      <tr className="grid grid-cols-14 gap-4 mb-2 px-4 py-2 border-b">
                         <th className="col-span-2 text-left text-sm font-medium text-gray-500">Item No.</th>
                         <th className="col-span-2 text-left text-sm font-medium text-gray-500">Description</th>
                         <th className="col-span-1 text-center text-sm font-medium text-gray-500">Qty</th>
                         <th className="col-span-2 text-center text-sm font-medium text-gray-500">Unit Price</th>
                         <th className="col-span-2 text-center text-sm font-medium text-gray-500">Discount (%)</th>
                         <th className="col-span-2 text-center text-sm font-medium text-gray-500">Amount</th>
+                        <th className="col-span-2 text-center text-sm font-medium text-gray-500">
+                          <div className="flex items-center justify-center">
+                            <Link className="h-4 w-4 mr-1" />
+                            <span>Website URL</span>
+                          </div>
+                        </th>
                         <th className="col-span-1 text-center text-sm font-medium text-gray-500">Action</th>
                       </tr>
                     </thead>
                     <tbody className="px-4">
                       {items.map((item, index) => (
-                        <tr key={item.id} className="grid grid-cols-12 gap-4 mb-6 items-center px-4 py-2">
+                        <tr key={item.id} className="grid grid-cols-14 gap-4 mb-6 items-center px-4 py-2">
                           <td className="col-span-2">
                             <Input
                               type="text"
@@ -507,6 +516,15 @@ const NewQuote = () => {
                               value={calculateAmount(item)}
                               readOnly
                               className="w-full text-center bg-gray-50"
+                            />
+                          </td>
+                          <td className="col-span-2">
+                            <Input
+                              type="url"
+                              value={item.websiteUrl}
+                              onChange={(e) => updateItem(item.id, "websiteUrl", e.target.value)}
+                              placeholder="https://example.com"
+                              className="w-full"
                             />
                           </td>
                           <td className="col-span-1 flex justify-center">
