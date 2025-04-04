@@ -12,7 +12,7 @@ const Logo = ({
 }: LogoProps) => {
   return <Link to="/" className={`flex items-center ${className}`}>
       <div className="relative mr-2">
-        <img src="/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png" alt="MOKMzansi Logo" className="h-20 w-20 rounded-full" />
+        <img src="/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png" alt="MOKMzansi Logo" className="h-16 w-16 rounded-full" />
       </div>
       {variant === "full" && <div className="font-bold text-xl">
           <span className="gradient-text">MOKMzansi</span>
