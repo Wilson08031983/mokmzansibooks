@@ -533,9 +533,9 @@ const NewQuote = () => {
             
             <div>
               <h2 className="text-lg font-semibold mb-4">Quote Preview</h2>
-              <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 overflow-hidden" style={{ height: '700px' }}>
-                <div className="scale-[0.65] origin-top-left w-[210mm]" style={{ height: '1080px', overflow: 'auto', transformOrigin: 'top center' }}>
-                  <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate} className="w-full">
+              <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 overflow-hidden" style={{ height: '750px' }}>
+                <div className="scale-[0.65] origin-top w-full flex justify-center" style={{ height: '1080px', overflow: 'auto' }}>
+                  <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate} className="w-full max-w-[210mm]">
                     <TabsList className="w-full mb-4">
                       <TabsTrigger value="template1" className="flex-grow">Template 1</TabsTrigger>
                       <TabsTrigger value="template2" className="flex-grow">Template 2</TabsTrigger>
@@ -543,21 +543,23 @@ const NewQuote = () => {
                       <TabsTrigger value="template4" className="flex-grow">Template 4</TabsTrigger>
                       <TabsTrigger value="template5" className="flex-grow">Template 5</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="template1" className="mx-auto">
-                      <QuoteTemplate1 data={createPreviewData()} preview={true} />
-                    </TabsContent>
-                    <TabsContent value="template2" className="mx-auto">
-                      <QuoteTemplate2 data={createPreviewData()} preview={true} />
-                    </TabsContent>
-                    <TabsContent value="template3" className="mx-auto">
-                      <QuoteTemplate3 data={createPreviewData()} preview={true} />
-                    </TabsContent>
-                    <TabsContent value="template4" className="mx-auto">
-                      <QuoteTemplate4 data={createPreviewData()} preview={true} />
-                    </TabsContent>
-                    <TabsContent value="template5" className="mx-auto">
-                      <QuoteTemplate5 data={createPreviewData()} preview={true} />
-                    </TabsContent>
+                    <div className="flex justify-center">
+                      <TabsContent value="template1" className="max-w-[210mm]">
+                        <QuoteTemplate1 data={createPreviewData()} preview={true} />
+                      </TabsContent>
+                      <TabsContent value="template2" className="max-w-[210mm]">
+                        <QuoteTemplate2 data={createPreviewData()} preview={true} />
+                      </TabsContent>
+                      <TabsContent value="template3" className="max-w-[210mm]">
+                        <QuoteTemplate3 data={createPreviewData()} preview={true} />
+                      </TabsContent>
+                      <TabsContent value="template4" className="max-w-[210mm]">
+                        <QuoteTemplate4 data={createPreviewData()} preview={true} />
+                      </TabsContent>
+                      <TabsContent value="template5" className="max-w-[210mm]">
+                        <QuoteTemplate5 data={createPreviewData()} preview={true} />
+                      </TabsContent>
+                    </div>
                   </Tabs>
                 </div>
               </div>
