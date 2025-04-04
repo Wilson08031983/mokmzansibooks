@@ -419,18 +419,18 @@ const NewQuote = () => {
                 
                 <div className="grid grid-cols-12 gap-4 mb-2 font-medium text-sm text-gray-500">
                   <div className="col-span-1">Item No.</div>
-                  <div className="col-span-3">Description</div>
+                  <div className="col-span-4">Description</div>
                   <div className="col-span-1 text-center">Qty</div>
                   <div className="col-span-2 text-center">Unit Price</div>
                   <div className="col-span-2 text-center">Discount (%)</div>
-                  <div className="col-span-2 text-center">Amount</div>
+                  <div className="col-span-1 text-center">Amount</div>
                   <div className="col-span-1 text-center">Action</div>
                 </div>
                 
-                <ScrollArea className="h-[350px] w-full overflow-hidden border rounded-md">
-                  <div className="p-2">
+                <ScrollArea className="h-[400px] w-full overflow-hidden border rounded-md">
+                  <div className="p-4 min-w-[800px]">
                     {items.map((item, index) => (
-                      <div key={item.id} className="grid grid-cols-12 gap-4 mb-5 items-center">
+                      <div key={item.id} className="grid grid-cols-12 gap-4 mb-6 items-center">
                         <div className="col-span-1">
                           <Input
                             type="text"
@@ -439,7 +439,7 @@ const NewQuote = () => {
                             className="w-full"
                           />
                         </div>
-                        <div className="col-span-3">
+                        <div className="col-span-4">
                           <Input
                             type="text"
                             value={item.description}
@@ -498,7 +498,7 @@ const NewQuote = () => {
                             className="w-full text-center"
                           />
                         </div>
-                        <div className="col-span-2">
+                        <div className="col-span-1">
                           <Input
                             type="number"
                             value={calculateAmount(item)}
