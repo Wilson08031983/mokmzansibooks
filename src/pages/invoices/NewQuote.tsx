@@ -312,7 +312,7 @@ const NewQuote = () => {
                 />
               </Card>
 
-              <Card className="mt-8 p-6">
+              <Card className="mt-8 p-6 w-full">
                 <h3 className="text-lg font-semibold mb-4">Items</h3>
                 {items.map((item, index) => (
                   <div key={item.id} className="grid grid-cols-6 gap-4 mb-4 items-center">
