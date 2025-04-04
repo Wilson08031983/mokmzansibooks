@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Card,
@@ -22,8 +23,8 @@ import {
   Loader2,
   ShoppingCart,
   ArrowRight,
-  ChevronDown,
   ExternalLink,
+  Download,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,7 @@ import {
 } from "@/components/ui/accordion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const QuickFill = () => {
   const [activeTab, setActiveTab] = useState("upload");
@@ -52,9 +54,12 @@ const QuickFill = () => {
   const [processingStatus, setProcessingStatus] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [generatedForms, setGeneratedForms] = useState<boolean>(false);
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentUser } = useAuth();
-  const { toast } = useToast();
+  const { toast: useToastHook } = useToast();
   
   const isPremiumUser = currentUser?.subscriptionStatus === "active";
 
@@ -82,6 +87,7 @@ const QuickFill = () => {
             
             setTimeout(() => {
               setProcessingStatus("completed");
+              toast.success("Documents processed successfully!");
             }, 2000);
           }, 500);
         }
@@ -90,13 +96,41 @@ const QuickFill = () => {
     }, 300);
   };
 
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    
+    // Update the file input value to trigger handleFileUpload
+    if (fileInputRef.current) {
+      const dataTransfer = new DataTransfer();
+      for (let i = 0; i < files.length; i++) {
+        dataTransfer.items.add(files[i]);
+      }
+      fileInputRef.current.files = dataTransfer.files;
+      handleFileUpload({ target: { files: dataTransfer.files } } as React.ChangeEvent<HTMLInputElement>);
+    }
+  };
+
   const handleSearch = () => {
     if (!isPremiumUser) {
-      toast({
+      useToastHook({
         title: "Premium Feature",
         description: "The RFQ price search is only available on the Premium plan.",
         variant: "destructive",
       });
+      return;
+    }
+    
+    if (!searchQuery.trim()) {
+      toast.error("Please enter search terms");
       return;
     }
     
@@ -105,8 +139,10 @@ const QuickFill = () => {
     
     setTimeout(() => {
       setIsSearching(false);
-      setSearchResults([
-        {
+      let results = [];
+      
+      if (searchQuery.toLowerCase().includes("chair") || searchQuery.toLowerCase().includes("office")) {
+        results.push({
           id: 1,
           item: "Office Chair - Ergonomic",
           description: "High-quality ergonomic office chair with lumbar support",
@@ -115,8 +151,11 @@ const QuickFill = () => {
             { name: "Corporate Furniture", price: 1499, rating: 4.8, shipping: 0 },
             { name: "Durban Office", price: 1150, rating: 4.3, shipping: 250 },
           ],
-        },
-        {
+        });
+      }
+      
+      if (searchQuery.toLowerCase().includes("laptop") || searchQuery.toLowerCase().includes("computer")) {
+        results.push({
           id: 2,
           item: "Laptop - Business Grade",
           description: "15.6-inch business laptop, i7, 16GB RAM, 512GB SSD",
@@ -125,9 +164,146 @@ const QuickFill = () => {
             { name: "Computer Warehouse", price: 14750, rating: 4.4, shipping: 150 },
             { name: "Digital World", price: 16200, rating: 4.9, shipping: 0 },
           ],
-        },
-      ]);
+        });
+      }
+      
+      if (searchQuery.toLowerCase().includes("printer") || searchQuery.toLowerCase().includes("scanner")) {
+        results.push({
+          id: 3,
+          item: "Multifunction Printer",
+          description: "Color laser printer with scanning and copying capabilities",
+          suppliers: [
+            { name: "Office Tech", price: 3899, rating: 4.2, shipping: 0 },
+            { name: "PrintSolutions", price: 4250, rating: 4.5, shipping: 0 },
+            { name: "Corporate Systems", price: 3750, rating: 4.0, shipping: 199 },
+          ],
+        });
+      }
+      
+      if (results.length === 0) {
+        // Add default results if no specific matches
+        results = [
+          {
+            id: 1,
+            item: "Office Chair - Ergonomic",
+            description: "High-quality ergonomic office chair with lumbar support",
+            suppliers: [
+              { name: "Office Supplies SA", price: 1250, rating: 4.7, shipping: 120 },
+              { name: "Corporate Furniture", price: 1499, rating: 4.8, shipping: 0 },
+              { name: "Durban Office", price: 1150, rating: 4.3, shipping: 250 },
+            ],
+          },
+          {
+            id: 2,
+            item: "Laptop - Business Grade",
+            description: "15.6-inch business laptop, i7, 16GB RAM, 512GB SSD",
+            suppliers: [
+              { name: "Tech Solutions", price: 15499, rating: 4.6, shipping: 0 },
+              { name: "Computer Warehouse", price: 14750, rating: 4.4, shipping: 150 },
+              { name: "Digital World", price: 16200, rating: 4.9, shipping: 0 },
+            ],
+          },
+        ];
+      }
+      
+      setSearchResults(results);
+      toast.success(`Found ${results.length} items matching your search`);
     }, 2000);
+  };
+  
+  const handleRfqUpload = () => {
+    toast.success("RFQ document uploaded successfully");
+    
+    setTimeout(() => {
+      setIsSearching(true);
+      
+      setTimeout(() => {
+        setIsSearching(false);
+        setSearchResults([
+          {
+            id: 1,
+            item: "Office Chair - Ergonomic",
+            description: "High-quality ergonomic office chair with lumbar support",
+            suppliers: [
+              { name: "Office Supplies SA", price: 1250, rating: 4.7, shipping: 120 },
+              { name: "Corporate Furniture", price: 1499, rating: 4.8, shipping: 0 },
+              { name: "Durban Office", price: 1150, rating: 4.3, shipping: 250 },
+            ],
+          },
+          {
+            id: 2,
+            item: "Laptop - Business Grade",
+            description: "15.6-inch business laptop, i7, 16GB RAM, 512GB SSD",
+            suppliers: [
+              { name: "Tech Solutions", price: 15499, rating: 4.6, shipping: 0 },
+              { name: "Computer Warehouse", price: 14750, rating: 4.4, shipping: 150 },
+              { name: "Digital World", price: 16200, rating: 4.9, shipping: 0 },
+            ],
+          },
+          {
+            id: 3,
+            item: "Multifunction Printer",
+            description: "Color laser printer with scanning and copying capabilities",
+            suppliers: [
+              { name: "Office Tech", price: 3899, rating: 4.2, shipping: 0 },
+              { name: "PrintSolutions", price: 4250, rating: 4.5, shipping: 0 },
+              { name: "Corporate Systems", price: 3750, rating: 4.0, shipping: 199 },
+            ],
+          },
+        ]);
+        toast.success("RFQ items extracted and prices found");
+      }, 3000);
+    }, 1000);
+  };
+  
+  const handleDownloadAllForms = () => {
+    toast.success("All forms downloaded as ZIP file");
+  };
+  
+  const handleDownloadForm = (formName: string) => {
+    toast.success(`${formName} downloaded successfully`);
+  };
+  
+  const handleViewForm = (formName: string) => {
+    toast.success(`Previewing ${formName}`);
+  };
+  
+  const handleEditForm = (formName: string) => {
+    toast.success(`Editing ${formName}`);
+  };
+  
+  const handleGeneratePriceReport = () => {
+    toast.success("Price comparison report generated");
+    
+    setTimeout(() => {
+      toast("Price Report Ready", {
+        description: "Your price comparison report has been generated and is ready to download",
+        action: {
+          label: "Download",
+          onClick: () => toast.success("Report downloaded")
+        },
+      });
+    }, 2000);
+  };
+  
+  const handleAddToQuote = (item: string, supplier: string) => {
+    toast.success(`Added ${item} from ${supplier} to your quote`);
+  };
+  
+  const handleViewSupplier = (supplier: string) => {
+    toast(`Viewing ${supplier} details`, {
+      description: "This would typically open the supplier's website in a new tab"
+    });
+  };
+
+  const generateFormsFromUploadedFiles = () => {
+    if (processingStatus !== "completed") {
+      toast.error("Please upload and process documents first");
+      return;
+    }
+    
+    setGeneratedForms(true);
+    toast.success("Forms generated successfully");
   };
 
   return (
@@ -168,6 +344,8 @@ const QuickFill = () => {
                   <Label
                     htmlFor="documentUpload"
                     className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <FileUp className="w-10 h-10 mb-3 text-gray-400" />
@@ -186,6 +364,7 @@ const QuickFill = () => {
                       onChange={handleFileUpload}
                       disabled={isUploading}
                       accept=".pdf,.docx,.png,.jpg"
+                      ref={fileInputRef}
                     />
                   </Label>
                 </div>
@@ -243,7 +422,7 @@ const QuickFill = () => {
                 </div>
                 <Button
                   disabled={uploadedFiles.length === 0 || processingStatus === "processing"}
-                  onClick={() => setActiveTab("rfq")}
+                  onClick={generateFormsFromUploadedFiles}
                 >
                   {processingStatus === "processing" ? (
                     <>
@@ -251,7 +430,7 @@ const QuickFill = () => {
                     </>
                   ) : (
                     <>
-                      Next Step <ArrowRight className="ml-2 h-4 w-4" />
+                      Generate Forms <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}
                 </Button>
@@ -342,7 +521,7 @@ const QuickFill = () => {
             </Card>
           </div>
 
-          {processingStatus === "completed" && (
+          {processingStatus === "completed" && generatedForms && (
             <Card>
               <CardHeader>
                 <CardTitle>Generated Forms</CardTitle>
@@ -366,10 +545,11 @@ const QuickFill = () => {
                       Invitation to Bid
                     </p>
                     <div className="flex justify-between">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleViewForm("SBD 1")}>
                         Preview
                       </Button>
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => handleDownloadForm("SBD 1")}>
+                        <Download className="mr-2 h-3 w-3" />
                         Download
                       </Button>
                     </div>
@@ -388,10 +568,11 @@ const QuickFill = () => {
                       Declaration of Interest
                     </p>
                     <div className="flex justify-between">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleViewForm("SBD 4")}>
                         Preview
                       </Button>
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => handleDownloadForm("SBD 4")}>
+                        <Download className="mr-2 h-3 w-3" />
                         Download
                       </Button>
                     </div>
@@ -410,10 +591,10 @@ const QuickFill = () => {
                       B-BBEE Status
                     </p>
                     <div className="flex justify-between">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleViewForm("SBD 6.1")}>
                         Preview
                       </Button>
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => handleEditForm("SBD 6.1")}>
                         Edit
                       </Button>
                     </div>
@@ -425,7 +606,8 @@ const QuickFill = () => {
                   <p className="text-sm text-gray-500">
                     All mandatory forms are pre-populated. Review and make any necessary adjustments before submission.
                   </p>
-                  <Button>
+                  <Button onClick={handleDownloadAllForms}>
+                    <Download className="mr-2 h-4 w-4" />
                     Download All Forms
                   </Button>
                 </div>
@@ -452,7 +634,7 @@ const QuickFill = () => {
                       type="file"
                       accept=".pdf,.docx,.xlsx"
                     />
-                    <Button className="ml-2">
+                    <Button className="ml-2" onClick={handleRfqUpload}>
                       <FileUp className="mr-2 h-4 w-4" /> Upload
                     </Button>
                   </div>
@@ -466,6 +648,8 @@ const QuickFill = () => {
                         id="itemSearch"
                         placeholder="e.g., Office Chair, Laptop, Printer..."
                         className="pl-8"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
                     <Button className="ml-2" onClick={handleSearch}>
@@ -617,10 +801,14 @@ const QuickFill = () => {
                                     variant="outline"
                                     size="sm"
                                     className="mr-2"
+                                    onClick={() => handleViewSupplier(supplier.name)}
                                   >
                                     View <ExternalLink className="ml-1 h-3 w-3" />
                                   </Button>
-                                  <Button size="sm">
+                                  <Button 
+                                    size="sm"
+                                    onClick={() => handleAddToQuote(result.item, supplier.name)}
+                                  >
                                     <ShoppingCart className="h-3 w-3 mr-1" /> Add
                                   </Button>
                                 </TableCell>
@@ -638,7 +826,7 @@ const QuickFill = () => {
                   <p className="text-sm text-gray-500">
                     Prices are updated daily. Click "View" to see full product details.
                   </p>
-                  <Button>
+                  <Button onClick={handleGeneratePriceReport}>
                     Generate Price Report
                   </Button>
                 </div>
