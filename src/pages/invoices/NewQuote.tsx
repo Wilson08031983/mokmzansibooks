@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -417,15 +418,15 @@ const NewQuote = () => {
                   <h3 className="text-lg font-semibold">Items</h3>
                 </div>
                 
-                <ScrollArea className="h-[450px] w-full overflow-hidden border rounded-md">
-                  <table className="w-full min-w-[800px] table-fixed">
+                <ScrollArea className="h-[500px] w-full overflow-hidden border rounded-md">
+                  <table className="w-full min-w-[900px] table-fixed">
                     <thead className="sticky top-0 bg-white z-10">
                       <tr className="grid grid-cols-12 gap-4 mb-2 px-4 py-2 border-b">
-                        <th className="col-span-1 text-left text-sm font-medium text-gray-500">Item No.</th>
+                        <th className="col-span-2 text-left text-sm font-medium text-gray-500">Item No.</th>
                         <th className="col-span-4 text-left text-sm font-medium text-gray-500">Description</th>
                         <th className="col-span-1 text-center text-sm font-medium text-gray-500">Qty</th>
                         <th className="col-span-2 text-center text-sm font-medium text-gray-500">Unit Price</th>
-                        <th className="col-span-2 text-center text-sm font-medium text-gray-500">Discount (%)</th>
+                        <th className="col-span-1 text-center text-sm font-medium text-gray-500">Discount (%)</th>
                         <th className="col-span-1 text-center text-sm font-medium text-gray-500">Amount</th>
                         <th className="col-span-1 text-center text-sm font-medium text-gray-500">Action</th>
                       </tr>
@@ -433,7 +434,7 @@ const NewQuote = () => {
                     <tbody className="px-4">
                       {items.map((item, index) => (
                         <tr key={item.id} className="grid grid-cols-12 gap-4 mb-6 items-center px-4 py-2">
-                          <td className="col-span-1">
+                          <td className="col-span-2">
                             <Input
                               type="text"
                               value={item.itemNo}
@@ -483,7 +484,7 @@ const NewQuote = () => {
                               className="w-full text-center"
                             />
                           </td>
-                          <td className="col-span-2">
+                          <td className="col-span-1">
                             <Input
                               type="number"
                               value={item.discount}
