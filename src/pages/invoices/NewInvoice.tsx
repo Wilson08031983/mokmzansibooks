@@ -20,13 +20,27 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, FileText, Save, ChevronDown } from "lucide-react";
 import { InvoiceData } from "@/types/invoice";
+import { QuoteData } from "@/types/quote";
 
 // Import templates
 import Template1 from "@/components/invoices/templates/Template1";
@@ -69,6 +83,91 @@ const mockClients = [
   { id: "client3", name: "Durban Services Co" },
   { id: "client4", name: "Johannesburg Tech Solutions" },
   { id: "client5", name: "Eastern Cape Supplies" },
+];
+
+// Mock quotation data
+const mockQuotations = [
+  {
+    id: "quote1",
+    quoteNumber: "QUO-2025-001",
+    clientId: "client1",
+    issueDate: "2025-03-15",
+    expiryDate: "2025-04-15",
+    description: "Office renovation project",
+    items: [
+      { 
+        itemNo: 1, 
+        description: "Design Consultation", 
+        quantity: 5, 
+        rate: 1200, 
+        amount: 6000, 
+        discount: 500, 
+        total: 5500 
+      },
+      { 
+        itemNo: 2, 
+        description: "Material Procurement", 
+        quantity: 1, 
+        rate: 8500, 
+        amount: 8500, 
+        discount: 0, 
+        total: 8500 
+      }
+    ],
+    notes: "Quote includes all consultation fees and materials.",
+    terms: "Valid for 30 days from the issue date."
+  },
+  {
+    id: "quote2",
+    quoteNumber: "QUO-2025-002",
+    clientId: "client3",
+    issueDate: "2025-03-20",
+    expiryDate: "2025-04-20",
+    description: "IT Infrastructure Setup",
+    items: [
+      { 
+        itemNo: 1, 
+        description: "Network Installation", 
+        quantity: 1, 
+        rate: 15000, 
+        amount: 15000, 
+        discount: 1500, 
+        total: 13500 
+      },
+      { 
+        itemNo: 2, 
+        description: "Hardware Supply", 
+        quantity: 10, 
+        rate: 5000, 
+        amount: 50000, 
+        discount: 5000, 
+        total: 45000 
+      }
+    ],
+    notes: "Quote includes installation and 1-year warranty.",
+    terms: "50% payment upfront, balance upon completion."
+  },
+  {
+    id: "quote3",
+    quoteNumber: "QUO-2025-003",
+    clientId: "client5",
+    issueDate: "2025-03-25",
+    expiryDate: "2025-04-25",
+    description: "Annual Supplies Contract",
+    items: [
+      { 
+        itemNo: 1, 
+        description: "Office Supplies", 
+        quantity: 12, 
+        rate: 2500, 
+        amount: 30000, 
+        discount: 3000, 
+        total: 27000 
+      }
+    ],
+    notes: "Monthly deliveries as per schedule.",
+    terms: "Monthly invoicing with 14-day payment terms."
+  }
 ];
 
 const NewInvoice = () => {
@@ -167,6 +266,58 @@ const NewInvoice = () => {
     });
   };
 
+  const populateFromQuote = (quoteId: string) => {
+    const selectedQuote = mockQuotations.find(q => q.id === quoteId);
+    
+    if (!selectedQuote) return;
+    
+    // Update client
+    form.setValue("clientId", selectedQuote.clientId);
+    
+    // Update dates
+    form.setValue("issueDate", new Date().toISOString().split("T")[0]);
+    form.setValue("dueDate", new Date(new Date().setDate(new Date().getDate() + 14)).toISOString().split("T")[0]);
+    
+    // Update description
+    form.setValue("shortDescription", selectedQuote.description);
+    
+    // Update items
+    const formattedItems = selectedQuote.items.map(item => ({
+      itemNo: item.itemNo,
+      description: item.description,
+      quantity: item.quantity,
+      rate: item.rate,
+      amount: item.amount,
+      discount: item.discount,
+      total: item.total
+    }));
+    
+    setItems(formattedItems);
+    
+    // Update notes and terms
+    form.setValue("notes", selectedQuote.notes);
+    form.setValue("terms", selectedQuote.terms);
+    
+    // Calculate totals
+    let subtotal = 0;
+    formattedItems.forEach(item => {
+      subtotal += item.total;
+    });
+    const tax = subtotal * 0.15;
+    const total = subtotal + tax;
+    
+    form.setValue("subtotal", subtotal);
+    form.setValue("tax", tax);
+    form.setValue("total", total);
+    
+    toast({
+      title: "Quote Imported",
+      description: `Quote ${selectedQuote.quoteNumber} has been imported to this invoice.`,
+    });
+    
+    updatePreview();
+  };
+
   useEffect(() => {
     updatePreview();
   }, [items, form.watch()]);
@@ -211,6 +362,27 @@ const NewInvoice = () => {
           <h1 className="text-2xl font-bold ml-4">New Invoice</h1>
         </div>
         <div className="space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <FileText className="mr-2 h-4 w-4" /> Import from Quote <ChevronDown className="ml-1 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Select Quotation</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {mockQuotations.map((quote) => (
+                <DropdownMenuItem 
+                  key={quote.id} 
+                  onClick={() => populateFromQuote(quote.id)}
+                  className="cursor-pointer"
+                >
+                  {quote.quoteNumber} - {mockClients.find(c => c.id === quote.clientId)?.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button variant="outline" onClick={() => navigate("/invoices/select-template")}>
             Change Template
           </Button>
