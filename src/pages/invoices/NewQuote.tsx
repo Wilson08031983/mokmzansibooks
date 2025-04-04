@@ -33,6 +33,27 @@ import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
 import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
 import { QuoteData } from "@/types/quote";
 
+interface BaseClient {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  lastInteraction: string;
+  type: string;
+}
+
+interface CompanyClient extends BaseClient {
+  contactPerson: string;
+  type: 'company' | 'vendor';
+}
+
+interface IndividualClient extends BaseClient {
+  type: 'individual';
+}
+
+type Client = CompanyClient | IndividualClient;
+
 const mockClients = {
   companies: [
     {
@@ -81,13 +102,12 @@ const mockClients = {
   ],
 };
 
-// Function to get all clients for dropdown
 const getAllClients = () => {
   return [
     ...mockClients.companies,
     ...mockClients.individuals,
     ...mockClients.vendors,
-  ];
+  ] as Client[];
 };
 
 const formSchema = z.object({
@@ -320,9 +340,9 @@ const NewQuote = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {allClients.map(client => (
+                          {getAllClients().map(client => (
                             <SelectItem key={client.id} value={client.id}>
-                              {client.name} {client.type !== 'individual' && client.hasOwnProperty('contactPerson') && client.contactPerson ? `(${client.contactPerson})` : ''}
+                              {client.name} {(client.type === 'company' || client.type === 'vendor') && 'contactPerson' in client ? `(${client.contactPerson})` : ''}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -513,31 +533,33 @@ const NewQuote = () => {
             
             <div>
               <h2 className="text-lg font-semibold mb-4">Quote Preview</h2>
-              <div className="scale-[0.45] origin-top-left bg-gray-100 p-4 rounded-lg border border-gray-200 h-[590px] overflow-hidden">
-                <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate} className="w-full">
-                  <TabsList className="w-full mb-4">
-                    <TabsTrigger value="template1" className="flex-grow">Template 1</TabsTrigger>
-                    <TabsTrigger value="template2" className="flex-grow">Template 2</TabsTrigger>
-                    <TabsTrigger value="template3" className="flex-grow">Template 3</TabsTrigger>
-                    <TabsTrigger value="template4" className="flex-grow">Template 4</TabsTrigger>
-                    <TabsTrigger value="template5" className="flex-grow">Template 5</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="template1">
-                    <QuoteTemplate1 data={createPreviewData()} preview={true} />
-                  </TabsContent>
-                  <TabsContent value="template2">
-                    <QuoteTemplate2 data={createPreviewData()} preview={true} />
-                  </TabsContent>
-                  <TabsContent value="template3">
-                    <QuoteTemplate3 data={createPreviewData()} preview={true} />
-                  </TabsContent>
-                  <TabsContent value="template4">
-                    <QuoteTemplate4 data={createPreviewData()} preview={true} />
-                  </TabsContent>
-                  <TabsContent value="template5">
-                    <QuoteTemplate5 data={createPreviewData()} preview={true} />
-                  </TabsContent>
-                </Tabs>
+              <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 overflow-hidden" style={{ height: '600px' }}>
+                <div className="scale-[0.45] origin-top-left" style={{ height: '1320px', overflow: 'auto' }}>
+                  <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate} className="w-full">
+                    <TabsList className="w-full mb-4">
+                      <TabsTrigger value="template1" className="flex-grow">Template 1</TabsTrigger>
+                      <TabsTrigger value="template2" className="flex-grow">Template 2</TabsTrigger>
+                      <TabsTrigger value="template3" className="flex-grow">Template 3</TabsTrigger>
+                      <TabsTrigger value="template4" className="flex-grow">Template 4</TabsTrigger>
+                      <TabsTrigger value="template5" className="flex-grow">Template 5</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="template1">
+                      <QuoteTemplate1 data={createPreviewData()} preview={true} />
+                    </TabsContent>
+                    <TabsContent value="template2">
+                      <QuoteTemplate2 data={createPreviewData()} preview={true} />
+                    </TabsContent>
+                    <TabsContent value="template3">
+                      <QuoteTemplate3 data={createPreviewData()} preview={true} />
+                    </TabsContent>
+                    <TabsContent value="template4">
+                      <QuoteTemplate4 data={createPreviewData()} preview={true} />
+                    </TabsContent>
+                    <TabsContent value="template5">
+                      <QuoteTemplate5 data={createPreviewData()} preview={true} />
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </div>
             </div>
           </div>
