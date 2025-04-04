@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -533,34 +534,36 @@ const NewQuote = () => {
             
             <div>
               <h2 className="text-lg font-semibold mb-4">Quote Preview</h2>
-              <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 overflow-hidden" style={{ height: '750px' }}>
-                <div className="scale-[0.65] origin-top w-full flex justify-center" style={{ height: '1080px', overflow: 'auto' }}>
-                  <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate} className="w-full max-w-[210mm]">
-                    <TabsList className="w-full mb-4">
-                      <TabsTrigger value="template1" className="flex-grow">Template 1</TabsTrigger>
-                      <TabsTrigger value="template2" className="flex-grow">Template 2</TabsTrigger>
-                      <TabsTrigger value="template3" className="flex-grow">Template 3</TabsTrigger>
-                      <TabsTrigger value="template4" className="flex-grow">Template 4</TabsTrigger>
-                      <TabsTrigger value="template5" className="flex-grow">Template 5</TabsTrigger>
-                    </TabsList>
-                    <div className="flex justify-center">
-                      <TabsContent value="template1" className="max-w-[210mm]">
-                        <QuoteTemplate1 data={createPreviewData()} preview={true} />
-                      </TabsContent>
-                      <TabsContent value="template2" className="max-w-[210mm]">
-                        <QuoteTemplate2 data={createPreviewData()} preview={true} />
-                      </TabsContent>
-                      <TabsContent value="template3" className="max-w-[210mm]">
-                        <QuoteTemplate3 data={createPreviewData()} preview={true} />
-                      </TabsContent>
-                      <TabsContent value="template4" className="max-w-[210mm]">
-                        <QuoteTemplate4 data={createPreviewData()} preview={true} />
-                      </TabsContent>
-                      <TabsContent value="template5" className="max-w-[210mm]">
-                        <QuoteTemplate5 data={createPreviewData()} preview={true} />
-                      </TabsContent>
-                    </div>
-                  </Tabs>
+              <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 overflow-hidden" style={{ height: '842px' }}>
+                <div className="w-full h-full flex justify-center items-start overflow-auto">
+                  <div className="scale-[0.55] origin-top transform-gpu" style={{ width: '210mm', transformOrigin: 'top center' }}>
+                    <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate} className="w-full">
+                      <TabsList className="w-full mb-4">
+                        <TabsTrigger value="template1" className="flex-grow">Template 1</TabsTrigger>
+                        <TabsTrigger value="template2" className="flex-grow">Template 2</TabsTrigger>
+                        <TabsTrigger value="template3" className="flex-grow">Template 3</TabsTrigger>
+                        <TabsTrigger value="template4" className="flex-grow">Template 4</TabsTrigger>
+                        <TabsTrigger value="template5" className="flex-grow">Template 5</TabsTrigger>
+                      </TabsList>
+                      <div className="flex justify-center">
+                        <TabsContent value="template1" className="w-[210mm]">
+                          <QuoteTemplate1 data={createPreviewData()} preview={true} />
+                        </TabsContent>
+                        <TabsContent value="template2" className="w-[210mm]">
+                          <QuoteTemplate2 data={createPreviewData()} preview={true} />
+                        </TabsContent>
+                        <TabsContent value="template3" className="w-[210mm]">
+                          <QuoteTemplate3 data={createPreviewData()} preview={true} />
+                        </TabsContent>
+                        <TabsContent value="template4" className="w-[210mm]">
+                          <QuoteTemplate4 data={createPreviewData()} preview={true} />
+                        </TabsContent>
+                        <TabsContent value="template5" className="w-[210mm]">
+                          <QuoteTemplate5 data={createPreviewData()} preview={true} />
+                        </TabsContent>
+                      </div>
+                    </Tabs>
+                  </div>
                 </div>
               </div>
             </div>
