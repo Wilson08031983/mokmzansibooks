@@ -32,51 +32,54 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import PublicLayout from "./layouts/PublicLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/payment" element={<Payment />} />
-            </Route>
-            
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/clients" element={<Clients />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/invoices/new" element={<NewInvoice />} />
-                <Route path="/invoices/select-template" element={<SelectTemplate />} />
-                <Route path="/invoices/quotes" element={<Quotes />} />
-                <Route path="/invoices/quotes/new" element={<NewQuote />} />
-                <Route path="/invoices/quotes/select-template" element={<SelectQuoteTemplate />} />
-                <Route path="/quickfill" element={<QuickFill />} />
-                <Route path="/accounting" element={<Accounting />} />
-                <Route path="/tax" element={<Tax />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/settings" element={<Settings />} />
+const App = () => {
+  // Create a new QueryClient instance inside the component
+  const queryClient = new QueryClient();
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes */}
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/payment" element={<Payment />} />
               </Route>
-            </Route>
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-        <Toaster />
-        <Sonner />
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+              
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route element={<DashboardLayout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/clients" element={<Clients />} />
+                  <Route path="/invoices" element={<Invoices />} />
+                  <Route path="/invoices/new" element={<NewInvoice />} />
+                  <Route path="/invoices/select-template" element={<SelectTemplate />} />
+                  <Route path="/invoices/quotes" element={<Quotes />} />
+                  <Route path="/invoices/quotes/new" element={<NewQuote />} />
+                  <Route path="/invoices/quotes/select-template" element={<SelectQuoteTemplate />} />
+                  <Route path="/quickfill" element={<QuickFill />} />
+                  <Route path="/accounting" element={<Accounting />} />
+                  <Route path="/tax" element={<Tax />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
+              </Route>
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
