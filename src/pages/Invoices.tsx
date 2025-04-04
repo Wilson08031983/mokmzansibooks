@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -256,7 +255,6 @@ const Invoices = () => {
               </div>
             </TabsContent>
             <TabsContent value="pending" className="m-0">
-              {/* Same table structure as "all" but filtered */}
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -332,157 +330,155 @@ const Invoices = () => {
               </div>
             </TabsContent>
             <TabsContent value="paid" className="m-0">
-              {/* Same table structure as "all" but filtered */}
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice ID</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInvoices.length > 0 ? (
-                      filteredInvoices.map((invoice) => (
-                        <TableRow key={invoice.id}>
-                          <TableCell className="font-medium">
-                            {invoice.id}
-                          </TableCell>
-                          <TableCell>{invoice.client}</TableCell>
-                          <TableCell>{formatDate(invoice.date)}</TableCell>
-                          <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(invoice.amount)}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Invoice</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Invoice
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Invoice ID</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInvoices.length > 0 ? (
+                        filteredInvoices.map((invoice) => (
+                          <TableRow key={invoice.id}>
+                            <TableCell className="font-medium">
+                              {invoice.id}
+                            </TableCell>
+                            <TableCell>{invoice.client}</TableCell>
+                            <TableCell>{formatDate(invoice.date)}</TableCell>
+                            <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(invoice.amount)}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Invoice</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive">
+                                    Delete Invoice
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell
+                            colSpan={7}
+                            className="h-24 text-center text-gray-500"
+                          >
+                            No paid invoices found
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+              <TabsContent value="overdue" className="m-0">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="h-24 text-center text-gray-500"
-                        >
-                          No paid invoices found
-                        </TableCell>
+                        <TableHead>Invoice ID</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-            <TabsContent value="overdue" className="m-0">
-              {/* Same table structure as "all" but filtered */}
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice ID</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInvoices.length > 0 ? (
-                      filteredInvoices.map((invoice) => (
-                        <TableRow key={invoice.id}>
-                          <TableCell className="font-medium">
-                            {invoice.id}
-                          </TableCell>
-                          <TableCell>{invoice.client}</TableCell>
-                          <TableCell>{formatDate(invoice.date)}</TableCell>
-                          <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(invoice.amount)}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Invoice</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Invoice
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInvoices.length > 0 ? (
+                        filteredInvoices.map((invoice) => (
+                          <TableRow key={invoice.id}>
+                            <TableCell className="font-medium">
+                              {invoice.id}
+                            </TableCell>
+                            <TableCell>{invoice.client}</TableCell>
+                            <TableCell>{formatDate(invoice.date)}</TableCell>
+                            <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(invoice.amount)}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Invoice</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive">
+                                    Delete Invoice
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell
+                            colSpan={7}
+                            className="h-24 text-center text-gray-500"
+                          >
+                            No overdue invoices found
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="h-24 text-center text-gray-500"
-                        >
-                          No overdue invoices found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
