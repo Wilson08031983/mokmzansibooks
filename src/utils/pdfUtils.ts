@@ -63,8 +63,7 @@ export const downloadDocumentAsPdf = async (
       backgroundColor: "#ffffff",
       allowTaint: false,
       removeContainer: true,
-      // Improved rendering options
-      letterRendering: true,
+      // Removed letterRendering as it's not supported in the Options type
       foreignObjectRendering: false
     });
 
@@ -134,7 +133,7 @@ export const downloadQuoteAsPdf = async (
       logging: false,
       backgroundColor: "#ffffff",
       allowTaint: true,
-      letterRendering: true, // Improves text rendering
+      // Removed letterRendering as it's not supported in the Options type
       windowWidth: 980, // Fixed width to ensure consistency
       windowHeight: 1400 // Fixed height
     });
