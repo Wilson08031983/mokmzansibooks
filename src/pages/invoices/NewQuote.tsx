@@ -533,8 +533,8 @@ const NewQuote = () => {
             
             <div>
               <h2 className="text-lg font-semibold mb-4">Quote Preview</h2>
-              <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 overflow-hidden" style={{ height: '600px' }}>
-                <div className="scale-[0.45] origin-top-left" style={{ height: '1320px', overflow: 'auto' }}>
+              <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 overflow-hidden" style={{ height: '700px' }}>
+                <div className="scale-[0.65] origin-top-left w-[210mm]" style={{ height: '1080px', overflow: 'auto', transformOrigin: 'top center' }}>
                   <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate} className="w-full">
                     <TabsList className="w-full mb-4">
                       <TabsTrigger value="template1" className="flex-grow">Template 1</TabsTrigger>
@@ -543,19 +543,19 @@ const NewQuote = () => {
                       <TabsTrigger value="template4" className="flex-grow">Template 4</TabsTrigger>
                       <TabsTrigger value="template5" className="flex-grow">Template 5</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="template1">
+                    <TabsContent value="template1" className="mx-auto">
                       <QuoteTemplate1 data={createPreviewData()} preview={true} />
                     </TabsContent>
-                    <TabsContent value="template2">
+                    <TabsContent value="template2" className="mx-auto">
                       <QuoteTemplate2 data={createPreviewData()} preview={true} />
                     </TabsContent>
-                    <TabsContent value="template3">
+                    <TabsContent value="template3" className="mx-auto">
                       <QuoteTemplate3 data={createPreviewData()} preview={true} />
                     </TabsContent>
-                    <TabsContent value="template4">
+                    <TabsContent value="template4" className="mx-auto">
                       <QuoteTemplate4 data={createPreviewData()} preview={true} />
                     </TabsContent>
-                    <TabsContent value="template5">
+                    <TabsContent value="template5" className="mx-auto">
                       <QuoteTemplate5 data={createPreviewData()} preview={true} />
                     </TabsContent>
                   </Tabs>
