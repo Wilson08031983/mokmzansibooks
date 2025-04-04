@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,7 +33,6 @@ import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
 import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
 import { QuoteData } from "@/types/quote";
 
-// Mock client data from Clients page
 const mockClients = {
   companies: [
     {
@@ -81,15 +79,6 @@ const mockClients = {
       type: "vendor",
     },
   ],
-};
-
-// Function to get all clients for dropdown
-const getAllClients = () => {
-  return [
-    ...mockClients.companies,
-    ...mockClients.individuals,
-    ...mockClients.vendors,
-  ];
 };
 
 const formSchema = z.object({
@@ -148,7 +137,7 @@ const NewQuote = () => {
       quoteNumber: "QT-2025-0001",
       issueDate: format(new Date(), "yyyy-MM-dd"),
       expiryDate: format(addDays(new Date(), 30), "yyyy-MM-dd"),
-      client: "c1", // Default to first client ID
+      client: "c1",
       vatRate: 0,
       notes: "This quotation is valid for 30 days.",
       terms: "50% deposit required to commence work.",
@@ -212,7 +201,6 @@ const NewQuote = () => {
     return parseFloat(total.toFixed(2));
   };
 
-  // Get client info by ID
   const getSelectedClient = (clientId: string) => {
     return allClients.find(client => client.id === clientId);
   };
@@ -325,7 +313,7 @@ const NewQuote = () => {
                         <SelectContent>
                           {allClients.map(client => (
                             <SelectItem key={client.id} value={client.id}>
-                              {client.name} {client.type !== 'individual' && client.contactPerson ? `(${client.contactPerson})` : ''}
+                              {client.name} {client.type !== 'individual' && client.hasOwnProperty('contactPerson') && client.contactPerson ? `(${client.contactPerson})` : ''}
                             </SelectItem>
                           ))}
                         </SelectContent>
