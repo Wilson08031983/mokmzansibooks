@@ -81,6 +81,15 @@ const mockClients = {
   ],
 };
 
+// Function to get all clients for dropdown
+const getAllClients = () => {
+  return [
+    ...mockClients.companies,
+    ...mockClients.individuals,
+    ...mockClients.vendors,
+  ];
+};
+
 const formSchema = z.object({
   quoteNumber: z.string().min(2, {
     message: "Quote number must be at least 2 characters.",
