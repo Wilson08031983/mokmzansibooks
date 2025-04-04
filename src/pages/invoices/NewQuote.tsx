@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,13 +26,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2 } from "lucide-react";
+import { Download, Plus, Trash2 } from "lucide-react";
 import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
 import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
 import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate3";
 import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
 import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
 import { QuoteData } from "@/types/quote";
+import { downloadQuoteAsPdf } from "@/utils/pdfUtils";
 
 interface BaseClient {
   id: string;
@@ -163,6 +163,7 @@ const NewQuote = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const allClients = getAllClients();
+  const quoteTemplateRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -279,6 +280,28 @@ const NewQuote = () => {
       terms: form.watch("terms") || "50% deposit required to commence work.",
       signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
     };
+  };
+
+  const handleDownloadQuote = async () => {
+    if (!quoteTemplateRef.current) return;
+    
+    try {
+      const templateElement = quoteTemplateRef.current.querySelector('.tabscontent-active > div') || quoteTemplateRef.current;
+      
+      const success = await downloadQuoteAsPdf(
+        templateElement as HTMLElement, 
+        `Quote-${form.watch("quoteNumber")}.pdf`
+      );
+      
+      if (success) {
+        toast.success("Quote downloaded successfully");
+      } else {
+        toast.error("Failed to download quote");
+      }
+    } catch (error) {
+      console.error("Error downloading quote:", error);
+      toast.error("Failed to download quote");
+    }
   };
 
   return (
@@ -556,9 +579,20 @@ const NewQuote = () => {
             </div>
             
             <div>
-              <h2 className="text-lg font-semibold mb-4">Quote Preview</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Quote Preview</h2>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleDownloadQuote}
+                  className="flex items-center gap-2"
+                >
+                  <Download size={16} />
+                  Download PDF
+                </Button>
+              </div>
               <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 overflow-hidden" style={{ height: '842px' }}>
-                <div className="w-full h-full flex justify-center items-start overflow-auto">
+                <div className="w-full h-full flex justify-center items-start overflow-auto" ref={quoteTemplateRef}>
                   <div className="scale-[0.55] origin-top transform-gpu" style={{ width: '210mm', transformOrigin: 'top center' }}>
                     <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate} className="w-full">
                       <TabsList className="w-full mb-4">
@@ -569,19 +603,19 @@ const NewQuote = () => {
                         <TabsTrigger value="template5" className="flex-grow">Template 5</TabsTrigger>
                       </TabsList>
                       <div className="flex justify-center">
-                        <TabsContent value="template1" className="w-[210mm]">
+                        <TabsContent value="template1" className="w-[210mm] tabscontent-active">
                           <QuoteTemplate1 data={createPreviewData()} preview={true} />
                         </TabsContent>
-                        <TabsContent value="template2" className="w-[210mm]">
+                        <TabsContent value="template2" className="w-[210mm] tabscontent-active">
                           <QuoteTemplate2 data={createPreviewData()} preview={true} />
                         </TabsContent>
-                        <TabsContent value="template3" className="w-[210mm]">
+                        <TabsContent value="template3" className="w-[210mm] tabscontent-active">
                           <QuoteTemplate3 data={createPreviewData()} preview={true} />
                         </TabsContent>
-                        <TabsContent value="template4" className="w-[210mm]">
+                        <TabsContent value="template4" className="w-[210mm] tabscontent-active">
                           <QuoteTemplate4 data={createPreviewData()} preview={true} />
                         </TabsContent>
-                        <TabsContent value="template5" className="w-[210mm]">
+                        <TabsContent value="template5" className="w-[210mm] tabscontent-active">
                           <QuoteTemplate5 data={createPreviewData()} preview={true} />
                         </TabsContent>
                       </div>
