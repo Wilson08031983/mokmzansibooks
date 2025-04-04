@@ -91,12 +91,14 @@ const SelectTemplate = () => {
           >
             <CardContent className="p-4">
               <div className="aspect-[1/1.414] bg-white border rounded-md overflow-hidden flex items-center justify-center">
-                <div className="transform scale-[0.2] origin-center" style={{ width: '210mm', height: '297mm' }}>
-                  {id === 1 && <Template1 data={previewData} preview />}
-                  {id === 2 && <Template2 data={previewData} preview />}
-                  {id === 3 && <Template3 data={previewData} preview />}
-                  {id === 4 && <Template4 data={previewData} preview />}
-                  {id === 5 && <Template5 data={previewData} preview />}
+                <div className="transform scale-[0.17] origin-center w-full flex justify-center">
+                  <div style={{ width: '210mm', height: '297mm' }}>
+                    {id === 1 && <Template1 data={previewData} preview />}
+                    {id === 2 && <Template2 data={previewData} preview />}
+                    {id === 3 && <Template3 data={previewData} preview />}
+                    {id === 4 && <Template4 data={previewData} preview />}
+                    {id === 5 && <Template5 data={previewData} preview />}
+                  </div>
                 </div>
               </div>
               <p className="mt-2 text-center font-medium">Template {id}</p>
