@@ -427,17 +427,17 @@ const NewQuote = () => {
                       <tr className="grid grid-cols-14 gap-4 mb-2 px-4 py-2 border-b">
                         <th className="col-span-2 text-left text-sm font-medium text-gray-500">Item No.</th>
                         <th className="col-span-2 text-left text-sm font-medium text-gray-500">Description</th>
-                        <th className="col-span-1 text-center text-sm font-medium text-gray-500">Qty</th>
-                        <th className="col-span-2 text-center text-sm font-medium text-gray-500">Unit Price</th>
-                        <th className="col-span-2 text-center text-sm font-medium text-gray-500">Discount (%)</th>
-                        <th className="col-span-2 text-center text-sm font-medium text-gray-500">Amount</th>
-                        <th className="col-span-2 text-center text-sm font-medium text-gray-500">
-                          <div className="flex items-center justify-center">
+                        <th className="col-span-1 text-left text-sm font-medium text-gray-500">Qty</th>
+                        <th className="col-span-2 text-left text-sm font-medium text-gray-500">Unit Price</th>
+                        <th className="col-span-2 text-left text-sm font-medium text-gray-500">Discount (%)</th>
+                        <th className="col-span-2 text-left text-sm font-medium text-gray-500">Amount</th>
+                        <th className="col-span-2 text-left text-sm font-medium text-gray-500">
+                          <div className="flex items-center">
                             <Link className="h-4 w-4 mr-1" />
                             <span>Website URL</span>
                           </div>
                         </th>
-                        <th className="col-span-1 text-center text-sm font-medium text-gray-500">Action</th>
+                        <th className="col-span-1 text-left text-sm font-medium text-gray-500">Action</th>
                       </tr>
                     </thead>
                     <tbody className="px-4">
