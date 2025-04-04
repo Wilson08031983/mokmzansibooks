@@ -1,7 +1,7 @@
 
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { Bell, User } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
+import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,82 +11,116 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { Badge } from "@/components/ui/badge";
+import { useSidebar } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useNavigate } from "react-router-dom";
 
 const DashboardHeader = () => {
-  const location = useLocation();
-  const { currentUser, signOut } = useAuth();
-  const [pageTitle, setPageTitle] = useState("");
+  const { currentUser, logout } = useAuth();
+  const { collapsed, setCollapsed } = useSidebar();
+  const navigate = useNavigate();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  useEffect(() => {
-    // Set the page title based on the current path
-    const path = location.pathname;
-    if (path.includes("dashboard")) setPageTitle("Dashboard");
-    else if (path.includes("clients")) setPageTitle("Clients");
-    else if (path.includes("quotes")) setPageTitle("Quotes");
-    else if (path.includes("invoices")) setPageTitle("Invoices");
-    else if (path.includes("quickfill")) setPageTitle("QuickFill");
-    else if (path.includes("accounting")) setPageTitle("Accounting");
-    else if (path.includes("tax")) setPageTitle("Tax");
-    else if (path.includes("reports")) setPageTitle("Reports");
-    else if (path.includes("settings")) setPageTitle("Settings");
-  }, [location]);
+  const handleLogout = async () => {
+    await logout();
+    navigate("/signin");
+  };
 
-  const subscriptionBadge = () => {
-    if (!currentUser?.subscriptionStatus) return null;
-    
-    switch (currentUser.subscriptionStatus) {
-      case "trial":
-        return (
-          <Badge variant="outline" className="ml-2 border-amber-500 text-amber-500">
-            Free Trial
-          </Badge>
-        );
-      case "active":
-        return (
-          <Badge variant="outline" className="ml-2 border-green-500 text-green-500">
-            Premium
-          </Badge>
-        );
-      default:
-        return null;
-    }
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   return (
-    <header className="h-16 px-4 border-b bg-white flex items-center justify-between">
-      <div className="flex items-center space-x-3">
-        <SidebarTrigger className="md:hidden" />
-        <h1 className="text-xl font-semibold flex items-center">
-          {pageTitle}
-          {subscriptionBadge()}
-        </h1>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500"></span>
+    <header className="h-16 px-4 border-b flex items-center justify-between bg-background">
+      <div className="flex items-center">
+        <Button
+          variant="ghost"
+          className="mr-2"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          {collapsed ? (
+            <Menu className="h-5 w-5" />
+          ) : (
+            <X className="h-5 w-5" />
+          )}
+          <span className="sr-only">Toggle sidebar</span>
         </Button>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
         
-        <DropdownMenu>
+        <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+            >
+              <Bell className="h-5 w-5" />
+              <span className="sr-only">Notifications</span>
+              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-destructive"></span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Subscription</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <div className="max-h-96 overflow-auto">
+              <div className="flex items-center gap-4 p-4 hover:bg-muted/50">
+                <div>
+                  <p className="text-sm font-medium">
+                    Welcome to LiteBooks!
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Thank you for signing up. Get started by creating your first invoice.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 p-4 hover:bg-muted/50">
+                <div>
+                  <p className="text-sm font-medium">
+                    New features added
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Check out the new QuickFill feature to save time on invoices.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Avatar>
+                <AvatarImage src={currentUser?.photoURL || ""} />
+                <AvatarFallback>
+                  {getInitials(currentUser?.name || "User")}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>
+              {currentUser?.name || "User"}
+              <p className="text-xs font-normal text-muted-foreground truncate max-w-[12rem]">
+                {currentUser?.email || "user@example.com"}
+              </p>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>
-              Log out
+            <DropdownMenuItem onClick={() => navigate("/settings")}>
+              Settings
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

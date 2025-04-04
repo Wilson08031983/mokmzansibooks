@@ -31,6 +31,8 @@ import {
   Shield,
   Globe,
   Landmark,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -42,11 +44,14 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const Settings = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   
   const [saveLoading, setSaveLoading] = useState(false);
   const [language, setLanguage] = useState<"english" | "afrikaans">("english");
@@ -321,6 +326,40 @@ const Settings = () => {
                     <div className="font-medium">Euro</div>
                     <div className="text-sm text-gray-500">EUR</div>
                     {currency === "EUR" && <Check className="h-5 w-5 text-green-500 mx-auto mt-2" />}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium mb-4 flex items-center">
+                  <Sun className="h-5 w-5 mr-2 text-gray-500" /> 
+                  Theme Preference
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Choose between light and dark themes for the application.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div 
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${theme === "light" ? "bg-primary/5 border-primary" : ""}`}
+                    onClick={() => setTheme("light")}
+                  >
+                    <div className="text-2xl font-semibold mb-1">
+                      <Sun className="h-8 w-8 mx-auto" />
+                    </div>
+                    <div className="font-medium">Light Theme</div>
+                    <div className="text-sm text-gray-500">Bright and clean interface</div>
+                    {theme === "light" && <Check className="h-5 w-5 text-green-500 mx-auto mt-2" />}
+                  </div>
+                  <div 
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${theme === "dark" ? "bg-primary/5 border-primary" : ""}`}
+                    onClick={() => setTheme("dark")}
+                  >
+                    <div className="text-2xl font-semibold mb-1">
+                      <Moon className="h-8 w-8 mx-auto" />
+                    </div>
+                    <div className="font-medium">Dark Theme</div>
+                    <div className="text-sm text-gray-500">Easier on the eyes in low light</div>
+                    {theme === "dark" && <Check className="h-5 w-5 text-green-500 mx-auto mt-2" />}
                   </div>
                 </div>
               </div>

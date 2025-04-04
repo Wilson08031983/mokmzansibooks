@@ -91,7 +91,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
   }
 
   .gradient-text {
@@ -100,5 +100,10 @@
 
   .gradient-bg {
     @apply bg-gradient-to-r from-brand-purple via-brand-pink to-brand-orange;
+  }
+  
+  /* Add smooth transitions for theme changes */
+  .dark-transition {
+    @apply transition-colors duration-300;
   }
 }
