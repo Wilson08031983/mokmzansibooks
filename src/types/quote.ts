@@ -3,6 +3,7 @@ export interface QuoteData {
   quoteNumber: string;
   issueDate: string;
   expiryDate: string;
+  shortDescription?: string;
   client: {
     name: string;
     address: string;
@@ -25,6 +26,7 @@ export interface QuoteData {
     rate?: number;
     discount?: number;
     amount: number;
+    websiteUrl?: string;
   }[];
   subtotal: number;
   vatRate?: number;

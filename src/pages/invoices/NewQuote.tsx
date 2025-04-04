@@ -118,6 +118,7 @@ const formSchema = z.object({
   }),
   issueDate: z.string(),
   expiryDate: z.string(),
+  shortDescription: z.string().optional(),
   client: z.string().min(2, {
     message: "Client name must be at least 2 characters.",
   }),
@@ -134,6 +135,7 @@ interface Item {
   unitPrice: number;
   discount: number;
   amount: number;
+  websiteUrl?: string;
 }
 
 const NewQuote = () => {
@@ -168,6 +170,7 @@ const NewQuote = () => {
       quoteNumber: "QT-2025-0001",
       issueDate: format(new Date(), "yyyy-MM-dd"),
       expiryDate: format(addDays(new Date(), 30), "yyyy-MM-dd"),
+      shortDescription: "",
       client: "c1",
       vatRate: 0,
       notes: "This quotation is valid for 30 days.",
@@ -244,6 +247,7 @@ const NewQuote = () => {
       quoteNumber: "QT-2025-0001",
       issueDate: form.watch("issueDate"),
       expiryDate: form.watch("expiryDate"),
+      shortDescription: form.watch("shortDescription"),
       client: {
         name: selectedClient?.name || "Client Name",
         address: selectedClient?.address || "Client Address",
@@ -264,7 +268,8 @@ const NewQuote = () => {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         discount: item.discount,
-        amount: item.amount
+        amount: item.amount,
+        websiteUrl: item.websiteUrl
       })),
       subtotal: calculateSubtotal(),
       vatRate: form.watch("vatRate") || 15,
@@ -320,6 +325,23 @@ const NewQuote = () => {
                       <FormLabel>Expiry Date</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="shortDescription"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Short Description</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Brief description of this quote" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
