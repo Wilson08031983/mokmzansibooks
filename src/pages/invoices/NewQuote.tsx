@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Form,
   FormControl,
@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
 import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
 import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate3";
@@ -173,20 +173,6 @@ const NewQuote = () => {
       terms: "50% deposit required to commence work.",
     },
   });
-
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-    }
-  };
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     toast("Quote Submitted", {
@@ -429,39 +415,19 @@ const NewQuote = () => {
               <Card className="mt-8 p-6 w-full">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Items</h3>
-                  <div className="flex gap-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={scrollLeft}
-                      className="h-8 w-8 rounded-full"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={scrollRight}
-                      className="h-8 w-8 rounded-full"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
                 
-                <ScrollArea className="w-full">
-                  <div className="grid grid-cols-12 gap-4 mb-2 font-medium text-sm text-gray-500">
-                    <div className="col-span-1">Item No.</div>
-                    <div className="col-span-4">Description</div>
-                    <div className="col-span-1 text-center">Qty</div>
-                    <div className="col-span-2 text-center">Unit Price</div>
-                    <div className="col-span-2 text-center">Discount (%)</div>
-                    <div className="col-span-2 text-center">Amount</div>
-                  </div>
-                  
-                  <div ref={scrollContainerRef} className="overflow-x-auto pb-2">
+                <div className="grid grid-cols-12 gap-4 mb-2 font-medium text-sm text-gray-500">
+                  <div className="col-span-1">Item No.</div>
+                  <div className="col-span-4">Description</div>
+                  <div className="col-span-1 text-center">Qty</div>
+                  <div className="col-span-2 text-center">Unit Price</div>
+                  <div className="col-span-2 text-center">Discount (%)</div>
+                  <div className="col-span-2 text-center">Amount</div>
+                </div>
+                
+                <ScrollArea className="h-[300px] w-full">
+                  <div className="pr-4">
                     {items.map((item, index) => (
                       <div key={item.id} className="grid grid-cols-12 gap-4 mb-4 items-center">
                         <div className="col-span-1">
@@ -553,7 +519,6 @@ const NewQuote = () => {
                       </div>
                     ))}
                   </div>
-                  <ScrollBar orientation="horizontal" />
                 </ScrollArea>
                 
                 <Button type="button" size="sm" onClick={handleAddItem} className="mt-2">
