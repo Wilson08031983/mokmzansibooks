@@ -13,12 +13,20 @@ export const formatDate = (dateString: string): string => {
   }
 };
 
-export const formatCurrency = (amount: number | string): string => {
+export const formatCurrency = (amount: number | string, currency: string = "ZAR"): string => {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
   
-  return new Intl.NumberFormat("en-ZA", {
+  const currencyMap: Record<string, { code: string, locale: string }> = {
+    "ZAR": { code: "ZAR", locale: "en-ZA" },
+    "USD": { code: "USD", locale: "en-US" },
+    "EUR": { code: "EUR", locale: "de-DE" }
+  };
+  
+  const { code, locale } = currencyMap[currency] || currencyMap["ZAR"];
+  
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "ZAR",
+    currency: code,
     minimumFractionDigits: 2,
   }).format(num);
 };

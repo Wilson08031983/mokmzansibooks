@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -30,9 +29,19 @@ import {
   Loader2,
   CheckCircle2,
   Shield,
+  Globe,
+  Landmark,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const Settings = () => {
   const { currentUser } = useAuth();
@@ -40,6 +49,8 @@ const Settings = () => {
   const navigate = useNavigate();
   
   const [saveLoading, setSaveLoading] = useState(false);
+  const [language, setLanguage] = useState<"english" | "afrikaans">("english");
+  const [currency, setCurrency] = useState<"ZAR" | "USD" | "EUR">("ZAR");
 
   const handleSaveProfile = () => {
     setSaveLoading(true);
@@ -49,6 +60,18 @@ const Settings = () => {
       toast({
         title: "Settings saved",
         description: "Your profile has been updated successfully.",
+      });
+    }, 1000);
+  };
+
+  const handleSavePreferences = () => {
+    setSaveLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      setSaveLoading(false);
+      toast({
+        title: "Preferences saved",
+        description: "Your language and currency preferences have been updated.",
       });
     }, 1000);
   };
@@ -63,12 +86,15 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6">
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-6">
           <TabsTrigger value="profile">
             <User className="mr-2 h-4 w-4" /> Profile
           </TabsTrigger>
           <TabsTrigger value="company">
             <Building className="mr-2 h-4 w-4" /> Company
+          </TabsTrigger>
+          <TabsTrigger value="preferences">
+            <Settings2 className="mr-2 h-4 w-4" /> Preferences
           </TabsTrigger>
           <TabsTrigger value="subscription">
             <CreditCard className="mr-2 h-4 w-4" /> Subscription
@@ -210,6 +236,119 @@ const Settings = () => {
               <Button>
                 <Check className="mr-2 h-4 w-4" />
                 Save Changes
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="preferences">
+          <Card>
+            <CardHeader>
+              <CardTitle>Language and Currency</CardTitle>
+              <CardDescription>
+                Set your preferred language and currency for documents
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-4 flex items-center">
+                  <Globe className="h-5 w-5 mr-2 text-gray-500" /> 
+                  Language Preference
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Select your preferred language for quotes, invoices and other documents.
+                </p>
+                <RadioGroup 
+                  value={language} 
+                  onValueChange={(val) => setLanguage(val as "english" | "afrikaans")}
+                  className="flex flex-col space-y-3"
+                >
+                  <div className="flex items-center space-x-3 rounded-md border p-3">
+                    <RadioGroupItem value="english" id="english" />
+                    <Label htmlFor="english" className="flex-1 cursor-pointer">
+                      <div className="font-medium">English</div>
+                      <div className="text-sm text-gray-500">
+                        Use English for all documents and interfaces
+                      </div>
+                    </Label>
+                    {language === "english" && <Check className="h-5 w-5 text-green-500" />}
+                  </div>
+                  <div className="flex items-center space-x-3 rounded-md border p-3">
+                    <RadioGroupItem value="afrikaans" id="afrikaans" />
+                    <Label htmlFor="afrikaans" className="flex-1 cursor-pointer">
+                      <div className="font-medium">Afrikaans</div>
+                      <div className="text-sm text-gray-500">
+                        Use Afrikaans for all documents and interfaces
+                      </div>
+                    </Label>
+                    {language === "afrikaans" && <Check className="h-5 w-5 text-green-500" />}
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium mb-4 flex items-center">
+                  <Landmark className="h-5 w-5 mr-2 text-gray-500" /> 
+                  Currency Preference
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Select your preferred currency for financial calculations and reporting.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div 
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${currency === "ZAR" ? "bg-primary/5 border-primary" : ""}`}
+                    onClick={() => setCurrency("ZAR")}
+                  >
+                    <div className="text-2xl font-semibold mb-1">R</div>
+                    <div className="font-medium">South African Rand</div>
+                    <div className="text-sm text-gray-500">ZAR</div>
+                    {currency === "ZAR" && <Check className="h-5 w-5 text-green-500 mx-auto mt-2" />}
+                  </div>
+                  <div 
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${currency === "USD" ? "bg-primary/5 border-primary" : ""}`}
+                    onClick={() => setCurrency("USD")}
+                  >
+                    <div className="text-2xl font-semibold mb-1">$</div>
+                    <div className="font-medium">US Dollar</div>
+                    <div className="text-sm text-gray-500">USD</div>
+                    {currency === "USD" && <Check className="h-5 w-5 text-green-500 mx-auto mt-2" />}
+                  </div>
+                  <div 
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${currency === "EUR" ? "bg-primary/5 border-primary" : ""}`}
+                    onClick={() => setCurrency("EUR")}
+                  >
+                    <div className="text-2xl font-semibold mb-1">€</div>
+                    <div className="font-medium">Euro</div>
+                    <div className="text-sm text-gray-500">EUR</div>
+                    {currency === "EUR" && <Check className="h-5 w-5 text-green-500 mx-auto mt-2" />}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="apply-to-all" className="flex items-center">
+                    Apply to all existing documents
+                    <span className="ml-2 text-xs text-gray-500">(This will update all your existing quotes and invoices)</span>
+                  </Label>
+                  <Switch id="apply-to-all" />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline">Cancel</Button>
+              <Button onClick={handleSavePreferences} disabled={saveLoading}>
+                {saveLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Save Preferences
+                  </>
+                )}
               </Button>
             </CardFooter>
           </Card>

@@ -4,6 +4,8 @@ export interface QuoteData {
   issueDate: string;
   expiryDate: string;
   shortDescription?: string;
+  language?: "english" | "afrikaans";
+  currency?: "ZAR" | "USD" | "EUR";
   client: {
     name: string;
     address: string;
