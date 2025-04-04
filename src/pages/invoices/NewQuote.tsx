@@ -417,109 +417,112 @@ const NewQuote = () => {
                   <h3 className="text-lg font-semibold">Items</h3>
                 </div>
                 
-                <div className="grid grid-cols-12 gap-4 mb-2 font-medium text-sm text-gray-500">
-                  <div className="col-span-1">Item No.</div>
-                  <div className="col-span-4">Description</div>
-                  <div className="col-span-1 text-center">Qty</div>
-                  <div className="col-span-2 text-center">Unit Price</div>
-                  <div className="col-span-2 text-center">Discount (%)</div>
-                  <div className="col-span-1 text-center">Amount</div>
-                  <div className="col-span-1 text-center">Action</div>
-                </div>
-                
-                <ScrollArea className="h-[400px] w-full overflow-hidden border rounded-md">
-                  <div className="p-4 min-w-[800px]">
-                    {items.map((item, index) => (
-                      <div key={item.id} className="grid grid-cols-12 gap-4 mb-6 items-center">
-                        <div className="col-span-1">
-                          <Input
-                            type="text"
-                            value={item.itemNo}
-                            onChange={(e) => updateItem(item.id, "itemNo", e.target.value)}
-                            className="w-full"
-                          />
-                        </div>
-                        <div className="col-span-4">
-                          <Input
-                            type="text"
-                            value={item.description}
-                            onChange={(e) => updateItem(item.id, "description", e.target.value)}
-                            className="w-full"
-                          />
-                        </div>
-                        <div className="col-span-1">
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value);
-                              updateItem(item.id, "quantity", isNaN(value) ? 0 : value);
-                              updateItem(item.id, "amount", calculateAmount(
-                                {
-                                  ...item,
-                                  quantity: isNaN(value) ? 0 : value
-                                }
-                              ))
-                            }}
-                            className="w-full text-center"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Input
-                            type="number"
-                            value={item.unitPrice}
-                            onChange={(e) => {
-                              const value = parseFloat(e.target.value);
-                              updateItem(item.id, "unitPrice", isNaN(value) ? 0 : value);
-                              updateItem(item.id, "amount", calculateAmount(
-                                {
-                                  ...item,
-                                  unitPrice: isNaN(value) ? 0 : value
-                                }
-                              ))
-                            }}
-                            className="w-full text-center"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Input
-                            type="number"
-                            value={item.discount}
-                            onChange={(e) => {
-                              const value = parseFloat(e.target.value);
-                              updateItem(item.id, "discount", isNaN(value) ? 0 : value);
-                              updateItem(item.id, "amount", calculateAmount(
-                                {
-                                  ...item,
-                                  discount: isNaN(value) ? 0 : value
-                                }
-                              ))
-                            }}
-                            className="w-full text-center"
-                          />
-                        </div>
-                        <div className="col-span-1">
-                          <Input
-                            type="number"
-                            value={calculateAmount(item)}
-                            readOnly
-                            className="w-full text-center bg-gray-50"
-                          />
-                        </div>
-                        <div className="col-span-1 flex justify-center">
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => handleRemoveItem(item.id)}
-                            className="h-8 w-8"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <ScrollArea className="h-[450px] w-full overflow-hidden border rounded-md">
+                  <table className="w-full min-w-[800px] table-fixed">
+                    <thead className="sticky top-0 bg-white z-10">
+                      <tr className="grid grid-cols-12 gap-4 mb-2 px-4 py-2 border-b">
+                        <th className="col-span-1 text-left text-sm font-medium text-gray-500">Item No.</th>
+                        <th className="col-span-4 text-left text-sm font-medium text-gray-500">Description</th>
+                        <th className="col-span-1 text-center text-sm font-medium text-gray-500">Qty</th>
+                        <th className="col-span-2 text-center text-sm font-medium text-gray-500">Unit Price</th>
+                        <th className="col-span-2 text-center text-sm font-medium text-gray-500">Discount (%)</th>
+                        <th className="col-span-1 text-center text-sm font-medium text-gray-500">Amount</th>
+                        <th className="col-span-1 text-center text-sm font-medium text-gray-500">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="px-4">
+                      {items.map((item, index) => (
+                        <tr key={item.id} className="grid grid-cols-12 gap-4 mb-6 items-center px-4 py-2">
+                          <td className="col-span-1">
+                            <Input
+                              type="text"
+                              value={item.itemNo}
+                              onChange={(e) => updateItem(item.id, "itemNo", e.target.value)}
+                              className="w-full"
+                            />
+                          </td>
+                          <td className="col-span-4">
+                            <Input
+                              type="text"
+                              value={item.description}
+                              onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                              className="w-full"
+                            />
+                          </td>
+                          <td className="col-span-1">
+                            <Input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                updateItem(item.id, "quantity", isNaN(value) ? 0 : value);
+                                updateItem(item.id, "amount", calculateAmount(
+                                  {
+                                    ...item,
+                                    quantity: isNaN(value) ? 0 : value
+                                  }
+                                ))
+                              }}
+                              className="w-full text-center"
+                            />
+                          </td>
+                          <td className="col-span-2">
+                            <Input
+                              type="number"
+                              value={item.unitPrice}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                updateItem(item.id, "unitPrice", isNaN(value) ? 0 : value);
+                                updateItem(item.id, "amount", calculateAmount(
+                                  {
+                                    ...item,
+                                    unitPrice: isNaN(value) ? 0 : value
+                                  }
+                                ))
+                              }}
+                              className="w-full text-center"
+                            />
+                          </td>
+                          <td className="col-span-2">
+                            <Input
+                              type="number"
+                              value={item.discount}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                updateItem(item.id, "discount", isNaN(value) ? 0 : value);
+                                updateItem(item.id, "amount", calculateAmount(
+                                  {
+                                    ...item,
+                                    discount: isNaN(value) ? 0 : value
+                                  }
+                                ))
+                              }}
+                              className="w-full text-center"
+                            />
+                          </td>
+                          <td className="col-span-1">
+                            <Input
+                              type="number"
+                              value={calculateAmount(item)}
+                              readOnly
+                              className="w-full text-center bg-gray-50"
+                            />
+                          </td>
+                          <td className="col-span-1 flex justify-center">
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => handleRemoveItem(item.id)}
+                              className="h-8 w-8"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </ScrollArea>
                 
                 <Button type="button" size="sm" onClick={handleAddItem} className="mt-2">
