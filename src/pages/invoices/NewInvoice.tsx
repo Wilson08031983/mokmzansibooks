@@ -414,14 +414,16 @@ const NewInvoice = () => {
           </Card>
         </div>
 
-        <div className="sticky top-4 h-fit">
-          <Card>
+        <div className="sticky top-4">
+          <Card className="overflow-hidden">
             <CardHeader>
               <CardTitle>Invoice Preview</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 overflow-hidden">
-              <div className="transform scale-50 origin-top-left w-[210mm] h-[297mm] -mx-20 -my-20">
-                {renderTemplate()}
+            <CardContent className="p-0">
+              <div className="h-[600px] overflow-auto flex items-center justify-center bg-gray-100">
+                <div className="transform scale-[0.35] origin-top" style={{ width: '210mm', minHeight: '297mm' }}>
+                  {renderTemplate()}
+                </div>
               </div>
             </CardContent>
           </Card>
