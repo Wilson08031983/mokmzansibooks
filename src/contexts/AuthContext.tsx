@@ -51,6 +51,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (currentSession?.user) {
           const user = currentSession.user;
           
+          // Get the provider from user metadata
+          const providerValue = user.app_metadata?.provider;
+          // Ensure provider is either "email" or "google"
+          const provider = providerValue === "google" ? "google" : "email";
+          
           // Create user profile from Supabase user
           const userProfile: UserProfile = {
             id: user.id,
@@ -58,7 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: user.user_metadata?.name || user.email?.split('@')[0] || "",
             subscriptionStatus: "trial", // Default to trial for new users
             trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-            provider: user.app_metadata?.provider || "email"
+            provider: provider
           };
           
           setCurrentUser(userProfile);
