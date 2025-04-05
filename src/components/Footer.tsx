@@ -44,14 +44,14 @@ const Footer = () => {
   const contactInfo = [
     { 
       icon: <MapPin className="h-5 w-5" />, 
-      content: "81 Monokane, Pretoria\nGauteng, South Africa",
-      href: "https://maps.google.com/?q=81+Monokane+Pretoria+South+Africa",
+      content: "81 Monokane Street, Pretoria\nGauteng, South Africa",
+      href: "https://maps.google.com/?q=81+Monokane+Street+Pretoria+South+Africa",
       label: "Address"
     },
     { 
       icon: <Mail className="h-5 w-5" />, 
-      content: "morwamoabelo@gmail.com",
-      href: "mailto:morwamoabelo@gmail.com",
+      content: "mokgethwamoabelo@gmail.com",
+      href: "mailto:mokgethwamoabelo@gmail.com",
       label: "Email" 
     },
     { 

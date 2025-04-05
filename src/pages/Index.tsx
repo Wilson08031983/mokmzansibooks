@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -360,17 +359,17 @@ const Index = () => {
                 <div>
                   <p className="font-medium">Address</p>
                   <p className="text-gray-600">
-                    123 Main Street, Pretoria<br />
+                    81 Monokane Street, Pretoria<br />
                     Gauteng, South Africa
                   </p>
                 </div>
                 <div>
                   <p className="font-medium">Email</p>
-                  <p className="text-gray-600">info@mokmzansibooks.co.za</p>
+                  <p className="text-gray-600">mokgethwamoabelo@gmail.com</p>
                 </div>
                 <div>
                   <p className="font-medium">Phone</p>
-                  <p className="text-gray-600">+27 12 345 6789</p>
+                  <p className="text-gray-600">+27 64 550 4029</p>
                 </div>
                 <div>
                   <p className="font-medium">Business Hours</p>
@@ -394,7 +393,7 @@ const Index = () => {
                   <Link to="/signup">Start Free Trial</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="text-base">
-                  <a href="mailto:info@mokmzansibooks.co.za">Email Us</a>
+                  <a href="mailto:mokgethwamoabelo@gmail.com">Email Us</a>
                 </Button>
               </div>
             </div>
