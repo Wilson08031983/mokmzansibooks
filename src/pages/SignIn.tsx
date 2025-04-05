@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -11,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -47,11 +45,6 @@ const SignIn = () => {
       });
       navigate("/dashboard");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid email or password. Please try again.",
-        variant: "destructive",
-      });
       console.error("Sign in error:", error);
     } finally {
       setIsSubmitting(false);
@@ -62,17 +55,7 @@ const SignIn = () => {
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
-      toast({
-        title: "Success!",
-        description: "You have successfully signed in with Google.",
-      });
-      navigate("/dashboard");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Google sign in failed. Please try again.",
-        variant: "destructive",
-      });
       console.error("Google sign in error:", error);
     } finally {
       setIsGoogleLoading(false);
