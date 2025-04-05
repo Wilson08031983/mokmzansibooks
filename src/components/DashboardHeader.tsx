@@ -17,13 +17,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 
 const DashboardHeader = () => {
-  const { currentUser, logout } = useAuth();
-  const { collapsed, setCollapsed } = useSidebar();
+  const { currentUser, signOut } = useAuth();
+  const { state, setOpen } = useSidebar();
   const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     navigate("/signin");
   };
 
@@ -43,9 +43,9 @@ const DashboardHeader = () => {
         <Button
           variant="ghost"
           className="mr-2"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => setOpen(!state.includes("expanded"))}
         >
-          {collapsed ? (
+          {state === "collapsed" ? (
             <Menu className="h-5 w-5" />
           ) : (
             <X className="h-5 w-5" />
@@ -102,7 +102,7 @@ const DashboardHeader = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar>
-                <AvatarImage src={currentUser?.photoURL || ""} />
+                <AvatarImage src="" />
                 <AvatarFallback>
                   {getInitials(currentUser?.name || "User")}
                 </AvatarFallback>
