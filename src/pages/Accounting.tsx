@@ -1,22 +1,18 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Accounting = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
 
+  // No longer blocking features based on subscription status
   const handleFeatureClick = () => {
-    if (currentUser?.subscriptionStatus !== "active") {
-      toast({
-        title: "Premium Feature",
-        description: "This feature is only available on the Premium plan.",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Feature Access Granted",
+      description: "You now have full access to this feature.",
+    });
   };
 
   return (
@@ -26,15 +22,7 @@ const Accounting = () => {
         <p className="text-gray-500">Manage your company's financial transactions</p>
       </div>
 
-      {currentUser?.subscriptionStatus !== "active" && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Premium Feature</AlertTitle>
-          <AlertDescription>
-            The accounting module is only available on the Premium plan. Please upgrade to access these features.
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Removed subscription check alert */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
