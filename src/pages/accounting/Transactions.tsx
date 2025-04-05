@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, Download, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/formatters";
 
 const AccountingTransactions = () => {
   const { toast } = useToast();
@@ -55,7 +56,7 @@ const AccountingTransactions = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium">${(Math.random() * 1000).toFixed(2)}</p>
+                  <p className="font-medium">{formatCurrency((Math.random() * 1000), "ZAR")}</p>
                   <p className="text-sm text-gray-500">
                     {index % 2 === 0 ? "Income" : "Expense"}
                   </p>
