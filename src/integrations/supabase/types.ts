@@ -9,27 +9,18 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      todos: {
+      instruments: {
         Row: {
-          created_at: string | null
-          id: string
-          is_complete: boolean
-          task: string
-          user_id: string
+          id: number
+          name: string
         }
         Insert: {
-          created_at?: string | null
-          id?: string
-          is_complete?: boolean
-          task: string
-          user_id: string
+          id?: never
+          name: string
         }
         Update: {
-          created_at?: string | null
-          id?: string
-          is_complete?: boolean
-          task?: string
-          user_id?: string
+          id?: never
+          name?: string
         }
         Relationships: []
       }
@@ -38,12 +29,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      insert_sample_todos_for_user: {
-        Args: {
-          user_uuid: string
-        }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
