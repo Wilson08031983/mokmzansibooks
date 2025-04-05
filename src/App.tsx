@@ -23,6 +23,8 @@ import SelectTemplate from "./pages/invoices/SelectTemplate";
 import SelectQuoteTemplate from "./pages/invoices/SelectQuoteTemplate";
 import QuickFill from "./pages/QuickFill";
 import Accounting from "./pages/Accounting";
+import AccountingTransactions from "./pages/accounting/Transactions";
+import AccountingReports from "./pages/accounting/Reports";
 import Tax from "./pages/Tax";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
@@ -66,6 +68,8 @@ const App = () => {
                     <Route path="/invoices/quotes/select-template" element={<SelectQuoteTemplate />} />
                     <Route path="/quickfill" element={<QuickFill />} />
                     <Route path="/accounting" element={<Accounting />} />
+                    <Route path="/accounting/transactions" element={<AccountingTransactions />} />
+                    <Route path="/accounting/reports" element={<AccountingReports />} />
                     <Route path="/tax" element={<Tax />} />
                     <Route path="/reports" element={<Reports />} />
                     <Route path="/settings" element={<Settings />} />

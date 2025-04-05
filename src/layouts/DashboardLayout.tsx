@@ -33,9 +33,19 @@ const DashboardLayout = () => {
     }
     
     if (location.pathname.includes('/accounting')) {
+      // Determine the active tab based on the current path
+      const currentPath = location.pathname;
+      let defaultValue = "overview";
+      
+      if (currentPath.includes("/accounting/transactions")) {
+        defaultValue = "transactions";
+      } else if (currentPath.includes("/accounting/reports")) {
+        defaultValue = "reports";
+      }
+      
       return (
         <Tabs
-          defaultValue="overview"
+          defaultValue={defaultValue}
           className="mb-4"
           onValueChange={(value) => {
             navigate(`/accounting${value !== 'overview' ? '/' + value : ''}`);
@@ -43,8 +53,8 @@ const DashboardLayout = () => {
         >
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="transactions" disabled={currentUser?.subscriptionStatus !== "active"}>Transactions</TabsTrigger>
-            <TabsTrigger value="reports" disabled={currentUser?.subscriptionStatus !== "active"}>Reports</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
         </Tabs>
       );
