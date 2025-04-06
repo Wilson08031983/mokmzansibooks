@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,7 @@ import {
   Settings,
   Key,
   Link,
-  LinkOff
+  Link2Off
 } from "lucide-react";
 import {
   Dialog,
@@ -54,7 +53,6 @@ const AccountingIntegrations = () => {
   const [autoSync, setAutoSync] = useState(true);
   const [integrationType, setIntegrationType] = useState<"bank" | "software">("bank");
   
-  // State for banks and accounting software
   const [banks, setBanks] = useState<BankIntegration[]>([
     { id: "absa", name: "ABSA", logoSrc: "/placeholder.svg", connected: false },
     { id: "fnb", name: "First National Bank", logoSrc: "/placeholder.svg", connected: false },
@@ -75,7 +73,6 @@ const AccountingIntegrations = () => {
     { id: "wave", name: "Wave", logoSrc: "/placeholder.svg", connected: false },
   ]);
   
-  // Load saved integrations from localStorage on component mount
   useEffect(() => {
     const savedBanks = localStorage.getItem('connectedBanks');
     const savedSoftware = localStorage.getItem('connectedSoftware');
@@ -89,7 +86,6 @@ const AccountingIntegrations = () => {
     }
   }, []);
   
-  // Save integrations to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('connectedBanks', JSON.stringify(banks));
   }, [banks]);
@@ -132,7 +128,6 @@ const AccountingIntegrations = () => {
     setConnecting(currentIntegration.id);
     setOpenDialog(false);
     
-    // Simulate connection process with timeout
     setTimeout(() => {
       if (integrationType === "bank") {
         const updatedBanks = banks.map(bank => 
@@ -164,7 +159,6 @@ const AccountingIntegrations = () => {
         description: `Successfully connected to ${integrationType === 'bank' ? 'bank account' : 'accounting software'}.`,
       });
 
-      // Simulate data sync
       if (autoSync) {
         toast({
           title: "Syncing Data",
@@ -188,7 +182,6 @@ const AccountingIntegrations = () => {
     });
     
     setTimeout(() => {
-      // Update last synced timestamp
       if (type === "bank") {
         const updatedBanks = banks.map(bank => 
           bank.id === id ? { ...bank, lastSynced: new Date().toISOString() } : bank
@@ -261,7 +254,7 @@ const AccountingIntegrations = () => {
                           size="sm"
                           onClick={() => handleDisconnect(bank.id, 'bank')}
                         >
-                          <LinkOff className="mr-2 h-4 w-4" />
+                          <Link2Off className="mr-2 h-4 w-4" />
                           Disconnect
                         </Button>
                       </>
@@ -331,7 +324,7 @@ const AccountingIntegrations = () => {
                           size="sm"
                           onClick={() => handleDisconnect(software.id, 'software')}
                         >
-                          <LinkOff className="mr-2 h-4 w-4" />
+                          <Link2Off className="mr-2 h-4 w-4" />
                           Disconnect
                         </Button>
                       </>
@@ -385,7 +378,6 @@ const AccountingIntegrations = () => {
         </div>
       </div>
 
-      {/* Connection dialog */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
