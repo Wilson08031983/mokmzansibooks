@@ -2,10 +2,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
+import { useRef } from "react";
+import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 
 const Reports = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const reportsRef = useRef<HTMLDivElement>(null);
 
   // Modified to always allow access to all features
   const handleFeatureClick = () => {
@@ -15,6 +20,33 @@ const Reports = () => {
     });
   };
 
+  const handlePrintReports = async () => {
+    if (reportsRef.current) {
+      toast({
+        title: "Generating PDF",
+        description: "Your report is being prepared for download...",
+      });
+      
+      const success = await downloadDocumentAsPdf(
+        reportsRef.current,
+        "business-reports.pdf"
+      );
+      
+      if (success) {
+        toast({
+          title: "PDF Generated",
+          description: "Your report has been downloaded successfully.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "There was a problem generating your PDF report.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -22,12 +54,13 @@ const Reports = () => {
           <h1 className="text-2xl font-bold">Reports</h1>
           <p className="text-gray-500">Generate and view reports for your business</p>
         </div>
-        {/* Removed the buttons that were here */}
+        <Button onClick={handlePrintReports} className="bg-primary">
+          <Printer className="mr-2 h-4 w-4" />
+          Print Reports
+        </Button>
       </div>
 
-      {/* Removed the premium alert that was here */}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6" ref={reportsRef}>
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
           <CardHeader>
             <CardTitle>Financial Reports</CardTitle>
