@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 // Import the new components
 import DocumentExtractor from "@/components/tax/DocumentExtractor";
