@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/utils/formatters";
 
 interface Receivable {
   id: string;
@@ -71,14 +72,6 @@ const Receivables = () => {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
   const getStatusBadge = (status: Receivable['status'], daysOverdue?: number) => {
     switch (status) {
       case "paid":
@@ -128,7 +121,7 @@ const Receivables = () => {
                     <div>{receivable.invoiceNumber}</div>
                     <div>{receivable.customer}</div>
                     <div>{receivable.dueDate}</div>
-                    <div>{formatCurrency(receivable.amount)}</div>
+                    <div>{formatCurrency(receivable.amount, "ZAR")}</div>
                     <div>
                       {getStatusBadge(receivable.status, receivable.daysOverdue)}
                     </div>
@@ -159,7 +152,7 @@ const Receivables = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm">Total Receivables</span>
                 <span className="font-medium">
-                  {formatCurrency(receivables.reduce((sum, r) => sum + r.amount, 0))}
+                  {formatCurrency(receivables.reduce((sum, r) => sum + r.amount, 0), "ZAR")}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -168,7 +161,8 @@ const Receivables = () => {
                   {formatCurrency(
                     receivables
                       .filter(r => r.status === 'overdue')
-                      .reduce((sum, r) => sum + r.amount, 0)
+                      .reduce((sum, r) => sum + r.amount, 0),
+                    "ZAR"
                   )}
                 </span>
               </div>
@@ -178,7 +172,8 @@ const Receivables = () => {
                   {formatCurrency(
                     receivables
                       .filter(r => r.status === 'pending')
-                      .reduce((sum, r) => sum + r.amount, 0)
+                      .reduce((sum, r) => sum + r.amount, 0),
+                    "ZAR"
                   )}
                 </span>
               </div>
@@ -188,7 +183,8 @@ const Receivables = () => {
                   {formatCurrency(
                     receivables
                       .filter(r => r.status === 'paid')
-                      .reduce((sum, r) => sum + r.amount, 0)
+                      .reduce((sum, r) => sum + r.amount, 0),
+                    "ZAR"
                   )}
                 </span>
               </div>

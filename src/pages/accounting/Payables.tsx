@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/utils/formatters";
 
 interface Payable {
   id: string;
@@ -79,14 +80,6 @@ const Payables = () => {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
   const getStatusBadge = (status: Payable['status'], daysOverdue?: number) => {
     switch (status) {
       case "paid":
@@ -136,7 +129,7 @@ const Payables = () => {
                     <div>{payable.billNumber}</div>
                     <div>{payable.vendor}</div>
                     <div>{payable.dueDate}</div>
-                    <div>{formatCurrency(payable.amount)}</div>
+                    <div>{formatCurrency(payable.amount, "ZAR")}</div>
                     <div>
                       {getStatusBadge(payable.status, payable.daysOverdue)}
                     </div>
@@ -167,7 +160,7 @@ const Payables = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm">Total Payables</span>
                 <span className="font-medium">
-                  {formatCurrency(payables.reduce((sum, p) => sum + p.amount, 0))}
+                  {formatCurrency(payables.reduce((sum, p) => sum + p.amount, 0), "ZAR")}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -176,7 +169,8 @@ const Payables = () => {
                   {formatCurrency(
                     payables
                       .filter(p => p.status === 'overdue')
-                      .reduce((sum, p) => sum + p.amount, 0)
+                      .reduce((sum, p) => sum + p.amount, 0), 
+                    "ZAR"
                   )}
                 </span>
               </div>
@@ -186,7 +180,8 @@ const Payables = () => {
                   {formatCurrency(
                     payables
                       .filter(p => p.status === 'pending')
-                      .reduce((sum, p) => sum + p.amount, 0)
+                      .reduce((sum, p) => sum + p.amount, 0),
+                    "ZAR"
                   )}
                 </span>
               </div>
@@ -196,7 +191,8 @@ const Payables = () => {
                   {formatCurrency(
                     payables
                       .filter(p => p.status === 'paid')
-                      .reduce((sum, p) => sum + p.amount, 0)
+                      .reduce((sum, p) => sum + p.amount, 0),
+                    "ZAR"
                   )}
                 </span>
               </div>
