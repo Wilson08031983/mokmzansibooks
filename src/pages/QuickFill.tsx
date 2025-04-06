@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentExtractor from '@/components/documents/DocumentExtractor';
@@ -97,7 +98,7 @@ const DataSummary = () => {
   });
   
   // Reload data when localStorage changes
-  React.useEffect(() => {
+  useEffect(() => {
     const handleStorageChange = () => {
       try {
         const storedData = localStorage.getItem('extractedData');
@@ -107,8 +108,17 @@ const DataSummary = () => {
       }
     };
     
+    // Add event listener for both storage event and custom event
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('storageupdated', handleStorageChange);
+    
+    // Also check on mount
+    handleStorageChange();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('storageupdated', handleStorageChange);
+    };
   }, []);
   
   if (Object.keys(data).length === 0) {
@@ -121,7 +131,7 @@ const DataSummary = () => {
   }
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
       {Object.entries(data).map(([type, typeData]) => {
         // Skip internal fields
         const displayData = Object.entries(typeData).filter(([key]) => !key.startsWith('_'));

@@ -47,6 +47,9 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
       setExtractedType(result.type);
       setStatus('success');
       
+      // Trigger storage event for other components to update
+      window.dispatchEvent(new Event('storage'));
+      
       // Call the callback if provided
       if (onExtracted) {
         onExtracted(result);
@@ -163,7 +166,7 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
           </Button>
         ) : (
           <Button 
-            variant="extract" 
+            variant="outline" 
             className="w-full"
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
