@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, Download, Upload, Tag, Camera, Image, FileUp } from "lucide-react";
@@ -83,6 +84,7 @@ const AccountingTransactions = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // Clean up camera resources when component unmounts
   useEffect(() => {
     return () => {
       if (cameraStream) {
@@ -91,6 +93,7 @@ const AccountingTransactions = () => {
     };
   }, [cameraStream]);
 
+  // Clean up camera when dialog closes
   useEffect(() => {
     if (!importDialogOpen && cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());
@@ -162,25 +165,37 @@ const AccountingTransactions = () => {
 
   const startCamera = async () => {
     try {
+      // Stop any existing stream before starting a new one
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
       }
       
       console.log("Starting camera...");
+      setCameraError(""); // Clear any previous errors
+      
+      // Request camera access
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: "environment" } 
       });
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraStream(stream);
-        setShowCameraPreview(true);
-        setCameraError("");
-        console.log("Camera started successfully");
-      } else {
-        console.error("Video ref is not available");
-        throw new Error("Camera initialization failed");
-      }
+      // Store the stream in state
+      setCameraStream(stream);
+      
+      // Set up the video element with the stream - but only after a short delay
+      // to ensure the DOM has updated and the video element is available
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          setShowCameraPreview(true);
+          console.log("Camera started successfully");
+        } else {
+          // If the video element is still not available, clean up and show error
+          stream.getTracks().forEach(track => track.stop());
+          setCameraError("Camera element not ready. Please try again.");
+          console.error("Video ref is still not available after delay");
+        }
+      }, 100);
     } catch (err) {
       console.error("Error accessing camera:", err);
       setCameraError(`Could not access camera: ${err.message || "Please check permissions and try again."}`);
