@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -5,6 +6,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // Define a type for accounting modules
 interface AccountingModule {
@@ -88,6 +90,50 @@ const Accounting = () => {
     setSelectedModules([]);
   };
 
+  const findSimilarModules = () => {
+    if (selectedModules.length === 0) {
+      toast({
+        title: "No modules selected",
+        description: "Please select at least one module to find similar ones",
+      });
+      return;
+    }
+
+    // This is a simple implementation - in a real app you'd use more sophisticated matching
+    const selectedKeywords = selectedModules.flatMap(id => {
+      const module = modules.find(m => m.id === id);
+      if (!module) return [];
+      return [...module.title.toLowerCase().split(' '), ...module.description.toLowerCase().split(' ')];
+    });
+
+    // Find modules with similar keywords
+    const similarModuleIds = modules
+      .filter(module => !selectedModules.includes(module.id))
+      .map(module => {
+        const moduleKeywords = [...module.title.toLowerCase().split(' '), ...module.description.toLowerCase().split(' ')];
+        const matchCount = moduleKeywords.filter(keyword => selectedKeywords.includes(keyword)).length;
+        return { id: module.id, matchCount };
+      })
+      .filter(item => item.matchCount > 0)
+      .sort((a, b) => b.matchCount - a.matchCount)
+      .slice(0, 3)
+      .map(item => item.id);
+
+    if (similarModuleIds.length === 0) {
+      toast({
+        title: "No similar modules found",
+        description: "We couldn't find any modules similar to your selection",
+      });
+      return;
+    }
+
+    setSelectedModules([...selectedModules, ...similarModuleIds]);
+    toast({
+      title: "Similar modules added",
+      description: `Added ${similarModuleIds.length} similar modules to your selection`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -100,9 +146,14 @@ const Accounting = () => {
           <span className="text-sm font-medium">
             {selectedModules.length} module{selectedModules.length > 1 ? 's' : ''} selected
           </span>
-          <Button variant="ghost" size="sm" onClick={clearSelection}>
-            Clear selection
-          </Button>
+          <div className="space-x-2">
+            <Button variant="outline" size="sm" onClick={findSimilarModules}>
+              Find similar
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearSelection}>
+              Clear selection
+            </Button>
+          </div>
         </div>
       )}
 
@@ -114,26 +165,31 @@ const Accounting = () => {
             >
               <CheckCircle className="h-5 w-5 text-green-500" />
             </div>
-            <div
+            <Card 
+              className={`h-full hover:shadow-md transition-shadow ${isSelected(module.id) ? 'bg-green-50 ring-2 ring-green-500 ring-offset-2' : ''}`}
               onClick={() => toggleSelection(module.id)}
-              className={`cursor-pointer ${isSelected(module.id) ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}
             >
-              <Card className={`h-full hover:shadow-md transition-shadow ${isSelected(module.id) ? 'bg-green-50' : ''}`}>
-                <CardHeader>
-                  <CardTitle>{module.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-500">
-                    {module.description}
-                  </p>
-                  <div className="mt-4">
-                    <Link to={module.path} className="text-primary hover:underline text-sm">
-                      Open {module.title}
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+              <CardHeader>
+                <CardTitle>{module.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500">
+                  {module.description}
+                </p>
+                <div className="mt-4 flex justify-between items-center">
+                  <Link 
+                    to={module.path} 
+                    className="text-primary hover:underline text-sm"
+                    onClick={(e) => e.stopPropagation()} // Prevent the card click from triggering
+                  >
+                    Open {module.title}
+                  </Link>
+                  {isSelected(module.id) && (
+                    <Badge variant="secondary">Selected</Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ))}
       </div>
