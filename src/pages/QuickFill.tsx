@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -24,6 +24,8 @@ import {
   ArrowRight,
   ExternalLink,
   Download,
+  Plus,
+  Edit,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -41,10 +43,20 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/formatters";
+import { QuoteData } from "@/types/quote";
 
 const QuickFill = () => {
   const [activeTab, setActiveTab] = useState("upload");
@@ -56,10 +68,18 @@ const QuickFill = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [generatedForms, setGeneratedForms] = useState<boolean>(false);
+  const [selectedQuote, setSelectedQuote] = useState<QuoteData | null>(null);
+  const [quotes, setQuotes] = useState<QuoteData[]>([]);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+  const [itemQuantity, setItemQuantity] = useState(1);
+  const [itemDiscount, setItemDiscount] = useState(0);
+  const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentUser } = useAuth();
   const { toast: useToastHook } = useToast();
+  const navigate = useNavigate();
   
   const isPremiumUser = currentUser?.subscriptionStatus === "active";
 
@@ -108,7 +128,6 @@ const QuickFill = () => {
     const files = e.dataTransfer.files;
     if (!files || files.length === 0) return;
     
-    // Update the file input value to trigger handleFileUpload
     if (fileInputRef.current) {
       const dataTransfer = new DataTransfer();
       for (let i = 0; i < files.length; i++) {
@@ -184,7 +203,6 @@ const QuickFill = () => {
       }
       
       if (results.length === 0) {
-        // Add default results if no specific matches
         results = [
           {
             id: 1,
@@ -318,6 +336,118 @@ const QuickFill = () => {
     
     setGeneratedForms(true);
     toast.success("Forms generated successfully");
+  };
+
+  const fetchQuotes = () => {
+    const mockQuotes: QuoteData[] = [
+      {
+        quoteNumber: "Q-2023-001",
+        issueDate: "2023-04-01",
+        expiryDate: "2023-05-01",
+        client: {
+          name: "ABC Corporation",
+          address: "123 Main St, Johannesburg",
+          email: "contact@abccorp.co.za",
+          phone: "+27 11 123 4567"
+        },
+        company: {
+          name: "Morwa Moabelo (Pty) Ltd",
+          address: "456 Business Park, Pretoria",
+          email: "mokgethwamoabelo@gmail.com",
+          phone: "+27 64 550 4029"
+        },
+        items: [
+          {
+            description: "Consulting Services",
+            quantity: 10,
+            amount: 5000,
+          }
+        ],
+        subtotal: 5000,
+        tax: 750,
+        total: 5750
+      },
+      {
+        quoteNumber: "Q-2023-002",
+        issueDate: "2023-04-15",
+        expiryDate: "2023-05-15",
+        client: {
+          name: "Tech Solutions Ltd",
+          address: "789 Tech Park, Cape Town",
+          email: "info@techsolutions.co.za",
+          phone: "+27 21 987 6543"
+        },
+        company: {
+          name: "Morwa Moabelo (Pty) Ltd",
+          address: "456 Business Park, Pretoria",
+          email: "mokgethwamoabelo@gmail.com",
+          phone: "+27 64 550 4029"
+        },
+        items: [
+          {
+            description: "IT Support Package",
+            quantity: 1,
+            amount: 12000,
+          }
+        ],
+        subtotal: 12000,
+        tax: 1800,
+        total: 13800
+      }
+    ];
+    
+    setQuotes(mockQuotes);
+  };
+
+  const handleLinkToQuote = (item: any, supplier: any) => {
+    setSelectedItem(item);
+    setSelectedSupplier(supplier);
+    fetchQuotes();
+    setIsQuoteDialogOpen(true);
+  };
+
+  const handleSelectQuote = (quote: QuoteData) => {
+    setSelectedQuote(quote);
+  };
+
+  const handleUpdateQuote = () => {
+    if (!selectedQuote || !selectedItem || !selectedSupplier) {
+      toast.error("Please select a quote and product");
+      return;
+    }
+
+    const discountAmount = selectedSupplier.price * (itemDiscount / 100);
+    const discountedPrice = selectedSupplier.price - discountAmount;
+    const totalAmount = discountedPrice * itemQuantity;
+
+    const newItem = {
+      description: `${selectedItem.item} - ${selectedItem.description} (${selectedSupplier.name})`,
+      quantity: itemQuantity,
+      unitPrice: selectedSupplier.price,
+      discount: itemDiscount,
+      amount: totalAmount,
+      websiteUrl: selectedSupplier.url,
+    };
+
+    toast.success(`Added ${selectedItem.item} to Quote ${selectedQuote.quoteNumber}`);
+    setIsQuoteDialogOpen(false);
+
+    setItemQuantity(1);
+    setItemDiscount(0);
+    setSelectedQuote(null);
+
+    navigate("/invoices/quotes", { 
+      state: { 
+        fromQuickFill: true,
+        quoteNumber: selectedQuote.quoteNumber,
+        addedItem: newItem
+      } 
+    });
+
+    setTimeout(() => {
+      navigate("/quickfill");
+      toast.success(`Updated Quote ${selectedQuote.quoteNumber} successfully`);
+    }, 1000);
   };
 
   return (
@@ -831,11 +961,9 @@ const QuickFill = () => {
                                   </Button>
                                   <Button 
                                     size="sm"
-                                    asChild
+                                    onClick={() => handleLinkToQuote(result, supplier)}
                                   >
-                                    <Link to="/invoices/quotes" className="flex items-center">
-                                      <FileText className="h-3 w-3 mr-1" /> Link to Quote
-                                    </Link>
+                                    <FileText className="h-3 w-3 mr-1" /> Link to Quote
                                   </Button>
                                 </TableCell>
                               </TableRow>
@@ -861,6 +989,117 @@ const QuickFill = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isQuoteDialogOpen} onOpenChange={setIsQuoteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Link to Quote</DialogTitle>
+            <DialogDescription>
+              Select a quote to add this item to and update the quantity and discount.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedItem && (
+            <div className="py-4">
+              <h3 className="font-medium text-sm">Selected Item:</h3>
+              <p>{selectedItem.item} - {selectedSupplier?.name}</p>
+              <p className="text-sm text-muted-foreground">
+                Price: {formatCurrency(selectedSupplier?.price || 0, "ZAR")}
+              </p>
+            </div>
+          )}
+          
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="quote">Select Quote</Label>
+              <div className="grid gap-2">
+                {quotes.map((quote) => (
+                  <div 
+                    key={quote.quoteNumber}
+                    className={`p-3 border rounded-md cursor-pointer ${
+                      selectedQuote?.quoteNumber === quote.quoteNumber 
+                        ? "border-primary bg-primary/5" 
+                        : ""
+                    }`}
+                    onClick={() => handleSelectQuote(quote)}
+                  >
+                    <div className="font-medium">{quote.quoteNumber}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Client: {quote.client.name} | 
+                      Total: {formatCurrency(quote.total, "ZAR")}
+                    </div>
+                  </div>
+                ))}
+                {quotes.length === 0 && (
+                  <div className="text-center p-4 text-muted-foreground">
+                    No quotes found
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  value={itemQuantity}
+                  onChange={(e) => setItemQuantity(parseInt(e.target.value) || 1)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="discount">Discount (%)</Label>
+                <Input
+                  id="discount"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={itemDiscount}
+                  onChange={(e) => setItemDiscount(parseInt(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+            
+            {selectedQuote && selectedItem && selectedSupplier && (
+              <div className="p-3 bg-muted rounded-md">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>{formatCurrency(selectedSupplier.price * itemQuantity, "ZAR")}</span>
+                </div>
+                {itemDiscount > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Discount ({itemDiscount}%):</span>
+                    <span>-{formatCurrency((selectedSupplier.price * itemQuantity) * (itemDiscount / 100), "ZAR")}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-medium mt-1 pt-1 border-t">
+                  <span>Total:</span>
+                  <span>
+                    {formatCurrency(
+                      (selectedSupplier.price * itemQuantity) * (1 - itemDiscount / 100), 
+                      "ZAR"
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="sm:justify-between">
+            <Button variant="outline" onClick={() => setIsQuoteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdateQuote}
+              disabled={!selectedQuote}
+            >
+              Update Quote
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
