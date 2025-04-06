@@ -1,10 +1,9 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Download, Upload, Tag } from "lucide-react";
+import { Plus, FileText, Download, Upload, Tag, Camera, Image, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Select,
   SelectContent,
@@ -13,11 +12,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-// Define transaction categories
 const CATEGORIES = [
   { id: "all", name: "All Categories", color: "#8E9196" },
   { id: "income", name: "Income", color: "#4CAF50" },
@@ -29,12 +38,10 @@ const CATEGORIES = [
   { id: "utilities", name: "Utilities", color: "#10B981" },
 ];
 
-// Mock transaction data with categories
 const TRANSACTIONS = [...Array(8)].map((_, index) => {
   const isIncome = index % 3 === 0;
   let categoryId = isIncome ? "income" : "expense";
   
-  // For expenses, assign more specific categories
   if (!isIncome) {
     const expenseCategories = ["supplies", "marketing", "salary", "rent", "utilities"];
     categoryId = expenseCategories[index % expenseCategories.length];
@@ -56,15 +63,18 @@ const AccountingTransactions = () => {
   const [newTransactionOpen, setNewTransactionOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [currentImportTab, setCurrentImportTab] = useState("statement");
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+  const [attachmentType, setAttachmentType] = useState<string | null>(null);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
+  const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
   
-  const [newTransaction, setNewTransaction] = useState({
-    amount: "",
-    description: "",
-    type: "expense",
-    categoryId: "expense",
-  });
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewTransaction({
@@ -73,14 +83,12 @@ const AccountingTransactions = () => {
     });
   };
 
-  // Handle new transaction submission
   const handleSubmitTransaction = () => {
     toast({
       title: "Transaction Added",
       description: `${newTransaction.type === "income" ? "Income" : "Expense"} of ${formatCurrency(parseFloat(newTransaction.amount) || 0, "ZAR")} added successfully.`,
     });
     setNewTransactionOpen(false);
-    // Reset form
     setNewTransaction({
       amount: "",
       description: "",
@@ -89,16 +97,24 @@ const AccountingTransactions = () => {
     });
   };
 
-  // Handle import submission
-  const handleImport = () => {
+  const handleImport = (type: string = "statement") => {
     toast({
       title: "Import Successful",
-      description: "Your transactions have been imported successfully.",
+      description: `Your ${type === "statement" ? "transactions have" : "attachment has"} been imported successfully.`,
     });
     setImportDialogOpen(false);
+    setAttachmentPreview(null);
+    setAttachmentType(null);
+    setShowCameraPreview(false);
+    if (type === "attachment" && selectedTransactionId) {
+      toast({
+        title: "Attachment Linked",
+        description: `Attachment has been linked to transaction #${selectedTransactionId}.`,
+      });
+      setSelectedTransactionId(null);
+    }
   };
 
-  // Handle export submission
   const handleExport = () => {
     toast({
       title: "Export Successful",
@@ -107,14 +123,82 @@ const AccountingTransactions = () => {
     setExportDialogOpen(false);
   };
 
-  // Filter transactions based on selected category
   const filteredTransactions = TRANSACTIONS.filter(
     (transaction) =>
       selectedCategory === "all" || transaction.categoryId === selectedCategory
   );
 
-  // Find the category object by id
   const getCategoryById = (id) => CATEGORIES.find((cat) => cat.id === id) || CATEGORIES[0];
+
+  const startCamera = async () => {
+    try {
+      if (videoRef.current) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoRef.current.srcObject = stream;
+        setShowCameraPreview(true);
+        setCameraError("");
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      setCameraError("Could not access camera. Please check permissions and try again.");
+    }
+  };
+
+  const takePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement("canvas");
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      canvas.getContext("2d")?.drawImage(
+        videoRef.current, 
+        0, 
+        0, 
+        videoRef.current.videoWidth, 
+        videoRef.current.videoHeight
+      );
+      
+      const dataUrl = canvas.toDataURL("image/jpeg");
+      setAttachmentPreview(dataUrl);
+      setAttachmentType("camera");
+      
+      const stream = videoRef.current.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      setShowCameraPreview(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const fileType = file.type;
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setAttachmentPreview(result);
+        setAttachmentType(fileType.includes('pdf') ? 'pdf' : 'image');
+      };
+      
+      if (fileType.includes('pdf')) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleTransactionClick = (transactionId: number) => {
+    setSelectedTransactionId(transactionId);
+    setAttachmentDialogOpen(true);
+  };
+
+  const startAttachmentProcess = () => {
+    setAttachmentDialogOpen(false);
+    setImportDialogOpen(true);
+    setCurrentImportTab("attachment");
+  };
 
   return (
     <div className="space-y-6">
@@ -140,7 +224,6 @@ const AccountingTransactions = () => {
       </div>
 
       <div className="grid md:grid-cols-[250px_1fr] gap-6">
-        {/* Category filter section */}
         <div className="space-y-4">
           <Card>
             <CardHeader>
@@ -175,7 +258,6 @@ const AccountingTransactions = () => {
           </Card>
         </div>
 
-        {/* Transactions list */}
         <Card>
           <CardHeader>
             <CardTitle>Recent Transactions</CardTitle>
@@ -185,7 +267,11 @@ const AccountingTransactions = () => {
               {filteredTransactions.map((transaction) => {
                 const category = getCategoryById(transaction.categoryId);
                 return (
-                  <div key={transaction.id} className="flex justify-between items-center p-4 border rounded-md hover:bg-gray-50 cursor-pointer">
+                  <div 
+                    key={transaction.id} 
+                    className="flex justify-between items-center p-4 border rounded-md hover:bg-gray-50 cursor-pointer"
+                    onClick={() => handleTransactionClick(transaction.id)}
+                  >
                     <div className="flex items-center">
                       <div className="bg-primary/10 p-2 rounded-md mr-4">
                         <FileText className="h-5 w-5 text-primary" />
@@ -227,7 +313,6 @@ const AccountingTransactions = () => {
         </Card>
       </div>
 
-      {/* New Transaction Dialog */}
       <Dialog open={newTransactionOpen} onOpenChange={setNewTransactionOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -311,34 +396,170 @@ const AccountingTransactions = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Import Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Import Transactions</DialogTitle>
+            <DialogTitle>
+              {currentImportTab === "statement" ? "Import Transactions" : "Attach Document to Transaction"}
+            </DialogTitle>
+            {currentImportTab === "statement" && (
+              <DialogDescription>Upload a CSV or Excel file with your transactions</DialogDescription>
+            )}
+            {currentImportTab === "attachment" && (
+              <DialogDescription>
+                Upload a receipt or supporting document for transaction #{selectedTransactionId}
+              </DialogDescription>
+            )}
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <p className="text-sm text-gray-500">Upload a CSV or Excel file with your transactions.</p>
-            <div className="flex justify-center">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-8 h-8 mb-2 text-gray-500" />
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">CSV, XLSX (MAX. 10MB)</p>
+          
+          <Tabs value={currentImportTab} onValueChange={setCurrentImportTab}>
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="statement">Bank Statement</TabsTrigger>
+              <TabsTrigger value="attachment">File Upload</TabsTrigger>
+              <TabsTrigger value="camera">Camera</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="statement" className="space-y-4">
+              <div className="flex justify-center">
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 mb-2 text-gray-500" />
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500">CSV, XLSX (MAX. 10MB)</p>
+                  </div>
+                  <input ref={fileInputRef} type="file" className="hidden" accept=".csv,.xlsx" />
+                </label>
+              </div>
+              <Button type="submit" onClick={() => handleImport("statement")} className="w-full">Import</Button>
+            </TabsContent>
+            
+            <TabsContent value="attachment" className="space-y-4">
+              {attachmentPreview && attachmentType ? (
+                <div className="flex flex-col items-center space-y-4">
+                  {attachmentType.includes('pdf') ? (
+                    <div className="flex items-center justify-center h-48 w-full bg-gray-100 rounded-md">
+                      <FileText className="h-16 w-16 text-gray-400" />
+                      <p className="ml-2 text-gray-500">PDF Document</p>
+                    </div>
+                  ) : (
+                    <div className="max-h-64 overflow-hidden border rounded-md">
+                      <img 
+                        src={attachmentPreview} 
+                        alt="Preview" 
+                        className="object-contain max-h-64 w-full"
+                      />
+                    </div>
+                  )}
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setAttachmentPreview(null);
+                        setAttachmentType(null);
+                      }}
+                    >
+                      Change
+                    </Button>
+                    <Button onClick={() => handleImport("attachment")}>Attach to Transaction</Button>
+                  </div>
                 </div>
-                <input id="file-upload" type="file" className="hidden" />
-              </label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit" onClick={handleImport}>Import</Button>
-          </DialogFooter>
+              ) : (
+                <div className="flex flex-col space-y-4">
+                  <div className="flex justify-center">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <FileUp className="w-8 h-8 mb-2 text-gray-500" />
+                        <p className="mb-2 text-sm text-gray-500">
+                          <span className="font-semibold">Click to upload</span> receipt or document
+                        </p>
+                        <p className="text-xs text-gray-500">PDF, JPG, PNG (MAX. 10MB)</p>
+                      </div>
+                      <input 
+                        ref={fileInputRef} 
+                        type="file" 
+                        className="hidden" 
+                        accept=".pdf,.jpg,.jpeg,.png" 
+                        onChange={handleFileChange}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="camera" className="space-y-4">
+              {showCameraPreview ? (
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="w-full rounded-md overflow-hidden border">
+                    <video 
+                      ref={videoRef} 
+                      autoPlay 
+                      playsInline 
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                  <Button onClick={takePhoto}>
+                    <Camera className="mr-2 h-4 w-4" />
+                    Take Photo
+                  </Button>
+                </div>
+              ) : attachmentPreview && attachmentType === "camera" ? (
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="max-h-64 overflow-hidden border rounded-md">
+                    <img 
+                      src={attachmentPreview} 
+                      alt="Captured photo" 
+                      className="object-contain max-h-64 w-full"
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setAttachmentPreview(null);
+                        startCamera();
+                      }}
+                    >
+                      Retake
+                    </Button>
+                    <Button onClick={() => handleImport("attachment")}>Attach to Transaction</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center space-y-4">
+                  {cameraError && (
+                    <div className="text-red-500 text-center p-2 bg-red-50 rounded-md w-full">
+                      {cameraError}
+                    </div>
+                  )}
+                  <Button onClick={startCamera}>
+                    <Camera className="mr-2 h-4 w-4" />
+                    Start Camera
+                  </Button>
+                  <p className="text-sm text-gray-500">
+                    Or upload an existing photo
+                  </p>
+                  <Button variant="outline" onClick={() => cameraInputRef.current?.click()}>
+                    <Image className="mr-2 h-4 w-4" />
+                    Choose Photo
+                  </Button>
+                  <input 
+                    ref={cameraInputRef} 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*" 
+                    capture="environment"
+                    onChange={handleFileChange}
+                  />
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
-      {/* Export Dialog */}
       <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -377,6 +598,21 @@ const AccountingTransactions = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={attachmentDialogOpen} onOpenChange={setAttachmentDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Attach Documents</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like to attach a receipt, invoice, or other documentation to Transaction #{selectedTransactionId}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={startAttachmentProcess}>Attach Document</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
