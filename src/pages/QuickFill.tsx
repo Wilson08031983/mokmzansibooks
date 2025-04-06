@@ -52,6 +52,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
@@ -166,10 +173,13 @@ const QuickFill = () => {
           item: "Office Chair - Ergonomic",
           description: "High-quality ergonomic office chair with lumbar support",
           priceCheckUrl: "https://www.pricecheck.co.za/search?search=ergonomic+office+chair",
+          googleShoppingUrl: "https://shopping.google.co.za/search?q=ergonomic+office+chair",
           suppliers: [
-            { name: "Incredible Connection", price: 1899, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
-            { name: "Takealot", price: 1699, rating: 4.7, shipping: 0, url: "https://www.takealot.com" },
-            { name: "Office National", price: 2150, rating: 4.8, shipping: 0, url: "https://www.officenational.co.za" },
+            { name: "Incredible Connection", price: 1899, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za", source: "PriceCheck" },
+            { name: "Takealot", price: 1699, rating: 4.7, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+            { name: "Office National", price: 2150, rating: 4.8, shipping: 0, url: "https://www.officenational.co.za", source: "PriceCheck" },
+            { name: "Game", price: 1599, rating: 4.4, shipping: 99, url: "https://www.game.co.za", source: "Google Shopping" },
+            { name: "Makro", price: 1849, rating: 4.6, shipping: 0, url: "https://www.makro.co.za", source: "Google Shopping" },
           ],
         });
       }
@@ -180,10 +190,13 @@ const QuickFill = () => {
           item: "Laptop - Business Grade",
           description: "15.6-inch business laptop, i7, 16GB RAM, 512GB SSD",
           priceCheckUrl: "https://www.pricecheck.co.za/search?search=business+laptop+i7",
+          googleShoppingUrl: "https://shopping.google.co.za/search?q=business+laptop+i7+16gb+512gb",
           suppliers: [
-            { name: "Evetech", price: 15999, rating: 4.6, shipping: 0, url: "https://www.evetech.co.za" },
-            { name: "Wootware", price: 16599, rating: 4.8, shipping: 0, url: "https://www.wootware.co.za" },
-            { name: "Takealot", price: 17450, rating: 4.5, shipping: 0, url: "https://www.takealot.com" },
+            { name: "Evetech", price: 15999, rating: 4.6, shipping: 0, url: "https://www.evetech.co.za", source: "PriceCheck" },
+            { name: "Wootware", price: 16599, rating: 4.8, shipping: 0, url: "https://www.wootware.co.za", source: "PriceCheck" },
+            { name: "Takealot", price: 17450, rating: 4.5, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+            { name: "Technomobi", price: 15799, rating: 4.4, shipping: 0, url: "https://www.technomobi.co.za", source: "Google Shopping" },
+            { name: "Incredible Connection", price: 16999, rating: 4.7, shipping: 0, url: "https://www.incredible.co.za", source: "Google Shopping" },
           ],
         });
       }
@@ -194,10 +207,13 @@ const QuickFill = () => {
           item: "Multifunction Printer",
           description: "Color laser printer with scanning and copying capabilities",
           priceCheckUrl: "https://www.pricecheck.co.za/search?search=multifunction+laser+printer",
+          googleShoppingUrl: "https://shopping.google.co.za/search?q=multifunction+color+laser+printer",
           suppliers: [
-            { name: "Takealot", price: 4299, rating: 4.2, shipping: 0, url: "https://www.takealot.com" },
-            { name: "Incredible Connection", price: 4599, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
-            { name: "Game", price: 3999, rating: 4.0, shipping: 250, url: "https://www.game.co.za" },
+            { name: "Takealot", price: 4299, rating: 4.2, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+            { name: "Incredible Connection", price: 4599, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za", source: "PriceCheck" },
+            { name: "Game", price: 3999, rating: 4.0, shipping: 250, url: "https://www.game.co.za", source: "PriceCheck" },
+            { name: "Makro", price: 4150, rating: 4.3, shipping: 0, url: "https://www.makro.co.za", source: "Google Shopping" },
+            { name: "Loot", price: 4499, rating: 4.1, shipping: 0, url: "https://www.loot.co.za", source: "Google Shopping" },
           ],
         });
       }
@@ -209,10 +225,13 @@ const QuickFill = () => {
             item: "Office Chair - Ergonomic",
             description: "High-quality ergonomic office chair with lumbar support",
             priceCheckUrl: "https://www.pricecheck.co.za/search?search=ergonomic+office+chair",
+            googleShoppingUrl: "https://shopping.google.co.za/search?q=ergonomic+office+chair",
             suppliers: [
-              { name: "Incredible Connection", price: 1899, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
-              { name: "Takealot", price: 1699, rating: 4.7, shipping: 0, url: "https://www.takealot.com" },
-              { name: "Office National", price: 2150, rating: 4.8, shipping: 0, url: "https://www.officenational.co.za" },
+              { name: "Incredible Connection", price: 1899, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za", source: "PriceCheck" },
+              { name: "Takealot", price: 1699, rating: 4.7, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+              { name: "Office National", price: 2150, rating: 4.8, shipping: 0, url: "https://www.officenational.co.za", source: "PriceCheck" },
+              { name: "Game", price: 1599, rating: 4.4, shipping: 99, url: "https://www.game.co.za", source: "Google Shopping" },
+              { name: "Makro", price: 1849, rating: 4.6, shipping: 0, url: "https://www.makro.co.za", source: "Google Shopping" },
             ],
           },
           {
@@ -220,10 +239,13 @@ const QuickFill = () => {
             item: "Laptop - Business Grade",
             description: "15.6-inch business laptop, i7, 16GB RAM, 512GB SSD",
             priceCheckUrl: "https://www.pricecheck.co.za/search?search=business+laptop+i7",
+            googleShoppingUrl: "https://shopping.google.co.za/search?q=business+laptop+i7+16gb+512gb",
             suppliers: [
-              { name: "Evetech", price: 15999, rating: 4.6, shipping: 0, url: "https://www.evetech.co.za" },
-              { name: "Wootware", price: 16599, rating: 4.8, shipping: 0, url: "https://www.wootware.co.za" },
-              { name: "Takealot", price: 17450, rating: 4.5, shipping: 0, url: "https://www.takealot.com" },
+              { name: "Evetech", price: 15999, rating: 4.6, shipping: 0, url: "https://www.evetech.co.za", source: "PriceCheck" },
+              { name: "Wootware", price: 16599, rating: 4.8, shipping: 0, url: "https://www.wootware.co.za", source: "PriceCheck" },
+              { name: "Takealot", price: 17450, rating: 4.5, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+              { name: "Technomobi", price: 15799, rating: 4.4, shipping: 0, url: "https://www.technomobi.co.za", source: "Google Shopping" },
+              { name: "Incredible Connection", price: 16999, rating: 4.7, shipping: 0, url: "https://www.incredible.co.za", source: "Google Shopping" },
             ],
           },
         ];
@@ -248,10 +270,13 @@ const QuickFill = () => {
             item: "Office Chair - Ergonomic",
             description: "High-quality ergonomic office chair with lumbar support",
             priceCheckUrl: "https://www.pricecheck.co.za/search?search=ergonomic+office+chair",
+            googleShoppingUrl: "https://shopping.google.co.za/search?q=ergonomic+office+chair",
             suppliers: [
-              { name: "Incredible Connection", price: 1899, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
-              { name: "Takealot", price: 1699, rating: 4.7, shipping: 0, url: "https://www.takealot.com" },
-              { name: "Office National", price: 2150, rating: 4.8, shipping: 0, url: "https://www.officenational.co.za" },
+              { name: "Incredible Connection", price: 1899, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za", source: "PriceCheck" },
+              { name: "Takealot", price: 1699, rating: 4.7, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+              { name: "Office National", price: 2150, rating: 4.8, shipping: 0, url: "https://www.officenational.co.za", source: "PriceCheck" },
+              { name: "Game", price: 1599, rating: 4.4, shipping: 99, url: "https://www.game.co.za", source: "Google Shopping" },
+              { name: "Makro", price: 1849, rating: 4.6, shipping: 0, url: "https://www.makro.co.za", source: "Google Shopping" },
             ],
           },
           {
@@ -259,10 +284,13 @@ const QuickFill = () => {
             item: "Laptop - Business Grade",
             description: "15.6-inch business laptop, i7, 16GB RAM, 512GB SSD",
             priceCheckUrl: "https://www.pricecheck.co.za/search?search=business+laptop+i7",
+            googleShoppingUrl: "https://shopping.google.co.za/search?q=business+laptop+i7+16gb+512gb",
             suppliers: [
-              { name: "Evetech", price: 15999, rating: 4.6, shipping: 0, url: "https://www.evetech.co.za" },
-              { name: "Wootware", price: 16599, rating: 4.8, shipping: 0, url: "https://www.wootware.co.za" },
-              { name: "Takealot", price: 17450, rating: 4.5, shipping: 0, url: "https://www.takealot.com" },
+              { name: "Evetech", price: 15999, rating: 4.6, shipping: 0, url: "https://www.evetech.co.za", source: "PriceCheck" },
+              { name: "Wootware", price: 16599, rating: 4.8, shipping: 0, url: "https://www.wootware.co.za", source: "PriceCheck" },
+              { name: "Takealot", price: 17450, rating: 4.5, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+              { name: "Technomobi", price: 15799, rating: 4.4, shipping: 0, url: "https://www.technomobi.co.za", source: "Google Shopping" },
+              { name: "Incredible Connection", price: 16999, rating: 4.7, shipping: 0, url: "https://www.incredible.co.za", source: "Google Shopping" },
             ],
           },
           {
@@ -270,10 +298,13 @@ const QuickFill = () => {
             item: "Multifunction Printer",
             description: "Color laser printer with scanning and copying capabilities",
             priceCheckUrl: "https://www.pricecheck.co.za/search?search=multifunction+laser+printer",
+            googleShoppingUrl: "https://shopping.google.co.za/search?q=multifunction+color+laser+printer",
             suppliers: [
-              { name: "Takealot", price: 4299, rating: 4.2, shipping: 0, url: "https://www.takealot.com" },
-              { name: "Incredible Connection", price: 4599, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
-              { name: "Game", price: 3999, rating: 4.0, shipping: 250, url: "https://www.game.co.za" },
+              { name: "Takealot", price: 4299, rating: 4.2, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+              { name: "Incredible Connection", price: 4599, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za", source: "PriceCheck" },
+              { name: "Game", price: 3999, rating: 4.0, shipping: 250, url: "https://www.game.co.za", source: "PriceCheck" },
+              { name: "Makro", price: 4150, rating: 4.3, shipping: 0, url: "https://www.makro.co.za", source: "Google Shopping" },
+              { name: "Loot", price: 4499, rating: 4.1, shipping: 0, url: "https://www.loot.co.za", source: "Google Shopping" },
             ],
           },
         ]);
@@ -316,9 +347,10 @@ const QuickFill = () => {
     toast.success(`Added ${item} from ${supplier} to your quote`);
   };
 
-  const handleViewPriceCheck = (url: string) => {
+  const handleViewPriceCheck = (priceCheckUrl: string, googleShoppingUrl: string, source: string = "pricecheck") => {
+    const url = source.toLowerCase() === "google" ? googleShoppingUrl : priceCheckUrl;
     window.open(url, '_blank');
-    toast.success("Viewing price comparisons on PriceCheck.co.za");
+    toast.success(`Viewing price comparisons on ${source === "google" ? "Google Shopping" : "PriceCheck.co.za"}`);
   };
 
   const handleViewSupplier = (supplier: string, url: string) => {
@@ -801,6 +833,17 @@ const QuickFill = () => {
                     </Button>
                   </div>
                 </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Label className="text-sm">Search Sources:</Label>
+                  <div className="flex items-center gap-1">
+                    <Badge variant="outline" className="cursor-pointer">
+                      PriceCheck.co.za
+                    </Badge>
+                    <Badge variant="outline" className="cursor-pointer">
+                      Google Shopping
+                    </Badge>
+                  </div>
+                </div>
                 {!isPremiumUser && (
                   <div className="rounded-md border border-amber-200 bg-amber-50 p-3 mt-4">
                     <div className="flex">
@@ -848,7 +891,7 @@ const QuickFill = () => {
                   <div>
                     <h3 className="font-medium">Automatic Parsing</h3>
                     <p className="text-sm text-gray-500">
-                      Our system extracts items and searches PriceCheck.co.za for the best prices
+                      Our system extracts items and searches PriceCheck.co.za and Google Shopping for the best prices
                     </p>
                   </div>
                 </div>
@@ -877,9 +920,9 @@ const QuickFill = () => {
               <CardContent className="p-6">
                 <div className="flex flex-col items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
-                  <h3 className="text-lg font-medium">Searching for prices on PriceCheck.co.za...</h3>
+                  <h3 className="text-lg font-medium">Searching for prices across South African retailers...</h3>
                   <p className="text-gray-500 mt-1">
-                    Checking multiple South African suppliers for the best deals
+                    Checking PriceCheck.co.za and Google Shopping for the best deals
                   </p>
                 </div>
               </CardContent>
@@ -911,14 +954,24 @@ const QuickFill = () => {
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="mb-2">
-                          <Button 
-                            variant="outline" 
-                            className="text-sm" 
-                            onClick={() => handleViewPriceCheck(result.priceCheckUrl)}
-                          >
-                            <ExternalLink className="h-3 w-3 mr-1" /> 
-                            View more on PriceCheck.co.za
-                          </Button>
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              variant="outline" 
+                              className="text-sm" 
+                              onClick={() => handleViewPriceCheck(result.priceCheckUrl, "", "pricecheck")}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" /> 
+                              View on PriceCheck.co.za
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="text-sm" 
+                              onClick={() => handleViewPriceCheck("", result.googleShoppingUrl, "google")}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" /> 
+                              View on Google Shopping
+                            </Button>
+                          </div>
                         </div>
                         <Table className="mt-2">
                           <TableHeader>
@@ -927,6 +980,7 @@ const QuickFill = () => {
                               <TableHead>Price</TableHead>
                               <TableHead>Rating</TableHead>
                               <TableHead>Shipping</TableHead>
+                              <TableHead>Source</TableHead>
                               <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -949,6 +1003,11 @@ const QuickFill = () => {
                                   {supplier.shipping === 0
                                     ? "Free"
                                     : formatCurrency(supplier.shipping, "ZAR")}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className={supplier.source === "Google Shopping" ? "bg-blue-50" : "bg-amber-50"}>
+                                    {supplier.source}
+                                  </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <Button
@@ -978,7 +1037,7 @@ const QuickFill = () => {
               <CardFooter>
                 <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <p className="text-sm text-gray-500">
-                    Prices are updated daily from PriceCheck.co.za. Click "View" to see full product details.
+                    Prices are updated daily from PriceCheck.co.za and Google Shopping. Click "View" to see full product details.
                   </p>
                   <Button onClick={handleGeneratePriceReport}>
                     Generate Price Report
@@ -1006,6 +1065,11 @@ const QuickFill = () => {
               <p className="text-sm text-muted-foreground">
                 Price: {formatCurrency(selectedSupplier?.price || 0, "ZAR")}
               </p>
+              {selectedSupplier?.source && (
+                <Badge variant="outline" className="mt-1">
+                  Source: {selectedSupplier.source}
+                </Badge>
+              )}
             </div>
           )}
           
