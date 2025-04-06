@@ -249,27 +249,27 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
   const fileName = file.name.toLowerCase();
   
   let documentType = "unknown";
-  if (fileName.includes("cipc") || fileName.includes("registration")) {
+  if (fileName.includes("cipc") || fileName.includes("registration") || fileName.includes("cor")) {
     documentType = "cipc";
-  } else if (fileName.includes("tax") || fileName.includes("sars")) {
+  } else if (fileName.includes("tax") || fileName.includes("sars") || fileName.includes("clearance")) {
     documentType = "tax";
-  } else if (fileName.includes("bbee") || fileName.includes("bee")) {
+  } else if (fileName.includes("bbee") || fileName.includes("bee") || fileName.includes("bbbee")) {
     documentType = "bbee";
-  } else if (fileName.includes("csd")) {
+  } else if (fileName.includes("csd") || fileName.includes("central") || fileName.includes("supplier")) {
     documentType = "csd";
-  } else if (fileName.includes("bank")) {
+  } else if (fileName.includes("bank") || fileName.includes("statement") || fileName.includes("confirmation")) {
     documentType = "bank";
-  } else if (fileName.includes("invoice")) {
+  } else if (fileName.includes("invoice") || fileName.includes("bill")) {
     documentType = "invoice";
-  } else if (fileName.includes("rfq") || fileName.includes("quote")) {
+  } else if (fileName.includes("rfq") || fileName.includes("quote") || fileName.includes("quotation")) {
     documentType = "rfq";
-  } else if (fileName.includes("tender")) {
+  } else if (fileName.includes("tender") || fileName.includes("bid")) {
     documentType = "tender";
-  } else if (fileName.includes("application")) {
+  } else if (fileName.includes("application") || fileName.includes("form")) {
     documentType = "application";
   }
   
-  console.log(`Extracting data from ${documentType} document`);
+  console.log(`Extracting data from ${documentType} document with multiple pages`);
   
   const extractedData: Record<string, string> = {};
   
@@ -278,17 +278,32 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["Registration Number"] = "2018/421571/07";
     extractedData["Director"] = "Wilson Mokgethwa Moabelo";
     extractedData["Registration Date"] = "2018-08-15";
+    extractedData["Business Status"] = "In Business";
+    extractedData["Company Type"] = "Private Company";
+    extractedData["Financial Year End"] = "February";
+    extractedData["Physical Address"] = "123 Main Street, Polokwane, 0700";
+    extractedData["Postal Address"] = "P.O. Box 12345, Polokwane, 0700";
   } else if (documentType === "tax") {
     extractedData["Tax Number"] = "9012345678";
     extractedData["Tax Status"] = "Compliant";
     extractedData["Issue Date"] = "2023-03-01";
     extractedData["Expiry Date"] = "2024-03-01";
+    extractedData["VAT Number"] = "4680239510";
+    extractedData["PAYE Reference"] = "7065737164";
+    extractedData["Income Tax Reference"] = "1901234567";
+    extractedData["SDL Reference"] = "L901234567";
+    extractedData["UIF Reference"] = "U901234567";
   } else if (documentType === "bbee") {
     extractedData["B-BBEE Level"] = "Level 1";
     extractedData["Verification Agency"] = "BEE Verification Agency";
     extractedData["Certificate Number"] = "BEE12345/21";
     extractedData["Issue Date"] = "2023-01-15";
     extractedData["Expiry Date"] = "2024-01-14";
+    extractedData["Black Ownership"] = "100%";
+    extractedData["Black Women Ownership"] = "51%";
+    extractedData["EME/QSE Status"] = "Qualifying Small Enterprise";
+    extractedData["Procurement Recognition"] = "135%";
+    extractedData["Empowering Supplier"] = "Yes";
   } else if (documentType === "csd") {
     extractedData["CSD Registration"] = "MAAA0987654";
     extractedData["Supplier Number"] = "SN12345678";
@@ -296,19 +311,58 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["Status"] = "Active";
     extractedData["Company Name"] = "Morwa Moabelo (Pty) Ltd";
     extractedData["Registration Number"] = "2018/421571/07";
+    extractedData["Tax Compliance"] = "Yes";
+    extractedData["B-BBEE Status"] = "Level 1";
+    extractedData["Director ID"] = "8512095873082";
+    extractedData["Banking Details Verified"] = "Yes";
+    extractedData["CIDB Registration"] = "123456";
+    extractedData["Industry Classification"] = "Information Technology";
   } else if (documentType === "bank") {
     extractedData["Bank Name"] = "First National Bank";
     extractedData["Account Holder"] = "Morwa Moabelo (Pty) Ltd";
     extractedData["Account Number"] = "62123456789";
     extractedData["Branch Code"] = "250655";
     extractedData["Account Type"] = "Business";
+    extractedData["Branch Name"] = "Polokwane";
+    extractedData["SWIFT Code"] = "FIRNZAJJ";
+    extractedData["Date Issued"] = "2023-04-01";
+    extractedData["Bank Official"] = "Jane Smith";
+    extractedData["Bank Contact"] = "011 123 4567";
   } else if (documentType === "invoice" || documentType === "rfq" || documentType === "quote") {
     extractedData["Client Name"] = "ABC Corporation";
     extractedData["Client Contact"] = "Jane Smith";
     extractedData["Client Email"] = "jane.smith@abccorp.com";
+    extractedData["Client Phone"] = "011 987 6543";
     extractedData["Service Description"] = "Consulting Services";
     extractedData["Amount"] = "R15,000.00";
     extractedData["Date"] = "2023-04-15";
+    extractedData["Invoice Number"] = "INV-2023-0123";
+    extractedData["Payment Terms"] = "30 days";
+    extractedData["VAT Amount"] = "R2,250.00";
+    extractedData["Total Amount"] = "R17,250.00";
+    extractedData["Client Address"] = "456 Corporate Park, Johannesburg, 2000";
+  } else if (documentType === "tender") {
+    extractedData["Tender Number"] = "TEND2023/456";
+    extractedData["Issuing Department"] = "Department of Public Works";
+    extractedData["Tender Description"] = "Supply and Installation of IT Equipment";
+    extractedData["Closing Date"] = "2023-06-30";
+    extractedData["Briefing Session"] = "2023-05-15";
+    extractedData["Contact Person"] = "Mr. John Doe";
+    extractedData["Contact Email"] = "john.doe@gov.za";
+    extractedData["Contact Phone"] = "012 345 6789";
+    extractedData["CIDB Requirement"] = "Grade 3 IT";
+    extractedData["B-BBEE Requirement"] = "Level 1-4";
+  } else if (documentType === "application") {
+    extractedData["Form Type"] = "Vendor Application";
+    extractedData["Applicant Name"] = "Morwa Moabelo (Pty) Ltd";
+    extractedData["Contact Person"] = "Wilson Moabelo";
+    extractedData["Email"] = "wilson@morwamoabelo.co.za";
+    extractedData["Phone"] = "072 345 6789";
+    extractedData["Application Date"] = "2023-05-01";
+    extractedData["Industry Sector"] = "Information Technology";
+    extractedData["Years in Business"] = "5";
+    extractedData["Employees"] = "10-50";
+    extractedData["Annual Turnover"] = "R5,000,000 - R10,000,000";
   }
   
   return { 

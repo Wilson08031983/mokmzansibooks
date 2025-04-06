@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { extractTextFromDocuments, storeExtractedData } from '@/utils/pdfUtils';
-import { Loader2, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Upload, FileText, CheckCircle, AlertCircle, FileType } from 'lucide-react';
 
 interface DocumentExtractorProps {
   className?: string;
@@ -20,6 +20,7 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [extractedType, setExtractedType] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [extractedFields, setExtractedFields] = useState<number>(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -33,7 +34,7 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
     setIsLoading(true);
     
     try {
-      // Extract text from the document using OCR + AI
+      // Extract text from the document using OCR + AI (simulated)
       const result = await extractTextFromDocuments([file]);
       
       if (result.type === 'unknown') {
@@ -41,6 +42,10 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
         setStatus('error');
         return;
       }
+      
+      // Count extracted fields (excluding internal fields)
+      const fieldCount = Object.keys(result.data).filter(key => !key.startsWith('_')).length;
+      setExtractedFields(fieldCount);
       
       // Store the extracted data
       storeExtractedData(result.type, result.data);
@@ -59,7 +64,7 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
         onExtracted(result);
       }
       
-      toast.success(`Successfully extracted data from ${result.type.toUpperCase()} document`);
+      toast.success(`Successfully extracted ${fieldCount} fields from ${result.type.toUpperCase()} document`);
     } catch (error) {
       console.error('Error extracting text:', error);
       toast.error('Error extracting text from document');
@@ -72,6 +77,7 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
   const handleReset = () => {
     setFile(null);
     setExtractedType(null);
+    setExtractedFields(0);
     setStatus('idle');
     
     // Clear the file input
@@ -85,7 +91,7 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
       case 'processing':
         return 'Processing document...';
       case 'success':
-        return `Data extracted from ${extractedType?.toUpperCase()} document`;
+        return `Extracted ${extractedFields} fields from ${extractedType?.toUpperCase()} document`;
       case 'error':
         return 'Error extracting data';
       default:
@@ -104,6 +110,15 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
       default:
         return <FileText className="h-8 w-8 text-gray-400" />;
     }
+  };
+  
+  const getFileIcon = (filename: string) => {
+    const extension = filename.split('.').pop()?.toLowerCase();
+    if (extension === 'pdf') return 'PDF';
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(extension || '')) return 'Image';
+    if (['doc', 'docx'].includes(extension || '')) return 'Word';
+    if (['xls', 'xlsx'].includes(extension || '')) return 'Excel';
+    return 'File';
   };
   
   return (
@@ -130,8 +145,9 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
           <p className="text-sm font-medium">{getStatusMessage()}</p>
           
           {file && (
-            <Badge variant="outline" className="text-xs">
-              {file.name} ({Math.round(file.size / 1024)} KB)
+            <Badge variant="outline" className="text-xs flex items-center gap-1">
+              <span>{getFileIcon(file.name)}</span>
+              <span>{file.name} ({Math.round(file.size / 1024)} KB)</span>
             </Badge>
           )}
           
