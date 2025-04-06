@@ -395,8 +395,47 @@ export const identifyPdfFormFields = async (pdfFile: File): Promise<{
 }> => {
   console.log(`Identifying form fields in ${pdfFile.name}`);
   
+  // This is a simulated response - in a real application, this would analyze the PDF
+  const fakeFields = [
+    {
+      id: "field_1",
+      name: "Company Name",
+      type: "text",
+      rect: { x: 100, y: 100, width: 200, height: 30 },
+      page: 1
+    },
+    {
+      id: "field_2",
+      name: "Registration Number",
+      type: "text",
+      rect: { x: 100, y: 150, width: 200, height: 30 },
+      page: 1
+    },
+    {
+      id: "field_3",
+      name: "Tax Number",
+      type: "text",
+      rect: { x: 100, y: 200, width: 200, height: 30 },
+      page: 1
+    },
+    {
+      id: "field_4",
+      name: "Date",
+      type: "date",
+      rect: { x: 100, y: 250, width: 200, height: 30 },
+      page: 1
+    },
+    {
+      id: "field_5",
+      name: "Physical Address",
+      type: "text",
+      rect: { x: 100, y: 300, width: 300, height: 60 },
+      page: 1
+    }
+  ];
+  
   return {
-    fields: [],
+    fields: fakeFields,
     pageCount: 1
   };
 };
@@ -408,6 +447,7 @@ export const populateFillablePdf = async (
 ): Promise<Blob> => {
   console.log(`Populating PDF form ${pdfFile.name} with data`);
   
+  // This is a simulation - in a real application, this would populate the PDF with data
   return new Blob([await pdfFile.arrayBuffer()], { type: pdfFile.type });
 };
 
@@ -481,6 +521,9 @@ export const storeExtractedData = (
     
     localStorage.setItem('extractedData', JSON.stringify(existingData));
     console.log(`Stored extracted data for ${documentType}`);
+    
+    // Dispatch an event to notify any listeners
+    window.dispatchEvent(new CustomEvent('storageupdated'));
   } catch (error) {
     console.error('Error storing extracted data:', error);
   }
@@ -494,4 +537,198 @@ export const getStoredExtractedData = (): Record<string, Record<string, string>>
     console.error('Error retrieving extracted data:', error);
     return {};
   }
+};
+
+// New functions for template management
+
+export const storeFormTemplate = (
+  templateName: string,
+  fields: Record<string, string>,
+  formType: string = "generic"
+): void => {
+  try {
+    const existingTemplatesStr = localStorage.getItem('formTemplates');
+    const existingTemplates = existingTemplatesStr ? JSON.parse(existingTemplatesStr) : {};
+    
+    existingTemplates[templateName] = {
+      name: templateName,
+      fields: fields,
+      type: formType,
+      createdAt: new Date().toISOString(),
+      lastUsed: new Date().toISOString()
+    };
+    
+    localStorage.setItem('formTemplates', JSON.stringify(existingTemplates));
+    console.log(`Stored form template: ${templateName}`);
+    
+    // Dispatch an event to notify any listeners
+    window.dispatchEvent(new CustomEvent('templatesupdated'));
+  } catch (error) {
+    console.error('Error storing form template:', error);
+  }
+};
+
+export const getStoredFormTemplates = (): Record<string, {
+  name: string;
+  fields: Record<string, string>;
+  type: string;
+  createdAt: string;
+  lastUsed: string;
+}> => {
+  try {
+    const templatesStr = localStorage.getItem('formTemplates');
+    return templatesStr ? JSON.parse(templatesStr) : {};
+  } catch (error) {
+    console.error('Error retrieving form templates:', error);
+    return {};
+  }
+};
+
+export const getFormTemplateByName = (templateName: string): {
+  name: string;
+  fields: Record<string, string>;
+  type: string;
+  createdAt: string;
+  lastUsed: string;
+} | null => {
+  try {
+    const templates = getStoredFormTemplates();
+    return templates[templateName] || null;
+  } catch (error) {
+    console.error(`Error retrieving template: ${templateName}`, error);
+    return null;
+  }
+};
+
+export const updateFormTemplate = (
+  templateName: string,
+  updatedFields: Record<string, string>
+): boolean => {
+  try {
+    const existingTemplatesStr = localStorage.getItem('formTemplates');
+    const existingTemplates = existingTemplatesStr ? JSON.parse(existingTemplatesStr) : {};
+    
+    if (!existingTemplates[templateName]) {
+      return false;
+    }
+    
+    existingTemplates[templateName] = {
+      ...existingTemplates[templateName],
+      fields: updatedFields,
+      lastUsed: new Date().toISOString()
+    };
+    
+    localStorage.setItem('formTemplates', JSON.stringify(existingTemplates));
+    console.log(`Updated form template: ${templateName}`);
+    
+    // Dispatch an event to notify any listeners
+    window.dispatchEvent(new CustomEvent('templatesupdated'));
+    return true;
+  } catch (error) {
+    console.error(`Error updating template: ${templateName}`, error);
+    return false;
+  }
+};
+
+export const deleteFormTemplate = (templateName: string): boolean => {
+  try {
+    const existingTemplatesStr = localStorage.getItem('formTemplates');
+    const existingTemplates = existingTemplatesStr ? JSON.parse(existingTemplatesStr) : {};
+    
+    if (!existingTemplates[templateName]) {
+      return false;
+    }
+    
+    delete existingTemplates[templateName];
+    
+    localStorage.setItem('formTemplates', JSON.stringify(existingTemplates));
+    console.log(`Deleted form template: ${templateName}`);
+    
+    // Dispatch an event to notify any listeners
+    window.dispatchEvent(new CustomEvent('templatesupdated'));
+    return true;
+  } catch (error) {
+    console.error(`Error deleting template: ${templateName}`, error);
+    return false;
+  }
+};
+
+export const applyFormTemplate = (
+  template: {
+    name: string;
+    fields: Record<string, string>;
+    type: string;
+  },
+  formFields: Array<{ id: string; name: string; type: string }>,
+  updateDates: boolean = true
+): Record<string, string> => {
+  const populatedValues: Record<string, string> = {};
+  const today = new Date();
+  
+  formFields.forEach(field => {
+    // Try to find a matching field in the template
+    const lowerFieldName = field.name.toLowerCase();
+    
+    // Find the closest matching key in the template fields
+    let bestMatch = '';
+    let bestMatchScore = 0;
+    
+    Object.keys(template.fields).forEach(templateKey => {
+      const templateKeyLower = templateKey.toLowerCase();
+      
+      if (lowerFieldName === templateKeyLower) {
+        // Exact match
+        bestMatch = templateKey;
+        bestMatchScore = 1;
+      } else if (lowerFieldName.includes(templateKeyLower) || templateKeyLower.includes(lowerFieldName)) {
+        // Partial match - only use if we don't have an exact match
+        if (bestMatchScore < 1) {
+          bestMatch = templateKey;
+          bestMatchScore = 0.8;
+        }
+      }
+    });
+    
+    if (bestMatch) {
+      let value = template.fields[bestMatch];
+      
+      // Update dates if requested
+      if (updateDates && (
+          lowerFieldName.includes('date') || 
+          field.type === 'date' || 
+          /expired?|valid until|due/i.test(lowerFieldName)
+        )) {
+        // If it looks like a date, update it
+        try {
+          const originalDate = new Date(value);
+          if (!isNaN(originalDate.getTime())) {
+            // Calculate how many days to add based on the original date
+            const daysDiff = Math.floor((originalDate.getTime() - new Date(template.lastUsed).getTime()) / (1000 * 60 * 60 * 24));
+            
+            // Create a new date by adding the same number of days from today
+            const newDate = new Date(today);
+            newDate.setDate(newDate.getDate() + daysDiff);
+            
+            // Format as YYYY-MM-DD
+            value = newDate.toISOString().split('T')[0];
+          }
+        } catch (error) {
+          console.warn('Could not parse date:', value);
+        }
+      }
+      
+      populatedValues[field.id] = value;
+    } else {
+      populatedValues[field.id] = '';
+    }
+  });
+  
+  // Mark the template as used
+  const templates = getStoredFormTemplates();
+  if (templates[template.name]) {
+    templates[template.name].lastUsed = today.toISOString();
+    localStorage.setItem('formTemplates', JSON.stringify(templates));
+  }
+  
+  return populatedValues;
 };

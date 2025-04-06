@@ -9,14 +9,37 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Upload, Download, Eye, ArrowRight, Edit, Save, Trash, AlertTriangle } from 'lucide-react';
+import { 
+  Loader2, Upload, Download, Eye, ArrowRight, Edit, Save, Trash, 
+  AlertTriangle, FileText, FileCheck, Template, Plus, Star, StarOff
+} from 'lucide-react';
 import { 
   identifyPdfFormFields, 
   matchDataToFormFields, 
   populateFillablePdf,
   getStoredExtractedData,
-  storeExtractedData
+  storeExtractedData,
+  getStoredFormTemplates,
+  storeFormTemplate,
+  deleteFormTemplate,
+  applyFormTemplate
 } from '@/utils/pdfUtils';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface FillablePdfFormProps {
   className?: string;
@@ -47,12 +70,44 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
   const [autoFillThreshold, setAutoFillThreshold] = useState(0.7);
   const [showLowConfidenceOnly, setShowLowConfidenceOnly] = useState(false);
   
+  // Template management
+  const [templates, setTemplates] = useState<Record<string, {
+    name: string;
+    fields: Record<string, string>;
+    type: string;
+    createdAt: string;
+    lastUsed: string;
+  }>>({});
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [templateType, setTemplateType] = useState('generic');
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [updateDates, setUpdateDates] = useState(true);
+  
   // References
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Load stored data on component mount
+  // Load stored data and templates on component mount
   useEffect(() => {
     setExtractedData(getStoredExtractedData());
+    setTemplates(getStoredFormTemplates());
+    
+    // Set up event listeners for updates
+    const handleStorageUpdate = () => {
+      setExtractedData(getStoredExtractedData());
+    };
+    
+    const handleTemplatesUpdate = () => {
+      setTemplates(getStoredFormTemplates());
+    };
+    
+    window.addEventListener('storageupdated', handleStorageUpdate);
+    window.addEventListener('templatesupdated', handleTemplatesUpdate);
+    
+    return () => {
+      window.removeEventListener('storageupdated', handleStorageUpdate);
+      window.removeEventListener('templatesupdated', handleTemplatesUpdate);
+    };
   }, []);
   
   // Update preview when file changes
@@ -140,6 +195,55 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     }
   };
   
+  // Use template to fill form
+  const handleUseTemplate = (templateName: string) => {
+    if (!templates[templateName]) return;
+    
+    const template = templates[templateName];
+    const populatedValues = applyFormTemplate(template, formFields, updateDates);
+    
+    // Set the field values
+    setFieldValues(populatedValues);
+    setSelectedTemplate(templateName);
+    
+    toast.success(`Template "${templateName}" applied to form`);
+  };
+  
+  // Save template
+  const handleSaveTemplate = () => {
+    if (!newTemplateName.trim()) {
+      toast.error('Please enter a template name');
+      return;
+    }
+    
+    // Create field mapping between form field IDs and names
+    const fieldNameMapping: Record<string, string> = {};
+    formFields.forEach(field => {
+      if (fieldValues[field.id]) {
+        fieldNameMapping[field.name] = fieldValues[field.id];
+      }
+    });
+    
+    // Store the template
+    storeFormTemplate(newTemplateName, fieldNameMapping, templateType);
+    
+    toast.success(`Template "${newTemplateName}" saved successfully`);
+    setTemplateDialogOpen(false);
+    setNewTemplateName('');
+  };
+  
+  // Delete template
+  const handleDeleteTemplate = (templateName: string) => {
+    if (deleteFormTemplate(templateName)) {
+      toast.success(`Template "${templateName}" deleted`);
+      if (selectedTemplate === templateName) {
+        setSelectedTemplate(null);
+      }
+    } else {
+      toast.error(`Error deleting template "${templateName}"`);
+    }
+  };
+  
   // Generate populated PDF
   const handleGeneratePdf = async () => {
     if (!pdfFile) return;
@@ -206,6 +310,7 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     setFieldMapping({});
     setFieldConfidence({});
     setFieldValues({});
+    setSelectedTemplate(null);
     setStep('upload');
   };
   
@@ -298,6 +403,27 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
             />
           </div>
           
+          {Object.keys(templates).length > 0 && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+              <h4 className="font-medium text-blue-800 flex items-center gap-2 mb-3">
+                <Template className="h-4 w-4" /> Your Saved Form Templates
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {Object.entries(templates).slice(0, 4).map(([name, template]) => (
+                  <Badge key={name} className="bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 p-2 justify-between cursor-default">
+                    <span className="text-xs truncate">{name}</span>
+                    <span className="text-xs text-gray-500">
+                      {new Date(template.lastUsed).toLocaleDateString()}
+                    </span>
+                  </Badge>
+                ))}
+              </div>
+              <p className="text-xs text-blue-600 mt-2">
+                These templates will be available to use after uploading your PDF form
+              </p>
+            </div>
+          )}
+          
           <Button 
             variant="extract" 
             className="w-full"
@@ -347,6 +473,30 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
             </div>
           </div>
           
+          {Object.keys(templates).length > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
+              <h4 className="font-medium text-green-800 flex items-center gap-2">
+                <Template className="h-4 w-4" /> Available Form Templates
+              </h4>
+              <p className="text-xs text-green-700 mt-1 mb-3">
+                You can also use one of your saved templates in the next step
+              </p>
+              <div className="space-y-2">
+                {Object.entries(templates).map(([name, template]) => (
+                  <div key={name} className="flex items-center justify-between gap-2 p-2 bg-white rounded-md">
+                    <div className="flex items-center gap-2">
+                      <FileCheck className="h-4 w-4 text-green-600" />
+                      <span className="font-medium">{name}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Last used: {new Date(template.lastUsed).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={handleReset} disabled={isLoading}>
               Back
@@ -354,7 +504,7 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
             <Button 
               className="flex-1"
               onClick={handleMatchData}
-              disabled={isLoading || Object.keys(extractedData).length === 0}
+              disabled={isLoading}
             >
               {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ArrowRight className="h-4 w-4 mr-2" />}
               Continue
@@ -397,9 +547,62 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
             </div>
           </div>
           
+          {/* Template selector */}
+          {Object.keys(templates).length > 0 && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex flex-col">
+                <Label className="text-sm mb-1 text-green-800">Use a template to fill this form:</Label>
+                <div className="flex flex-row items-center gap-2">
+                  <Select value={selectedTemplate || ''} onValueChange={handleUseTemplate}>
+                    <SelectTrigger className="w-full max-w-[260px] bg-white">
+                      <SelectValue placeholder="Select a template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(templates).map(([name]) => (
+                        <SelectItem key={name} value={name}>{name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="update-dates"
+                  checked={updateDates}
+                  onCheckedChange={setUpdateDates}
+                />
+                <Label htmlFor="update-dates" className="text-sm text-green-800">
+                  Auto-update dates
+                </Label>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-white border-green-300 text-green-700 hover:bg-green-50"
+                onClick={() => setTemplateDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Save as Template
+              </Button>
+            </div>
+          )}
+          
           <div className="border rounded-lg p-4 max-h-96 overflow-y-auto">
             {renderFormFields()}
           </div>
+          
+          {Object.keys(templates).length === 0 && (
+            <Button 
+              variant="outline" 
+              className="w-full bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+              onClick={() => setTemplateDialogOpen(true)}
+            >
+              <Template className="h-4 w-4 mr-2" />
+              Save as Template for Future Use
+            </Button>
+          )}
           
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setStep('map')} disabled={isLoading}>
@@ -459,6 +662,90 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
           </Button>
         </TabsContent>
       </Tabs>
+      
+      {/* Template Dialog */}
+      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Form Template</DialogTitle>
+            <DialogDescription>
+              Save your current form values as a template for future use. You can apply this template to similar forms in the future.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="template-name">Template Name</Label>
+              <Input
+                id="template-name"
+                placeholder="e.g., Tax Form 2023"
+                value={newTemplateName}
+                onChange={(e) => setNewTemplateName(e.target.value)}
+              />
+            </div>
+            
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="template-type">Template Type</Label>
+              <Select value={templateType} onValueChange={setTemplateType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="generic">Generic Form</SelectItem>
+                  <SelectItem value="tax">Tax Form</SelectItem>
+                  <SelectItem value="tender">Tender Application</SelectItem>
+                  <SelectItem value="registration">Registration Form</SelectItem>
+                  <SelectItem value="application">Application Form</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleSaveTemplate}>
+              <Save className="h-4 w-4 mr-2" />
+              Save Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Templates Management Dialog */}
+      {Object.keys(templates).length > 0 && selectedTemplate && (
+        <Dialog>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Manage Templates</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4 max-h-[400px] overflow-y-auto">
+              {Object.entries(templates).map(([name, template]) => (
+                <div key={name} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">{name}</p>
+                    <p className="text-xs text-gray-500">
+                      Created: {new Date(template.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteTemplate(name)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 };
