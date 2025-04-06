@@ -1,7 +1,7 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/formatters";
 
 interface Account {
   id: string;
@@ -191,14 +191,6 @@ const ChartOfAccounts = () => {
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
   const renderAccount = (account: Account, level = 0) => {
     const isExpanded = expanded.includes(account.id);
     const hasChildren = account.children && account.children.length > 0;
@@ -228,7 +220,7 @@ const ChartOfAccounts = () => {
                     : 'text-purple-600'
               }`}
             >
-              {formatCurrency(account.balance)}
+              {formatCurrency(account.balance, "ZAR")}
             </span>
           </div>
         </div>
