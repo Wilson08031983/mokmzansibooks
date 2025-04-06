@@ -2,6 +2,15 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface Account {
   id: string;
@@ -12,12 +21,22 @@ interface Account {
   children?: Account[];
 }
 
+const accountSchema = z.object({
+  code: z.string().min(3, "Account code must be at least 3 characters"),
+  name: z.string().min(2, "Account name must be at least 2 characters"),
+  type: z.string(),
+  parentId: z.string().optional(),
+  balance: z.coerce.number().min(0, "Balance must be a positive number"),
+});
+
+type AccountFormValues = z.infer<typeof accountSchema>;
+
 const ChartOfAccounts = () => {
   const { toast } = useToast();
   const [expanded, setExpanded] = useState<string[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Sample accounts data
-  const accounts: Account[] = [
+  const [accounts, setAccounts] = useState<Account[]>([
     {
       id: "1000",
       code: "1000",
@@ -181,7 +200,18 @@ const ChartOfAccounts = () => {
         },
       ],
     },
-  ];
+  ]);
+
+  const form = useForm<AccountFormValues>({
+    resolver: zodResolver(accountSchema),
+    defaultValues: {
+      code: "",
+      name: "",
+      type: "Asset",
+      parentId: "",
+      balance: 0,
+    },
+  });
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => 
@@ -189,6 +219,65 @@ const ChartOfAccounts = () => {
         ? prev.filter(item => item !== id) 
         : [...prev, id]
     );
+  };
+
+  const getAllAccountPaths = (
+    accountArray: Account[] = accounts, 
+    parentPath: string = ""
+  ): { id: string; path: string }[] => {
+    let results: { id: string; path: string }[] = [];
+    
+    accountArray.forEach(account => {
+      const currentPath = parentPath ? `${parentPath} > ${account.name}` : account.name;
+      results.push({ id: account.id, path: currentPath });
+      
+      if (account.children && account.children.length > 0) {
+        results = [...results, ...getAllAccountPaths(account.children, currentPath)];
+      }
+    });
+    
+    return results;
+  };
+
+  const addNewAccount = (data: AccountFormValues) => {
+    const newAccount: Account = {
+      id: data.code,
+      code: data.code,
+      name: data.name,
+      type: data.type,
+      balance: data.balance,
+    };
+
+    if (!data.parentId) {
+      setAccounts(prev => [...prev, newAccount]);
+    } else {
+      const addToParent = (accountList: Account[]): Account[] => {
+        return accountList.map(account => {
+          if (account.id === data.parentId) {
+            return {
+              ...account,
+              children: [...(account.children || []), newAccount],
+            };
+          } else if (account.children) {
+            return {
+              ...account,
+              children: addToParent(account.children),
+            };
+          }
+          return account;
+        });
+      };
+
+      setAccounts(prev => addToParent(prev));
+    }
+
+    toast({
+      title: "Account Added",
+      description: `${data.name} (${data.code}) has been added to your chart of accounts.`,
+    });
+
+    setIsDialogOpen(false);
+    form.reset();
   };
 
   const renderAccount = (account: Account, level = 0) => {
@@ -234,13 +323,6 @@ const ChartOfAccounts = () => {
     );
   };
 
-  const addNewAccount = () => {
-    toast({
-      title: "Add Account",
-      description: "This functionality will be implemented soon",
-    });
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -248,12 +330,12 @@ const ChartOfAccounts = () => {
           <h1 className="text-2xl font-bold">Chart of Accounts</h1>
           <p className="text-gray-500">Organize your accounts in a structured hierarchy</p>
         </div>
-        <button 
-          onClick={addNewAccount}
+        <Button 
+          onClick={() => setIsDialogOpen(true)}
           className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md"
         >
           Add Account
-        </button>
+        </Button>
       </div>
 
       <Card>
@@ -273,6 +355,123 @@ const ChartOfAccounts = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Account</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(addNewAccount)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Code</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g. 1010" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g. Cash on Hand" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Type</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select account type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Asset">Asset</SelectItem>
+                          <SelectItem value="Liability">Liability</SelectItem>
+                          <SelectItem value="Equity">Equity</SelectItem>
+                          <SelectItem value="Revenue">Revenue</SelectItem>
+                          <SelectItem value="Expense">Expense</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="balance"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Opening Balance (ZAR)</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="0" step="0.01" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="parentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent Account (Optional)</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Leave empty for top-level account" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No Parent (Top Level)</SelectItem>
+                        {getAllAccountPaths().map(({ id, path }) => (
+                          <SelectItem key={id} value={id}>{path}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="submit">Add Account</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

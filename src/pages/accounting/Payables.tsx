@@ -5,6 +5,14 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/utils/formatters";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Payable {
   id: string;
@@ -14,10 +22,37 @@ interface Payable {
   dueDate: string;
   status: "paid" | "pending" | "overdue";
   daysOverdue?: number;
+  description?: string;
 }
+
+// Sample vendors for dropdown
+const VENDORS = [
+  "Office Supplies Inc.",
+  "Utility Company",
+  "Web Hosting Services",
+  "Equipment Rental",
+  "Marketing Agency",
+  "Software Solutions Ltd",
+  "Printing Services Co.",
+  "Cleaning Services",
+  "Property Management",
+  "Insurance Provider"
+];
+
+// Form schema for new bill
+const billSchema = z.object({
+  vendor: z.string().min(1, "Vendor is required"),
+  billNumber: z.string().min(1, "Bill number is required"),
+  amount: z.coerce.number().positive("Amount must be positive"),
+  dueDate: z.string().min(1, "Due date is required"),
+  description: z.string().optional(),
+});
+
+type BillFormValues = z.infer<typeof billSchema>;
 
 const Payables = () => {
   const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   // Sample accounts payable data
   const [payables, setPayables] = useState<Payable[]>([
@@ -65,6 +100,17 @@ const Payables = () => {
     },
   ]);
 
+  const form = useForm<BillFormValues>({
+    resolver: zodResolver(billSchema),
+    defaultValues: {
+      vendor: "",
+      billNumber: "",
+      amount: 0,
+      dueDate: new Date().toISOString().split('T')[0],
+      description: "",
+    },
+  });
+
   const payBill = (id: string) => {
     setPayables(prevPayables => 
       prevPayables.map(payable => 
@@ -77,6 +123,37 @@ const Payables = () => {
     toast({
       title: "Payment Processed",
       description: "The bill has been marked as paid",
+    });
+  };
+
+  const addBill = (data: BillFormValues) => {
+    // Create a bill number if not provided
+    const billNumber = data.billNumber || `BILL-${new Date().getFullYear()}-${String(payables.length + 1).padStart(3, '0')}`;
+    
+    const newBill: Payable = {
+      id: (payables.length + 1).toString(),
+      vendor: data.vendor,
+      billNumber,
+      amount: data.amount,
+      dueDate: data.dueDate,
+      status: "pending",
+      description: data.description,
+    };
+
+    setPayables(prev => [newBill, ...prev]);
+    
+    toast({
+      title: "Bill Added",
+      description: `New bill for ${formatCurrency(data.amount, "ZAR")} has been added to your payables.`,
+    });
+    
+    setIsDialogOpen(false);
+    form.reset({
+      vendor: "",
+      billNumber: "",
+      amount: 0,
+      dueDate: new Date().toISOString().split('T')[0],
+      description: "",
     });
   };
 
@@ -101,7 +178,7 @@ const Payables = () => {
           <p className="text-gray-500">Manage bills and payments to your suppliers</p>
         </div>
         <Button 
-          onClick={() => toast({ title: "New Bill", description: "Add a new bill to your payables" })}
+          onClick={() => setIsDialogOpen(true)}
           className="bg-primary hover:bg-primary/90 text-white"
         >
           Add Bill
@@ -200,6 +277,106 @@ const Payables = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Add New Bill</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(addBill)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="vendor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vendor</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select vendor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {VENDORS.map(vendor => (
+                          <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="billNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bill Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter bill number" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount (ZAR)</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="0.01" step="0.01" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="dueDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Due Date</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="date" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="Enter bill description" rows={2} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="submit">Add Bill</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

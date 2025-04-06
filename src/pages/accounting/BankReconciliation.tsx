@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/utils/formatters";
+import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface BankTransaction {
   id: string;
@@ -12,10 +14,13 @@ interface BankTransaction {
   description: string;
   amount: number;
   reconciled: boolean;
+  reconciledDate?: string;
 }
 
 const BankReconciliation = () => {
   const { toast } = useToast();
+  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
+  const [isReconciling, setIsReconciling] = useState(false);
   
   // Sample bank transactions data
   const [transactions, setTransactions] = useState<BankTransaction[]>([
@@ -67,13 +72,36 @@ const BankReconciliation = () => {
   };
 
   const reconcileSelected = () => {
-    toast({
-      title: "Reconciliation Saved",
-      description: "Your bank reconciliation has been updated",
-    });
+    setIsAlertDialogOpen(true);
+  };
+
+  const confirmReconciliation = () => {
+    setIsReconciling(true);
+    
+    // Simulate processing delay
+    setTimeout(() => {
+      const currentDate = new Date().toISOString().split('T')[0];
+      
+      setTransactions(prevTransactions => 
+        prevTransactions.map(transaction => 
+          transaction.reconciled
+            ? { ...transaction, reconciledDate: currentDate }
+            : transaction
+        )
+      );
+      
+      setIsReconciling(false);
+      setIsAlertDialogOpen(false);
+      
+      toast({
+        title: "Reconciliation Saved",
+        description: "Your bank reconciliation has been updated successfully.",
+      });
+    }, 1000);
   };
 
   const unreconciledCount = transactions.filter(t => !t.reconciled).length;
+  const reconciledCount = transactions.filter(t => t.reconciled).length;
   
   return (
     <div className="space-y-6">
@@ -85,7 +113,7 @@ const BankReconciliation = () => {
         <Button 
           onClick={reconcileSelected}
           className="bg-primary hover:bg-primary/90 text-white"
-          disabled={unreconciledCount === 0}
+          disabled={unreconciledCount === transactions.length || reconciledCount === 0}
         >
           Save Reconciliation
         </Button>
@@ -98,15 +126,16 @@ const BankReconciliation = () => {
           </CardHeader>
           <CardContent>
             <div className="border rounded-md">
-              <div className="grid grid-cols-5 bg-gray-100 p-3 font-semibold border-b">
+              <div className="grid grid-cols-6 bg-gray-100 p-3 font-semibold border-b">
                 <div>Date</div>
                 <div className="col-span-2">Description</div>
                 <div className="text-right">Amount</div>
                 <div className="text-center">Reconciled</div>
+                <div className="text-center">Status</div>
               </div>
               <div>
                 {transactions.map((transaction) => (
-                  <div key={transaction.id} className="grid grid-cols-5 p-3 border-b last:border-b-0 hover:bg-gray-50">
+                  <div key={transaction.id} className="grid grid-cols-6 p-3 border-b last:border-b-0 hover:bg-gray-50">
                     <div>{transaction.date}</div>
                     <div className="col-span-2">{transaction.description}</div>
                     <div className={`text-right ${transaction.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -117,6 +146,17 @@ const BankReconciliation = () => {
                         checked={transaction.reconciled} 
                         onCheckedChange={() => toggleReconciled(transaction.id)}
                       />
+                    </div>
+                    <div className="text-center">
+                      {transaction.reconciledDate ? (
+                        <Badge className="bg-green-500">
+                          Reconciled on {transaction.reconciledDate}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                          Pending
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -137,11 +177,25 @@ const BankReconciliation = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm">Reconciled</span>
-                <span className="font-medium">{transactions.filter(t => t.reconciled).length}</span>
+                <div className="flex items-center">
+                  <span className="font-medium">{reconciledCount}</span>
+                  {reconciledCount > 0 && (
+                    <Badge className="ml-2 bg-green-500 text-xs">
+                      {Math.round((reconciledCount / transactions.length) * 100)}%
+                    </Badge>
+                  )}
+                </div>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm">Unreconciled</span>
-                <span className="font-medium">{unreconciledCount}</span>
+                <div className="flex items-center">
+                  <span className="font-medium">{unreconciledCount}</span>
+                  {unreconciledCount > 0 && (
+                    <Badge className="ml-2 bg-yellow-500 text-xs">
+                      {Math.round((unreconciledCount / transactions.length) * 100)}%
+                    </Badge>
+                  )}
+                </div>
               </div>
               <div className="border-t pt-4 mt-4">
                 <div className="flex justify-between items-center">
@@ -150,11 +204,44 @@ const BankReconciliation = () => {
                     {formatCurrency(transactions.reduce((sum, t) => sum + t.amount, 0), "ZAR")}
                   </span>
                 </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-sm font-medium">Reconciled Balance</span>
+                  <span className="font-medium text-green-600">
+                    {formatCurrency(
+                      transactions
+                        .filter(t => t.reconciledDate)
+                        .reduce((sum, t) => sum + t.amount, 0),
+                      "ZAR"
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={isAlertDialogOpen} onOpenChange={setIsAlertDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Reconciliation</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to mark {reconciledCount} transaction{reconciledCount !== 1 ? 's' : ''} as reconciled. 
+              This action will update your accounting records to match your bank statement. 
+              Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmReconciliation}
+              disabled={isReconciling}
+            >
+              {isReconciling ? "Processing..." : "Confirm Reconciliation"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

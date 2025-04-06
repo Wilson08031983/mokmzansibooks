@@ -4,6 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 interface JournalEntry {
   id: string;
@@ -14,8 +23,41 @@ interface JournalEntry {
   amount: number;
 }
 
+// Sample accounts for the form dropdown
+const ACCOUNTS = [
+  "1100 - Cash",
+  "1120 - Accounts Receivable",
+  "1210 - Equipment",
+  "1220 - Buildings",
+  "2110 - Accounts Payable",
+  "2120 - Accrued Expenses",
+  "3100 - Capital",
+  "3200 - Retained Earnings",
+  "4100 - Sales Revenue",
+  "4200 - Service Revenue",
+  "5100 - Salaries Expense",
+  "5200 - Rent Expense",
+  "5300 - Utilities Expense",
+  "6200 - Rent Expense"
+];
+
+// Form schema for new journal entry
+const journalEntrySchema = z.object({
+  date: z.string().min(1, "Date is required"),
+  description: z.string().min(3, "Description is required"),
+  debitAccount: z.string().min(1, "Debit account is required"),
+  creditAccount: z.string().min(1, "Credit account is required"),
+  amount: z.coerce.number().positive("Amount must be positive"),
+}).refine(data => data.debitAccount !== data.creditAccount, {
+  message: "Debit and credit accounts cannot be the same",
+  path: ["creditAccount"],
+});
+
+type JournalEntryFormValues = z.infer<typeof journalEntrySchema>;
+
 const JournalEntries = () => {
   const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   // Sample journal entries data
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([
@@ -53,10 +95,41 @@ const JournalEntries = () => {
     },
   ]);
 
-  const addNewEntry = () => {
+  const form = useForm<JournalEntryFormValues>({
+    resolver: zodResolver(journalEntrySchema),
+    defaultValues: {
+      date: new Date().toISOString().split('T')[0],
+      description: "",
+      debitAccount: "",
+      creditAccount: "",
+      amount: 0,
+    },
+  });
+
+  const addNewEntry = (data: JournalEntryFormValues) => {
+    const newEntry: JournalEntry = {
+      id: (journalEntries.length + 1).toString(),
+      date: data.date,
+      description: data.description,
+      debitAccount: data.debitAccount,
+      creditAccount: data.creditAccount,
+      amount: data.amount,
+    };
+
+    setJournalEntries(prev => [newEntry, ...prev]);
+    
     toast({
-      title: "Add Journal Entry",
-      description: "This functionality will be implemented soon",
+      title: "Journal Entry Added",
+      description: `New entry for ${formatCurrency(data.amount, "ZAR")} has been recorded.`,
+    });
+    
+    setIsDialogOpen(false);
+    form.reset({
+      date: new Date().toISOString().split('T')[0],
+      description: "",
+      debitAccount: "",
+      creditAccount: "",
+      amount: 0,
     });
   };
 
@@ -68,7 +141,7 @@ const JournalEntries = () => {
           <p className="text-gray-500">Record and manage your accounting transactions</p>
         </div>
         <Button 
-          onClick={addNewEntry}
+          onClick={() => setIsDialogOpen(true)}
           className="bg-primary hover:bg-primary/90 text-white"
         >
           Add Journal Entry
@@ -102,6 +175,120 @@ const JournalEntries = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Add Journal Entry</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(addNewEntry)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="date" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount (ZAR)</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="0.01" step="0.01" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="Enter transaction description" rows={2} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="debitAccount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Debit Account</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select account" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ACCOUNTS.map(account => (
+                            <SelectItem key={account} value={account}>{account}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="creditAccount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Credit Account</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select account" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ACCOUNTS.map(account => (
+                            <SelectItem key={account} value={account}>{account}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter>
+                <Button type="submit">Add Entry</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

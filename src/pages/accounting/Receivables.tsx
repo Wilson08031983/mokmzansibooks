@@ -5,6 +5,14 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/utils/formatters";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Receivable {
   id: string;
@@ -14,10 +22,37 @@ interface Receivable {
   dueDate: string;
   status: "paid" | "overdue" | "pending";
   daysOverdue?: number;
+  description?: string;
 }
+
+// Sample customers for dropdown
+const CUSTOMERS = [
+  "ABC Corporation",
+  "XYZ Inc.",
+  "Global Enterprises",
+  "Tech Solutions",
+  "Acme Ltd",
+  "Innovative Systems",
+  "Premier Services",
+  "Dynamic Solutions",
+  "Future Tech Inc.",
+  "Strategic Partners"
+];
+
+// Form schema for new invoice
+const invoiceSchema = z.object({
+  customer: z.string().min(1, "Customer is required"),
+  invoiceNumber: z.string().min(1, "Invoice number is required"),
+  amount: z.coerce.number().positive("Amount must be positive"),
+  dueDate: z.string().min(1, "Due date is required"),
+  description: z.string().optional(),
+});
+
+type InvoiceFormValues = z.infer<typeof invoiceSchema>;
 
 const Receivables = () => {
   const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   // Sample accounts receivable data
   const [receivables, setReceivables] = useState<Receivable[]>([
@@ -65,10 +100,52 @@ const Receivables = () => {
     },
   ]);
 
+  const form = useForm<InvoiceFormValues>({
+    resolver: zodResolver(invoiceSchema),
+    defaultValues: {
+      customer: "",
+      invoiceNumber: "",
+      amount: 0,
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+      description: "",
+    },
+  });
+
   const sendReminder = (id: string) => {
     toast({
       title: "Reminder Sent",
       description: "Payment reminder has been sent to the customer",
+    });
+  };
+
+  const createInvoice = (data: InvoiceFormValues) => {
+    // Create an invoice number if not provided
+    const invoiceNumber = data.invoiceNumber || `INV-${new Date().getFullYear()}-${String(receivables.length + 1).padStart(3, '0')}`;
+    
+    const newInvoice: Receivable = {
+      id: (receivables.length + 1).toString(),
+      customer: data.customer,
+      invoiceNumber,
+      amount: data.amount,
+      dueDate: data.dueDate,
+      status: "pending",
+      description: data.description,
+    };
+
+    setReceivables(prev => [newInvoice, ...prev]);
+    
+    toast({
+      title: "Invoice Created",
+      description: `New invoice for ${formatCurrency(data.amount, "ZAR")} has been created.`,
+    });
+    
+    setIsDialogOpen(false);
+    form.reset({
+      customer: "",
+      invoiceNumber: "",
+      amount: 0,
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      description: "",
     });
   };
 
@@ -93,7 +170,7 @@ const Receivables = () => {
           <p className="text-gray-500">Track money owed to your business by customers</p>
         </div>
         <Button 
-          onClick={() => toast({ title: "New Invoice", description: "Create a new invoice" })}
+          onClick={() => setIsDialogOpen(true)}
           className="bg-primary hover:bg-primary/90 text-white"
         >
           Create Invoice
@@ -192,6 +269,106 @@ const Receivables = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Create New Invoice</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(createInvoice)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="customer"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select customer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CUSTOMERS.map(customer => (
+                          <SelectItem key={customer} value={customer}>{customer}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="invoiceNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invoice Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Auto-generated if empty" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount (ZAR)</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="0.01" step="0.01" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="dueDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Due Date</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="date" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="Enter invoice description" rows={2} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="submit">Create Invoice</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
