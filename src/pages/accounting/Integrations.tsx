@@ -5,14 +5,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { 
   Building, 
-  CreditCard, 
-  CheckCircle, 
-  ArrowRight, 
-  RefreshCw,
   AlertCircle,
-  Settings,
   Key,
   Link,
+  CheckCircle,
+  RefreshCw,
   Link2Off
 } from "lucide-react";
 import {
@@ -25,17 +22,17 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import IntegrationGrid from "@/components/accounting/IntegrationGrid";
+import { formatLastSynced } from "@/components/accounting/IntegrationCard";
 
 interface BankIntegration {
   id: string;
@@ -285,12 +282,6 @@ const AccountingIntegrations = () => {
     });
   };
 
-  const formatLastSynced = (dateString?: string) => {
-    if (!dateString) return "Never";
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  };
-
   const getConnectedIntegrations = () => {
     const connectedBanks = banks.filter(bank => bank.connected);
     const connectedSoftware = accountingSoftware.filter(software => software.connected);
@@ -309,165 +300,29 @@ const AccountingIntegrations = () => {
       </div>
 
       <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-medium mb-4 flex items-center">
-            <Building className="mr-2 h-5 w-5" />
-            Banking Integrations
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {banks.map((bank) => (
-              <Card key={bank.id} className={`hover:shadow-md transition-shadow ${bank.connected ? 'border-green-200' : ''}`}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 mr-2 bg-gray-100 rounded flex items-center justify-center">
-                      <CreditCard className="h-4 w-4" />
-                    </div>
-                    <CardTitle className="text-base">{bank.name}</CardTitle>
-                  </div>
-                  {bank.connected && <CheckCircle className="h-5 w-5 text-green-500" />}
-                </CardHeader>
-                <CardContent>
-                  {bank.connected && (
-                    <div className="mb-3 text-sm text-gray-500">
-                      <p>Last synced: {formatLastSynced(bank.lastSynced)}</p>
-                      <div className="flex items-center mt-2">
-                        <Switch
-                          id={`auto-sync-${bank.id}`}
-                          checked={bank.autoSync !== false}
-                          onCheckedChange={(checked) => toggleAutoSync(bank.id, 'bank', checked)}
-                        />
-                        <Label htmlFor={`auto-sync-${bank.id}`} className="ml-2 text-xs">
-                          Auto-sync every 24 hours
-                        </Label>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex justify-end space-x-2">
-                    {bank.connected ? (
-                      <>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => syncIntegration(bank.id, 'bank')}
-                        >
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Sync
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDisconnect(bank.id, 'bank')}
-                        >
-                          <Link2Off className="mr-2 h-4 w-4" />
-                          Disconnect
-                        </Button>
-                      </>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        disabled={connecting === bank.id}
-                        onClick={() => handleOpenIntegrationDialog(bank, 'bank')}
-                      >
-                        {connecting === bank.id ? (
-                          <>
-                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                            Connecting...
-                          </>
-                        ) : (
-                          <>
-                            <Link className="mr-2 h-4 w-4" />
-                            Connect
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <IntegrationGrid
+          title="Banking Integrations"
+          icon={<Building className="mr-2 h-5 w-5" />}
+          integrations={banks}
+          type="bank"
+          connecting={connecting}
+          onOpenDialog={handleOpenIntegrationDialog}
+          onDisconnect={handleDisconnect}
+          onSync={syncIntegration}
+          onToggleAutoSync={toggleAutoSync}
+        />
 
-        <div>
-          <h2 className="text-xl font-medium mb-4 flex items-center">
-            <Building className="mr-2 h-5 w-5" />
-            Accounting Software
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {accountingSoftware.map((software) => (
-              <Card key={software.id} className={`hover:shadow-md transition-shadow ${software.connected ? 'border-green-200' : ''}`}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 mr-2 bg-gray-100 rounded flex items-center justify-center">
-                      <Building className="h-4 w-4" />
-                    </div>
-                    <CardTitle className="text-base">{software.name}</CardTitle>
-                  </div>
-                  {software.connected && <CheckCircle className="h-5 w-5 text-green-500" />}
-                </CardHeader>
-                <CardContent>
-                  {software.connected && (
-                    <div className="mb-3 text-sm text-gray-500">
-                      <p>Last synced: {formatLastSynced(software.lastSynced)}</p>
-                      <div className="flex items-center mt-2">
-                        <Switch
-                          id={`auto-sync-${software.id}`}
-                          checked={software.autoSync !== false}
-                          onCheckedChange={(checked) => toggleAutoSync(software.id, 'software', checked)}
-                        />
-                        <Label htmlFor={`auto-sync-${software.id}`} className="ml-2 text-xs">
-                          Auto-sync every 24 hours
-                        </Label>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex justify-end space-x-2">
-                    {software.connected ? (
-                      <>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => syncIntegration(software.id, 'software')}
-                        >
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Sync
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDisconnect(software.id, 'software')}
-                        >
-                          <Link2Off className="mr-2 h-4 w-4" />
-                          Disconnect
-                        </Button>
-                      </>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        disabled={connecting === software.id}
-                        onClick={() => handleOpenIntegrationDialog(software, 'software')}
-                      >
-                        {connecting === software.id ? (
-                          <>
-                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                            Connecting...
-                          </>
-                        ) : (
-                          <>
-                            <Link className="mr-2 h-4 w-4" />
-                            Connect
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <IntegrationGrid
+          title="Accounting Software"
+          icon={<Building className="mr-2 h-5 w-5" />}
+          integrations={accountingSoftware}
+          type="software"
+          connecting={connecting}
+          onOpenDialog={handleOpenIntegrationDialog}
+          onDisconnect={handleDisconnect}
+          onSync={syncIntegration}
+          onToggleAutoSync={toggleAutoSync}
+        />
 
         <div>
           <Card className="border-dashed border-gray-300">
