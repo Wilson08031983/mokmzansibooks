@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { FinancialDataProvider } from "./contexts/FinancialDataContext";
+import { NotificationsProvider } from "./contexts/NotificationsContext";
 import { useState } from "react";
 
 // Pages
@@ -54,53 +55,55 @@ const App = () => {
       <ThemeProvider>
         <AuthProvider>
           <FinancialDataProvider>
-            <TooltipProvider>
-              <BrowserRouter>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route element={<PublicLayout />}>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/signin" element={<SignIn />} />
-                    <Route path="/signup" element={<SignUp />} />
-                    <Route path="/payment" element={<Payment />} />
-                  </Route>
-                  
-                  {/* Protected Routes */}
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/onboarding" element={<Onboarding />} />
-                    <Route element={<DashboardLayout />}>
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/clients" element={<Clients />} />
-                      <Route path="/invoices" element={<Invoices />} />
-                      <Route path="/invoices/new" element={<NewInvoice />} />
-                      <Route path="/invoices/select-template" element={<SelectTemplate />} />
-                      <Route path="/invoices/quotes" element={<Quotes />} />
-                      <Route path="/invoices/quotes/new" element={<NewQuote />} />
-                      <Route path="/invoices/quotes/select-template" element={<SelectQuoteTemplate />} />
-                      <Route path="/quickfill" element={<QuickFill />} />
-                      <Route path="/accounting" element={<Accounting />} />
-                      <Route path="/accounting/transactions" element={<AccountingTransactions />} />
-                      <Route path="/accounting/reports" element={<AccountingReports />} />
-                      <Route path="/accounting/integrations" element={<AccountingIntegrations />} />
-                      <Route path="/tax" element={<Tax />} />
-                      <Route path="/tax/vat-returns" element={<VatReturns />} />
-                      <Route path="/tax/income-tax" element={<IncomeTax />} />
-                      <Route path="/tax/paye" element={<Paye />} />
-                      <Route path="/tax/calendar" element={<TaxCalendar />} />
-                      <Route path="/tax/documents" element={<TaxDocuments />} />
-                      <Route path="/tax/settings" element={<TaxSettings />} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/settings" element={<Settings />} />
+            <NotificationsProvider>
+              <TooltipProvider>
+                <BrowserRouter>
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route element={<PublicLayout />}>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/signin" element={<SignIn />} />
+                      <Route path="/signup" element={<SignUp />} />
+                      <Route path="/payment" element={<Payment />} />
                     </Route>
-                  </Route>
-                  
-                  {/* Catch-all route */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-              <Toaster />
-              <Sonner />
-            </TooltipProvider>
+                    
+                    {/* Protected Routes */}
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/onboarding" element={<Onboarding />} />
+                      <Route element={<DashboardLayout />}>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/clients" element={<Clients />} />
+                        <Route path="/invoices" element={<Invoices />} />
+                        <Route path="/invoices/new" element={<NewInvoice />} />
+                        <Route path="/invoices/select-template" element={<SelectTemplate />} />
+                        <Route path="/invoices/quotes" element={<Quotes />} />
+                        <Route path="/invoices/quotes/new" element={<NewQuote />} />
+                        <Route path="/invoices/quotes/select-template" element={<SelectQuoteTemplate />} />
+                        <Route path="/quickfill" element={<QuickFill />} />
+                        <Route path="/accounting" element={<Accounting />} />
+                        <Route path="/accounting/transactions" element={<AccountingTransactions />} />
+                        <Route path="/accounting/reports" element={<AccountingReports />} />
+                        <Route path="/accounting/integrations" element={<AccountingIntegrations />} />
+                        <Route path="/tax" element={<Tax />} />
+                        <Route path="/tax/vat-returns" element={<VatReturns />} />
+                        <Route path="/tax/income-tax" element={<IncomeTax />} />
+                        <Route path="/tax/paye" element={<Paye />} />
+                        <Route path="/tax/calendar" element={<TaxCalendar />} />
+                        <Route path="/tax/documents" element={<TaxDocuments />} />
+                        <Route path="/tax/settings" element={<TaxSettings />} />
+                        <Route path="/reports" element={<Reports />} />
+                        <Route path="/settings" element={<Settings />} />
+                      </Route>
+                    </Route>
+                    
+                    {/* Catch-all route */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+                <Toaster />
+                <Sonner />
+              </TooltipProvider>
+            </NotificationsProvider>
           </FinancialDataProvider>
         </AuthProvider>
       </ThemeProvider>
