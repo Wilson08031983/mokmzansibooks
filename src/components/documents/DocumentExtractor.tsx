@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { extractTextFromDocuments, storeExtractedData } from '@/utils/pdfUtils';
-import { Loader2, Upload, FileText, CheckCircle, AlertCircle, FileType } from 'lucide-react';
+import { Loader2, Upload, FileText, CheckCircle, AlertCircle, Save } from 'lucide-react';
 
 interface DocumentExtractorProps {
   className?: string;
@@ -21,6 +21,8 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
   const [extractedType, setExtractedType] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [extractedFields, setExtractedFields] = useState<number>(0);
+  const [extractedData, setExtractedData] = useState<Record<string, string> | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -32,6 +34,7 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
     setFile(file);
     setStatus('processing');
     setIsLoading(true);
+    setIsSaved(false);
     
     try {
       // Extract text from the document using OCR + AI (simulated)
@@ -46,18 +49,9 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
       // Count extracted fields (excluding internal fields)
       const fieldCount = Object.keys(result.data).filter(key => !key.startsWith('_')).length;
       setExtractedFields(fieldCount);
-      
-      // Store the extracted data
-      storeExtractedData(result.type, result.data);
+      setExtractedData(result.data);
       setExtractedType(result.type);
       setStatus('success');
-      
-      // Create and dispatch a custom event for components to update
-      const storageEvent = new Event('storageupdated');
-      window.dispatchEvent(storageEvent);
-      
-      // Also trigger standard storage event for compatibility
-      window.dispatchEvent(new Event('storage'));
       
       // Call the callback if provided
       if (onExtracted) {
@@ -74,11 +68,35 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
     }
   };
   
+  const handleSave = () => {
+    if (!extractedData || !extractedType) return;
+    
+    try {
+      // Store the extracted data
+      storeExtractedData(extractedType, extractedData);
+      
+      // Create and dispatch a custom event for components to update
+      const storageEvent = new Event('storageupdated');
+      window.dispatchEvent(storageEvent);
+      
+      // Also trigger standard storage event for compatibility
+      window.dispatchEvent(new Event('storage'));
+      
+      setIsSaved(true);
+      toast.success(`Saved ${extractedFields} fields from ${extractedType.toUpperCase()} document to your data`);
+    } catch (error) {
+      console.error('Error saving extracted data:', error);
+      toast.error('Error saving extracted data');
+    }
+  };
+  
   const handleReset = () => {
     setFile(null);
     setExtractedType(null);
     setExtractedFields(0);
+    setExtractedData(null);
     setStatus('idle');
+    setIsSaved(false);
     
     // Clear the file input
     if (fileInputRef.current) {
@@ -159,7 +177,9 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
           
           {status === 'success' && extractedType && (
             <p className="text-xs text-green-600">
-              This data will be available for auto-filling forms
+              {isSaved 
+                ? "Data saved successfully! Ready for auto-filling forms." 
+                : "Click Save to store this data for auto-filling forms"}
             </p>
           )}
         </div>
@@ -175,7 +195,27 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
       </div>
       
       <div className="flex gap-2 mt-4">
-        {status === 'success' || status === 'error' ? (
+        {status === 'success' && !isSaved ? (
+          <>
+            <Button 
+              variant="success" 
+              className="w-1/2"
+              onClick={handleSave}
+              disabled={isLoading || isSaved}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Extracted Data
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-1/2"
+              onClick={handleReset}
+              disabled={isLoading}
+            >
+              Upload Another Document
+            </Button>
+          </>
+        ) : status === 'success' || status === 'error' ? (
           <Button 
             variant="outline" 
             className="w-full"
