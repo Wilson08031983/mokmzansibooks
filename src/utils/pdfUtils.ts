@@ -1,3 +1,4 @@
+
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { InvoiceData } from "@/types/invoice";
@@ -281,8 +282,8 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["Business Status"] = "In Business";
     extractedData["Company Type"] = "Private Company";
     extractedData["Financial Year End"] = "February";
-    extractedData["Physical Address"] = "123 Main Street, Polokwane, 0700";
-    extractedData["Postal Address"] = "P.O. Box 12345, Polokwane, 0700";
+    extractedData["Physical Address"] = "Unit 5, Building 2, Maxwell Office Park, Waterfall City, Midrand, 2090";
+    extractedData["Postal Address"] = "P.O. Box 78954, Sandton, 2146";
   } else if (documentType === "tax") {
     extractedData["Tax Number"] = "9012345678";
     extractedData["Tax Status"] = "Compliant";
@@ -293,6 +294,7 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["Income Tax Reference"] = "1901234567";
     extractedData["SDL Reference"] = "L901234567";
     extractedData["UIF Reference"] = "U901234567";
+    extractedData["Physical Address"] = "Unit 5, Building 2, Maxwell Office Park, Waterfall City, Midrand, 2090";
   } else if (documentType === "bbee") {
     extractedData["B-BBEE Level"] = "Level 1";
     extractedData["Verification Agency"] = "BEE Verification Agency";
@@ -304,6 +306,7 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["EME/QSE Status"] = "Qualifying Small Enterprise";
     extractedData["Procurement Recognition"] = "135%";
     extractedData["Empowering Supplier"] = "Yes";
+    extractedData["Physical Address"] = "Unit 5, Building 2, Maxwell Office Park, Waterfall City, Midrand, 2090";
   } else if (documentType === "csd") {
     extractedData["CSD Registration"] = "MAAA0987654";
     extractedData["Supplier Number"] = "SN12345678";
@@ -317,17 +320,19 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["Banking Details Verified"] = "Yes";
     extractedData["CIDB Registration"] = "123456";
     extractedData["Industry Classification"] = "Information Technology";
+    extractedData["Physical Address"] = "Unit 5, Building 2, Maxwell Office Park, Waterfall City, Midrand, 2090";
   } else if (documentType === "bank") {
     extractedData["Bank Name"] = "First National Bank";
     extractedData["Account Holder"] = "Morwa Moabelo (Pty) Ltd";
     extractedData["Account Number"] = "62123456789";
     extractedData["Branch Code"] = "250655";
     extractedData["Account Type"] = "Business";
-    extractedData["Branch Name"] = "Polokwane";
+    extractedData["Branch Name"] = "Midrand";
     extractedData["SWIFT Code"] = "FIRNZAJJ";
     extractedData["Date Issued"] = "2023-04-01";
     extractedData["Bank Official"] = "Jane Smith";
     extractedData["Bank Contact"] = "011 123 4567";
+    extractedData["Bank Address"] = "FNB Midrand, Shop 51, Carlswald Decor Centre, Cnr New Rd & Harry Galaun Dr, Midrand, 1685";
   } else if (documentType === "invoice" || documentType === "rfq" || documentType === "quote") {
     extractedData["Client Name"] = "ABC Corporation";
     extractedData["Client Contact"] = "Jane Smith";
@@ -341,6 +346,7 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["VAT Amount"] = "R2,250.00";
     extractedData["Total Amount"] = "R17,250.00";
     extractedData["Client Address"] = "456 Corporate Park, Johannesburg, 2000";
+    extractedData["Company Address"] = "Unit 5, Building 2, Maxwell Office Park, Waterfall City, Midrand, 2090";
   } else if (documentType === "tender") {
     extractedData["Tender Number"] = "TEND2023/456";
     extractedData["Issuing Department"] = "Department of Public Works";
@@ -352,6 +358,7 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["Contact Phone"] = "012 345 6789";
     extractedData["CIDB Requirement"] = "Grade 3 IT";
     extractedData["B-BBEE Requirement"] = "Level 1-4";
+    extractedData["Physical Address"] = "Unit 5, Building 2, Maxwell Office Park, Waterfall City, Midrand, 2090";
   } else if (documentType === "application") {
     extractedData["Form Type"] = "Vendor Application";
     extractedData["Applicant Name"] = "Morwa Moabelo (Pty) Ltd";
@@ -363,6 +370,7 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["Years in Business"] = "5";
     extractedData["Employees"] = "10-50";
     extractedData["Annual Turnover"] = "R5,000,000 - R10,000,000";
+    extractedData["Physical Address"] = "Unit 5, Building 2, Maxwell Office Park, Waterfall City, Midrand, 2090";
   }
   
   return { 
