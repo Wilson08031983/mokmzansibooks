@@ -40,6 +40,7 @@ import Paye from "./pages/tax/Paye";
 import TaxCalendar from "./pages/tax/TaxCalendar";
 import TaxDocuments from "./pages/tax/TaxDocuments";
 import TaxSettings from "./pages/tax/TaxSettings";
+import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -99,6 +100,7 @@ const App = () => {
                         <Route path="/tax/calendar" element={<TaxCalendar />} />
                         <Route path="/tax/documents" element={<TaxDocuments />} />
                         <Route path="/tax/settings" element={<TaxSettings />} />
+                        <Route path="/inventory" element={<Inventory />} />
                         <Route path="/reports" element={<Reports />} />
                         <Route path="/settings" element={<Settings />} />
                       </Route>

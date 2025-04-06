@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import Logo from "./Logo";
 import { 
-  BarChart3, Home, Users, FileText, Calculator, Receipt, PieChart, Settings, LogOut
+  BarChart3, Home, Users, FileText, Calculator, Receipt, PieChart, Settings, LogOut, Package
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
@@ -39,6 +39,7 @@ const DashboardSidebar = () => {
     { icon: FileText, label: "Invoices & Quotes", path: "/invoices" },
     { icon: Calculator, label: "Accounting", path: "/accounting" },
     { icon: Receipt, label: "Tax", path: "/tax" },
+    { icon: Package, label: "Inventory", path: "/inventory" },
     { icon: PieChart, label: "Reports", path: "/reports" },
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
