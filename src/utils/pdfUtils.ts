@@ -658,6 +658,8 @@ export const applyFormTemplate = (
     name: string;
     fields: Record<string, string>;
     type: string;
+    createdAt?: string;
+    lastUsed?: string;
   },
   formFields: Array<{ id: string; name: string; type: string }>,
   updateDates: boolean = true
@@ -703,7 +705,9 @@ export const applyFormTemplate = (
           const originalDate = new Date(value);
           if (!isNaN(originalDate.getTime())) {
             // Calculate how many days to add based on the original date
-            const daysDiff = Math.floor((originalDate.getTime() - new Date(template.lastUsed).getTime()) / (1000 * 60 * 60 * 24));
+            const daysDiff = template.lastUsed 
+              ? Math.floor((originalDate.getTime() - new Date(template.lastUsed).getTime()) / (1000 * 60 * 60 * 24))
+              : 0;
             
             // Create a new date by adding the same number of days from today
             const newDate = new Date(today);

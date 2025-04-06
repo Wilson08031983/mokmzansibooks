@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   Loader2, Upload, Download, Eye, ArrowRight, Edit, Save, Trash, 
-  AlertTriangle, FileText, FileCheck, Template, Plus, Star, StarOff
+  AlertTriangle, FileText, FileCheck, FileSpreadsheet, Plus, Star, StarOff
 } from 'lucide-react';
 import { 
   identifyPdfFormFields, 
@@ -46,16 +45,13 @@ interface FillablePdfFormProps {
 }
 
 export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) => {
-  // Main state
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'upload' | 'map' | 'edit' | 'preview'>('upload');
   
-  // File management state
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [finalPdfUrl, setFinalPdfUrl] = useState<string | null>(null);
   
-  // PDF and form data state
   const [formFields, setFormFields] = useState<Array<{
     id: string;
     name: string;
@@ -70,7 +66,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
   const [autoFillThreshold, setAutoFillThreshold] = useState(0.7);
   const [showLowConfidenceOnly, setShowLowConfidenceOnly] = useState(false);
   
-  // Template management
   const [templates, setTemplates] = useState<Record<string, {
     name: string;
     fields: Record<string, string>;
@@ -84,15 +79,12 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [updateDates, setUpdateDates] = useState(true);
   
-  // References
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Load stored data and templates on component mount
   useEffect(() => {
     setExtractedData(getStoredExtractedData());
     setTemplates(getStoredFormTemplates());
     
-    // Set up event listeners for updates
     const handleStorageUpdate = () => {
       setExtractedData(getStoredExtractedData());
     };
@@ -110,7 +102,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     };
   }, []);
   
-  // Update preview when file changes
   useEffect(() => {
     if (pdfFile) {
       const url = URL.createObjectURL(pdfFile);
@@ -122,7 +113,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     }
   }, [pdfFile]);
   
-  // Upload file handler
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -137,11 +127,9 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     setPdfFile(file);
     
     try {
-      // Identify form fields in the PDF
       const { fields } = await identifyPdfFormFields(file);
       setFormFields(fields);
       
-      // Prepare for the next step
       setStep('map');
       toast.success('PDF form uploaded and analyzed');
     } catch (error) {
@@ -152,12 +140,10 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     }
   };
   
-  // Match data to fields
   const handleMatchData = () => {
     setIsLoading(true);
     
     try {
-      // Flatten all extracted data for matching
       const allData: Record<string, string> = {};
       Object.values(extractedData).forEach(docData => {
         Object.entries(docData).forEach(([key, value]) => {
@@ -167,12 +153,10 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
         });
       });
       
-      // Match data to form fields
       const { mapping, confidence } = matchDataToFormFields(formFields, allData);
       setFieldMapping(mapping);
       setFieldConfidence(confidence);
       
-      // Set initial field values based on mapping and confidence
       const initialValues: Record<string, string> = {};
       formFields.forEach(field => {
         const mappedKey = mapping[field.id];
@@ -184,7 +168,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
       });
       setFieldValues(initialValues);
       
-      // Move to edit step
       setStep('edit');
       toast.success('Data mapped to form fields');
     } catch (error) {
@@ -195,28 +178,24 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     }
   };
   
-  // Use template to fill form
   const handleUseTemplate = (templateName: string) => {
     if (!templates[templateName]) return;
     
     const template = templates[templateName];
     const populatedValues = applyFormTemplate(template, formFields, updateDates);
     
-    // Set the field values
     setFieldValues(populatedValues);
     setSelectedTemplate(templateName);
     
     toast.success(`Template "${templateName}" applied to form`);
   };
   
-  // Save template
   const handleSaveTemplate = () => {
     if (!newTemplateName.trim()) {
       toast.error('Please enter a template name');
       return;
     }
     
-    // Create field mapping between form field IDs and names
     const fieldNameMapping: Record<string, string> = {};
     formFields.forEach(field => {
       if (fieldValues[field.id]) {
@@ -224,7 +203,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
       }
     });
     
-    // Store the template
     storeFormTemplate(newTemplateName, fieldNameMapping, templateType);
     
     toast.success(`Template "${newTemplateName}" saved successfully`);
@@ -232,7 +210,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     setNewTemplateName('');
   };
   
-  // Delete template
   const handleDeleteTemplate = (templateName: string) => {
     if (deleteFormTemplate(templateName)) {
       toast.success(`Template "${templateName}" deleted`);
@@ -244,14 +221,12 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     }
   };
   
-  // Generate populated PDF
   const handleGeneratePdf = async () => {
     if (!pdfFile) return;
     
     setIsLoading(true);
     
     try {
-      // Create data object with values
       const populatedValues: Record<string, string> = {};
       Object.entries(fieldValues).forEach(([fieldId, value]) => {
         if (value) {
@@ -259,14 +234,11 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
         }
       });
       
-      // Populate the PDF
       const populatedPdf = await populateFillablePdf(pdfFile, populatedValues);
       
-      // Create URL for preview
       const url = URL.createObjectURL(populatedPdf);
       setFinalPdfUrl(url);
       
-      // Store the data for future use
       const dataToStore: Record<string, string> = {};
       Object.entries(fieldValues).forEach(([fieldId, value]) => {
         if (value) {
@@ -278,7 +250,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
       });
       storeExtractedData('form_data', dataToStore);
       
-      // Move to preview step
       setStep('preview');
       toast.success('PDF populated successfully');
     } catch (error) {
@@ -289,7 +260,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     }
   };
   
-  // Download populated PDF
   const handleDownloadPdf = () => {
     if (!finalPdfUrl) return;
     
@@ -301,7 +271,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     document.body.removeChild(a);
   };
   
-  // Reset the whole process
   const handleReset = () => {
     setPdfFile(null);
     setPdfPreviewUrl(null);
@@ -314,7 +283,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
     setStep('upload');
   };
   
-  // Render form fields with confidence indicators
   const renderFormFields = () => {
     if (formFields.length === 0) {
       return <p className="text-center py-4">No form fields detected in this PDF.</p>;
@@ -406,7 +374,7 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
           {Object.keys(templates).length > 0 && (
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
               <h4 className="font-medium text-blue-800 flex items-center gap-2 mb-3">
-                <Template className="h-4 w-4" /> Your Saved Form Templates
+                <FileSpreadsheet className="h-4 w-4" /> Your Saved Form Templates
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {Object.entries(templates).slice(0, 4).map(([name, template]) => (
@@ -476,7 +444,7 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
           {Object.keys(templates).length > 0 && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
               <h4 className="font-medium text-green-800 flex items-center gap-2">
-                <Template className="h-4 w-4" /> Available Form Templates
+                <FileSpreadsheet className="h-4 w-4" /> Available Form Templates
               </h4>
               <p className="text-xs text-green-700 mt-1 mb-3">
                 You can also use one of your saved templates in the next step
@@ -547,7 +515,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
             </div>
           </div>
           
-          {/* Template selector */}
           {Object.keys(templates).length > 0 && (
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
               <div className="flex flex-col">
@@ -599,7 +566,7 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
               className="w-full bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
               onClick={() => setTemplateDialogOpen(true)}
             >
-              <Template className="h-4 w-4 mr-2" />
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
               Save as Template for Future Use
             </Button>
           )}
@@ -663,7 +630,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
         </TabsContent>
       </Tabs>
       
-      {/* Template Dialog */}
       <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -713,7 +679,6 @@ export const FillablePdfForm: React.FC<FillablePdfFormProps> = ({ className }) =
         </DialogContent>
       </Dialog>
       
-      {/* Templates Management Dialog */}
       {Object.keys(templates).length > 0 && selectedTemplate && (
         <Dialog>
           <DialogContent>
