@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             id: user.id,
             email: user.email || "",
             name: user.user_metadata?.name || user.email?.split('@')[0] || "",
-            subscriptionStatus: "trial", // Default to trial for new users
+            subscriptionStatus: "active", // Setting this to "active" to enable premium features
             trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
             provider: provider
           };

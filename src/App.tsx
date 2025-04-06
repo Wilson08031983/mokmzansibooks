@@ -75,6 +75,12 @@ const App = () => {
                     <Route path="/accounting/reports" element={<AccountingReports />} />
                     <Route path="/accounting/integrations" element={<AccountingIntegrations />} />
                     <Route path="/tax" element={<Tax />} />
+                    <Route path="/tax/vat-returns" element={<NotFound />} />
+                    <Route path="/tax/income-tax" element={<NotFound />} />
+                    <Route path="/tax/paye" element={<NotFound />} />
+                    <Route path="/tax/calendar" element={<NotFound />} />
+                    <Route path="/tax/documents" element={<NotFound />} />
+                    <Route path="/tax/settings" element={<NotFound />} />
                     <Route path="/reports" element={<Reports />} />
                     <Route path="/settings" element={<Settings />} />
                   </Route>

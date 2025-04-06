@@ -1,23 +1,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 const Tax = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
-
-  const handleFeatureClick = () => {
-    if (currentUser?.subscriptionStatus !== "active") {
-      toast({
-        title: "Premium Feature",
-        description: "This feature is only available on the Premium plan.",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -26,82 +15,84 @@ const Tax = () => {
         <p className="text-gray-500">Manage your tax compliance and submissions</p>
       </div>
 
-      {currentUser?.subscriptionStatus !== "active" && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Premium Feature</AlertTitle>
-          <AlertDescription>
-            The tax management module is only available on the Premium plan. Please upgrade to access these features.
-          </AlertDescription>
-        </Alert>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader>
-            <CardTitle>VAT Returns</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500">
-              Prepare and submit your VAT returns to SARS
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/tax/vat-returns" className="block">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+            <CardHeader>
+              <CardTitle>VAT Returns</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500">
+                Prepare and submit your VAT returns to SARS
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader>
-            <CardTitle>Income Tax</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500">
-              Manage your company income tax calculations and submissions
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/tax/income-tax" className="block">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+            <CardHeader>
+              <CardTitle>Income Tax</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500">
+                Manage your company income tax calculations and submissions
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader>
-            <CardTitle>PAYE</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500">
-              Calculate and submit employee tax deductions
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/tax/paye" className="block">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+            <CardHeader>
+              <CardTitle>PAYE</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500">
+                Calculate and submit employee tax deductions
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader>
-            <CardTitle>Tax Calendar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500">
-              Stay on top of important tax deadlines and submissions
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/tax/calendar" className="block">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+            <CardHeader>
+              <CardTitle>Tax Calendar</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500">
+                Stay on top of important tax deadlines and submissions
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader>
-            <CardTitle>Tax Documents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500">
-              Store and manage your tax certificates and documents
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/tax/documents" className="block">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+            <CardHeader>
+              <CardTitle>Tax Documents</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500">
+                Store and manage your tax certificates and documents
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader>
-            <CardTitle>Tax Settings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500">
-              Configure your tax rates and preferences
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/tax/settings" className="block">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+            <CardHeader>
+              <CardTitle>Tax Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500">
+                Configure your tax rates and preferences
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   );
