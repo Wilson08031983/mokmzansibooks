@@ -1,15 +1,18 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
+
+import React, { useState, useEffect, useRef } from "react";
 import { useFinancialData } from "@/contexts/FinancialDataContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
-import { FileText, Download, Calendar, Bell } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Import the new components
+import DocumentExtractor from "@/components/tax/DocumentExtractor";
+import DocumentsTable from "@/components/tax/DocumentsTable";
+import ExtractedDataCards from "@/components/tax/ExtractedDataCards";
+import FormTemplates, { FormTemplate } from "@/components/tax/FormTemplates";
+import FormPreview from "@/components/tax/FormPreview";
 
 interface ExtractedFormData {
   id: string;
@@ -18,25 +21,44 @@ interface ExtractedFormData {
   extractedDate: string;
 }
 
+interface CompletedForm {
+  id: string;
+  templateId: string;
+  name: string;
+  fields: {
+    id: string;
+    label: string;
+    value: string;
+    type: string;
+    required: boolean;
+    autoFilled: boolean;
+  }[];
+  createdAt: string;
+  learnedFields: Record<string, string>;
+}
+
 const TaxDocuments = () => {
   const { toast } = useToast();
   const { taxDocuments, addTaxDocument } = useFinancialData();
   const { addNotification } = useNotifications();
   const documentsTableRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedFormData[]>([]);
   const [activeTab, setActiveTab] = useState("upload");
+  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
+  const [completedForms, setCompletedForms] = useState<CompletedForm[]>([]);
+  const [learningDatabase, setLearningDatabase] = useState<Record<string, string>>({});
 
+  // Check for expiring documents when component loads
   useEffect(() => {
     const today = new Date();
     
     taxDocuments.forEach(doc => {
-      const uploadDate = new Date(doc.uploadDate);
-      const expiryDate = new Date(uploadDate);
-      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+      const extractedDoc = extractedData.find(data => data.documentId === doc.id);
+      if (!extractedDoc || !extractedDoc.fields.expiryDate) return;
       
+      const expiryDate = new Date(extractedDoc.fields.expiryDate);
       const daysToExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       
       if (daysToExpiry <= 30 && daysToExpiry > 0) {
@@ -47,128 +69,82 @@ const TaxDocuments = () => {
         });
       }
     });
-  }, [taxDocuments, toast]);
+  }, [taxDocuments, extractedData, toast]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const extractFormData = async (file: File, docId: string) => {
+  // Handle document extraction
+  const handleExtract = async (file: File, extractedFormData: ExtractedFormData) => {
     setIsExtracting(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Create a new document entry
+      const fileType = file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN';
+      const fileSize = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
       
-      const fakeFields: Record<string, string> = {};
-      
+      let category = "General";
       if (file.name.toLowerCase().includes('tax')) {
-        fakeFields['taxYear'] = '2023';
-        fakeFields['taxReferenceNumber'] = 'TAX' + Math.floor(Math.random() * 10000000);
-        fakeFields['taxableIncome'] = 'R' + (Math.floor(Math.random() * 1000000) + 100000).toLocaleString();
-      } else if (file.name.toLowerCase().includes('invoice')) {
-        fakeFields['invoiceNumber'] = 'INV-' + Math.floor(Math.random() * 10000);
-        fakeFields['invoiceDate'] = new Date().toISOString().split('T')[0];
-        fakeFields['amount'] = 'R' + (Math.floor(Math.random() * 10000) + 1000).toLocaleString();
-      } else {
-        fakeFields['documentType'] = file.name.split('.').slice(0, -1).join('.');
-        fakeFields['submissionDate'] = new Date().toISOString().split('T')[0];
+        category = "Returns";
+      } else if (file.name.toLowerCase().includes('certificate')) {
+        category = "Certificates";
+      } else if (file.name.toLowerCase().includes('letter') || 
+                file.name.toLowerCase().includes('notice')) {
+        category = "Correspondence";
       }
       
-      const expiryDate = new Date();
-      expiryDate.setMonth(expiryDate.getMonth() + Math.floor(Math.random() * 12) + 1);
-      fakeFields['expiryDate'] = expiryDate.toISOString().split('T')[0];
-      
-      const newExtractedData: ExtractedFormData = {
-        id: `extract-${Date.now()}`,
-        documentId: docId,
-        fields: fakeFields,
-        extractedDate: new Date().toISOString(),
+      const newDocument = {
+        id: extractedFormData.documentId,
+        name: file.name.split('.').slice(0, -1).join('.'),
+        type: fileType,
+        size: fileSize,
+        uploadDate: new Date().toISOString().split('T')[0],
+        category: category,
       };
       
-      setExtractedData(prev => [...prev, newExtractedData]);
+      // Add the document and extracted data
+      addTaxDocument(newDocument);
+      setExtractedData(prev => [...prev, extractedFormData]);
       
-      toast({
-        title: "Form Data Extracted",
-        description: "Document information has been successfully extracted and saved.",
-      });
-      
-      const today = new Date();
-      const daysToExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysToExpiry <= 90) {
-        addNotification({
-          title: "Document Expiration",
-          message: `Document "${file.name}" will expire on ${expiryDate.toLocaleDateString()}`,
-          type: daysToExpiry <= 30 ? 'warning' : 'info',
-          link: '/tax/documents'
-        });
+      // Set up notifications for expiring documents
+      if (extractedFormData.fields.expiryDate) {
+        const expiryDate = new Date(extractedFormData.fields.expiryDate);
+        const today = new Date();
+        const daysToExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysToExpiry <= 90) {
+          addNotification({
+            title: "Document Expiration",
+            message: `Document "${file.name}" will expire on ${expiryDate.toLocaleDateString()}`,
+            type: daysToExpiry <= 30 ? 'warning' : 'info',
+            link: '/tax/documents'
+          });
+        }
       }
       
-      return newExtractedData;
+      // Update the learning database with the extracted fields
+      const newLearning = { ...learningDatabase };
+      Object.entries(extractedFormData.fields).forEach(([key, value]) => {
+        // Add only meaningful values (skip dates, empty values, etc.)
+        if (value && !key.includes('Date') && !key.includes('date')) {
+          newLearning[key] = value;
+        }
+      });
+      setLearningDatabase(newLearning);
+      
+      // Automatically switch to the documents tab
+      setActiveTab("forms");
+      
     } catch (error) {
-      console.error("Error extracting form data:", error);
+      console.error("Error processing document:", error);
       toast({
-        title: "Extraction Failed",
-        description: "There was a problem extracting data from your document.",
+        title: "Processing Failed",
+        description: "There was a problem processing your document.",
         variant: "destructive",
       });
-      return null;
     } finally {
       setIsExtracting(false);
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      toast({
-        title: "No File Selected",
-        description: "Please select a file to upload.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const fileType = selectedFile.name.split('.').pop()?.toUpperCase() || 'UNKNOWN';
-    const fileSize = `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`;
-    
-    let category = "General";
-    if (selectedFile.name.toLowerCase().includes('tax')) {
-      category = "Returns";
-    } else if (selectedFile.name.toLowerCase().includes('certificate')) {
-      category = "Certificates";
-    } else if (selectedFile.name.toLowerCase().includes('letter') || 
-               selectedFile.name.toLowerCase().includes('notice')) {
-      category = "Correspondence";
-    }
-    
-    const newDocument = {
-      id: `doc-${Date.now()}`,
-      name: selectedFile.name.split('.').slice(0, -1).join('.'),
-      type: fileType,
-      size: fileSize,
-      uploadDate: new Date().toISOString().split('T')[0],
-      category: category,
-    };
-    
-    addTaxDocument(newDocument);
-    
-    await extractFormData(selectedFile, newDocument.id);
-    
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    
-    toast({
-      title: "Document Uploaded",
-      description: "Your document has been uploaded and saved successfully.",
-    });
-    
-    setActiveTab("documents");
-  };
-
+  // Handle document download
   const handleDownload = async (id: string) => {
     const taxDoc = taxDocuments.find(doc => doc.id === id);
     if (!taxDoc) return;
@@ -347,6 +323,7 @@ const TaxDocuments = () => {
     }
   };
 
+  // Handle bulk download of document index
   const handleDownloadAllDocuments = async () => {
     if (!documentsTableRef.current) return;
     
@@ -378,21 +355,60 @@ const TaxDocuments = () => {
     }
   };
 
-  const getExpiryStatus = (docId: string) => {
-    const extractedDoc = extractedData.find(data => data.documentId === docId);
-    if (!extractedDoc || !extractedDoc.fields.expiryDate) return null;
-    
-    const expiryDate = new Date(extractedDoc.fields.expiryDate);
-    const today = new Date();
-    const daysToExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysToExpiry < 0) {
-      return { status: 'expired', daysToExpiry };
-    } else if (daysToExpiry <= 30) {
-      return { status: 'warning', daysToExpiry };
-    } else {
-      return { status: 'valid', daysToExpiry };
+  // Function to use extracted data for form
+  const handleUseForForm = (dataId: string) => {
+    if (extractedData.find(data => data.id === dataId)) {
+      setActiveTab("fill");
+      // The FormTemplates component will be shown and user can select a template
+      toast({
+        title: "Form Filling Ready",
+        description: "Select a form template to auto-fill using the extracted data.",
+      });
     }
+  };
+
+  // Function to select a template for auto-fill
+  const handleSelectTemplate = (template: FormTemplate) => {
+    setSelectedTemplate(template);
+  };
+
+  // Function to save a completed form
+  const handleSaveForm = (formData: { id: string; name: string; fields: any[] }) => {
+    // Identify fields that were manually filled (not auto-filled)
+    const manuallyFilledFields: Record<string, string> = {};
+    formData.fields.forEach(field => {
+      if (!field.autoFilled && field.value) {
+        manuallyFilledFields[field.id] = field.value;
+      }
+    });
+    
+    // Add to completed forms
+    const newForm: CompletedForm = {
+      id: `form-${Date.now()}`,
+      templateId: formData.id,
+      name: formData.name,
+      fields: formData.fields,
+      createdAt: new Date().toISOString(),
+      learnedFields: manuallyFilledFields
+    };
+    
+    setCompletedForms(prev => [...prev, newForm]);
+    
+    // Update learning database with manually filled fields
+    if (Object.keys(manuallyFilledFields).length > 0) {
+      setLearningDatabase(prev => ({
+        ...prev,
+        ...manuallyFilledFields
+      }));
+      
+      toast({
+        title: "Learning Complete",
+        description: `Learned ${Object.keys(manuallyFilledFields).length} new field values for future auto-fill.`,
+      });
+    }
+    
+    // Reset selected template
+    setSelectedTemplate(null);
   };
 
   return (
@@ -400,187 +416,100 @@ const TaxDocuments = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Tax Documents</h1>
-          <p className="text-gray-500">Store and manage your tax-related documents</p>
+          <p className="text-gray-500">Store, manage, and auto-fill your tax-related documents</p>
         </div>
-        <Button variant="outline" onClick={handleDownloadAllDocuments} className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Export Document Index
-        </Button>
       </div>
 
       <Tabs defaultValue="upload" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upload">Step 1: Upload Documents</TabsTrigger>
-          <TabsTrigger value="documents">Step 2: Auto-Fill Forms</TabsTrigger>
+          <TabsTrigger value="forms">Step 2: Auto-Fill Forms</TabsTrigger>
+          <TabsTrigger value="fill">Step 3: Complete & Learn</TabsTrigger>
         </TabsList>
         
         <TabsContent value="upload" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Document</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end gap-4">
-                <div className="flex-1">
-                  <Input 
-                    type="file" 
-                    ref={fileInputRef}
-                    onChange={handleFileChange} 
-                  />
-                </div>
-                <Button 
-                  onClick={handleUpload} 
-                  disabled={!selectedFile || isExtracting}
-                >
-                  {isExtracting ? "Extracting..." : "Upload & Extract"}
-                </Button>
-              </div>
-              {selectedFile && (
-                <div className="mt-4">
-                  <p className="text-sm text-gray-500">
-                    <strong>Selected file:</strong> {selectedFile.name} 
-                    ({(selectedFile.size / 1024).toFixed(2)} KB)
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <div className="text-sm text-gray-500 mt-2">
-            <p>Upload your tax forms here. The system will automatically extract information for use in Step 2.</p>
-            <p>Supported formats: PDF, JPG, PNG</p>
-          </div>
+          <DocumentExtractor 
+            onExtract={handleExtract}
+            isExtracting={isExtracting}
+          />
         </TabsContent>
         
-        <TabsContent value="documents" className="space-y-4">
+        <TabsContent value="forms" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Auto-Fill Forms</CardTitle>
+              <CardTitle>Extracted Document Data</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 mb-4">
-                The information from your uploaded documents can be used to automatically fill forms. 
-                Select a document to view extracted data.
-              </p>
-              {extractedData.length > 0 ? (
-                <div className="space-y-4">
-                  {extractedData.map(data => {
-                    const document = taxDocuments.find(doc => doc.id === data.documentId);
-                    return document ? (
-                      <Card key={data.id} className="border border-gray-200">
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between items-start">
-                            <CardTitle className="text-base">{document.name}</CardTitle>
-                            <div className="flex space-x-2">
-                              {data.fields.expiryDate && (
-                                <div className="flex items-center">
-                                  <Calendar className="h-4 w-4 mr-1 text-gray-500" />
-                                  <span className="text-xs">
-                                    Expires: {new Date(data.fields.expiryDate).toLocaleDateString()}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            {Object.entries(data.fields).map(([key, value], idx) => (
-                              <div key={idx} className={key === 'expiryDate' ? 'hidden' : ''}>
-                                <p className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
-                                <p className="text-gray-600">{value}</p>
-                              </div>
-                            ))}
-                          </div>
-                          <Button variant="outline" size="sm" className="mt-4">
-                            Use for Auto-Fill
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ) : null;
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium">No Extracted Data</h3>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Upload documents in Step 1 to extract form data for auto-filling.
-                  </p>
-                </div>
-              )}
+              <ExtractedDataCards 
+                extractedData={extractedData}
+                documents={taxDocuments}
+                onUseForForm={handleUseForForm}
+              />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="fill" className="space-y-4">
+          {selectedTemplate ? (
+            <FormPreview 
+              formTemplate={selectedTemplate}
+              extractedData={extractedData.map(data => data.fields)}
+              onSave={handleSaveForm}
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Select a Form Template</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FormTemplates onSelectTemplate={handleSelectTemplate} />
+              </CardContent>
+            </Card>
+          )}
+          
+          {completedForms.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Completed Forms</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {completedForms.map(form => (
+                    <Card key={form.id} className="border border-gray-200">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">{form.name}</CardTitle>
+                        <p className="text-xs text-gray-500">
+                          Completed on {new Date(form.createdAt).toLocaleDateString()}
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {form.fields.filter(f => f.value).length} of {form.fields.length} fields completed
+                        </p>
+                        <div className="flex justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {Object.keys(form.learnedFields).length} fields learned
+                          </Badge>
+                          <Button variant="outline" size="sm">View Form</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Your Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div ref={documentsTableRef}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Size</TableHead>
-                  <TableHead>Upload Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {taxDocuments.map((taxDoc) => {
-                  const expiryStatus = getExpiryStatus(taxDoc.id);
-                  return (
-                    <TableRow key={taxDoc.id}>
-                      <TableCell className="font-medium">{taxDoc.name}</TableCell>
-                      <TableCell>{taxDoc.category}</TableCell>
-                      <TableCell>{taxDoc.type}</TableCell>
-                      <TableCell>{taxDoc.size}</TableCell>
-                      <TableCell>{new Date(taxDoc.uploadDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        {expiryStatus ? (
-                          <>
-                            {expiryStatus.status === 'expired' ? (
-                              <Badge variant="destructive" className="flex items-center gap-1">
-                                <Bell className="h-3 w-3" /> Expired
-                              </Badge>
-                            ) : expiryStatus.status === 'warning' ? (
-                              <Badge variant="outline" className="border-amber-500 text-amber-500 flex items-center gap-1">
-                                <Bell className="h-3 w-3" /> 
-                                {expiryStatus.daysToExpiry} days left
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="border-green-500 text-green-500">
-                                Valid
-                              </Badge>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center"
-                          onClick={() => handleDownload(taxDoc.id)}
-                        >
-                          <FileText className="mr-2 h-4 w-4" />
-                          Download
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+        <CardContent className="pt-6">
+          <DocumentsTable 
+            documents={taxDocuments}
+            extractedData={extractedData}
+            onDownload={handleDownload}
+            onBulkDownload={handleDownloadAllDocuments}
+          />
         </CardContent>
       </Card>
     </div>
