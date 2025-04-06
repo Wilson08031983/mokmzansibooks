@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, Download, Upload, Tag, Camera, Image, FileUp } from "lucide-react";
@@ -70,6 +71,14 @@ const AccountingTransactions = () => {
   const [attachmentType, setAttachmentType] = useState<string | null>(null);
   const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
   const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
+  
+  // Adding the missing newTransaction state
+  const [newTransaction, setNewTransaction] = useState({
+    amount: "",
+    description: "",
+    type: "expense",
+    categoryId: "expense",
+  });
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
