@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatCurrency } from "@/utils/formatters";
 
 interface BankTransaction {
   id: string;
@@ -72,14 +73,6 @@ const BankReconciliation = () => {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
   const unreconciledCount = transactions.filter(t => !t.reconciled).length;
   
   return (
@@ -117,7 +110,7 @@ const BankReconciliation = () => {
                     <div>{transaction.date}</div>
                     <div className="col-span-2">{transaction.description}</div>
                     <div className={`text-right ${transaction.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {formatCurrency(transaction.amount)}
+                      {formatCurrency(transaction.amount, "ZAR")}
                     </div>
                     <div className="flex justify-center">
                       <Checkbox 
@@ -154,7 +147,7 @@ const BankReconciliation = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Bank Balance</span>
                   <span className="font-medium">
-                    {formatCurrency(transactions.reduce((sum, t) => sum + t.amount, 0))}
+                    {formatCurrency(transactions.reduce((sum, t) => sum + t.amount, 0), "ZAR")}
                   </span>
                 </div>
               </div>

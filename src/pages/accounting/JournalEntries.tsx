@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/formatters";
 
 interface JournalEntry {
   id: string;
@@ -59,14 +60,6 @@ const JournalEntries = () => {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -102,7 +95,7 @@ const JournalEntries = () => {
                   <div className="col-span-2">{entry.description}</div>
                   <div>{entry.debitAccount}</div>
                   <div>{entry.creditAccount}</div>
-                  <div className="text-right">{formatCurrency(entry.amount)}</div>
+                  <div className="text-right">{formatCurrency(entry.amount, "ZAR")}</div>
                 </div>
               ))}
             </div>
