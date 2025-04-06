@@ -94,7 +94,6 @@ const QuickFill = () => {
   
   const isPremiumUser = currentUser?.subscriptionStatus === "active";
 
-  // Check if there's an attached quote in the location state
   useEffect(() => {
     if (location.state?.attachedQuote && !isAutoSearchDone) {
       const quote = location.state.attachedQuote;
@@ -104,27 +103,22 @@ const QuickFill = () => {
         description: `Automatically searching for items in quote ${quote.quoteNumber}`
       });
       
-      // Auto-search for items in the quote
       autoSearchQuoteItems(quote);
       setIsAutoSearchDone(true);
     }
   }, [location, isAutoSearchDone]);
 
-  // Function to automatically search for items in the attached quote
   const autoSearchQuoteItems = (quote: QuoteData) => {
     if (!quote || !quote.items || quote.items.length === 0) return;
     
     setIsSearching(true);
     
-    // Create a batch of search queries based on quote items
     setTimeout(() => {
-      // Simulate searching for each item in the quote
       const results: any[] = [];
       
       quote.items.forEach(item => {
         const searchTerms = item.description.toLowerCase();
         
-        // Add search results based on the item description
         if (searchTerms.includes("chair") || searchTerms.includes("office")) {
           results.push({
             id: Math.random().toString(36).substr(2, 9),
@@ -171,7 +165,6 @@ const QuickFill = () => {
             ],
           });
         } else {
-          // Generic result for any other type of item
           results.push({
             id: Math.random().toString(36).substr(2, 9),
             item: item.description,
@@ -224,7 +217,6 @@ const QuickFill = () => {
             setTimeout(() => {
               setProcessingStatus("completed");
               
-              // Check if we have a quote file in the uploaded files
               const hasQuoteFile = newFiles.some(file => 
                 file.name.toLowerCase().includes('quote') || 
                 file.name.toLowerCase().includes('rfq')
@@ -233,7 +225,6 @@ const QuickFill = () => {
               if (hasQuoteFile) {
                 toast.success("Documents processed successfully! Found quote document in uploads.");
                 
-                // Simulate finding a quote in the uploaded documents
                 setTimeout(() => {
                   const simulatedQuote: QuoteData = {
                     quoteNumber: "Q-2023-003",
@@ -279,7 +270,6 @@ const QuickFill = () => {
                     description: `Automatically searching for items from Quote ${simulatedQuote.quoteNumber}`
                   });
                   
-                  // Auto-search for items in the quote
                   autoSearchQuoteItems(simulatedQuote);
                   setIsAutoSearchDone(true);
                 }, 1500);
@@ -599,7 +589,6 @@ const QuickFill = () => {
       }
     ];
     
-    // If we have an attached quote, add it to the list
     if (attachedQuote) {
       mockQuotes.push(attachedQuote);
     }
@@ -909,7 +898,7 @@ const QuickFill = () => {
                           <Upload className="mr-2 h-4 w-4" /> Upload Documents
                         </Button>
                         <Button variant="outline" size="sm">
-                          <Download className="mr-2 h-4 w-4" /> Download Template
+                          <FileText className="mr-2 h-4 w-4" /> Preview Document
                         </Button>
                       </div>
                     </div>
