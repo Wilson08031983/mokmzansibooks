@@ -196,7 +196,7 @@ const AccountingReports = () => {
           </CardHeader>
           <CardContent>
             <p className="text-gray-500 mb-4">
-              Track your assets, liabilities, and equity as of {format(date, "DD MMMM yyyy")}
+              Track your assets, liabilities, and equity as of {format(date, "dd MMMM yyyy")}
             </p>
             <div className="h-44 flex items-center justify-center bg-primary/5 rounded-md">
               <p className="text-gray-500">Balance sheet visualization will appear here</p>
