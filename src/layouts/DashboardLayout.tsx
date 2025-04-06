@@ -62,6 +62,42 @@ const DashboardLayout = () => {
       );
     }
     
+    if (location.pathname.includes('/hr')) {
+      const currentPath = location.pathname;
+      let defaultValue = "overview";
+      
+      if (currentPath.includes("/hr/employees")) {
+        defaultValue = "employees";
+      } else if (currentPath.includes("/hr/payroll")) {
+        defaultValue = "payroll";
+      } else if (currentPath.includes("/hr/attendance")) {
+        defaultValue = "attendance";
+      } else if (currentPath.includes("/hr/leaves")) {
+        defaultValue = "leaves";
+      } else if (currentPath.includes("/hr/benefits")) {
+        defaultValue = "benefits";
+      }
+      
+      return (
+        <Tabs
+          defaultValue={defaultValue}
+          className="mb-4"
+          onValueChange={(value) => {
+            navigate(`/hr${value !== 'overview' ? '/' + value : ''}`);
+          }}
+        >
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="employees">Employees</TabsTrigger>
+            <TabsTrigger value="payroll">Payroll</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="leaves">Leaves</TabsTrigger>
+            <TabsTrigger value="benefits">Benefits</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      );
+    }
+    
     if (location.pathname.includes('/tax')) {
       const currentPath = location.pathname;
       let defaultValue = "overview";

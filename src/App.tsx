@@ -45,6 +45,12 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
+// HR & Payroll Pages
+import HR from "./pages/HR";
+import Employees from "./pages/hr/Employees";
+import Payroll from "./pages/hr/Payroll";
+import Attendance from "./pages/hr/Attendance";
+
 // Layout components
 import DashboardLayout from "./layouts/DashboardLayout";
 import PublicLayout from "./layouts/PublicLayout";
@@ -93,6 +99,13 @@ const App = () => {
                         <Route path="/accounting/payables" element={<Payables />} />
                         <Route path="/accounting/integrations" element={<AccountingIntegrations />} />
                         <Route path="/accounting/transactions" element={<AccountingTransactions />} />
+                        
+                        {/* HR & Payroll Routes */}
+                        <Route path="/hr" element={<HR />} />
+                        <Route path="/hr/employees" element={<Employees />} />
+                        <Route path="/hr/payroll" element={<Payroll />} />
+                        <Route path="/hr/attendance" element={<Attendance />} />
+                        
                         <Route path="/tax" element={<Tax />} />
                         <Route path="/tax/vat-returns" element={<VatReturns />} />
                         <Route path="/tax/income-tax" element={<IncomeTax />} />
