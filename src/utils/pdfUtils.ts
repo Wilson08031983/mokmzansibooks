@@ -1,4 +1,3 @@
-
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { InvoiceData } from "@/types/invoice";
@@ -267,16 +266,12 @@ export const previewDocument = (element: HTMLElement, title: string = "Document 
   }
 };
 
-// Document text extraction functions
+// Enhanced document text extraction function with OCR and AI capabilities
 export const extractTextFromDocuments = async (files: File[]): Promise<{ 
   type: string; 
   data: Record<string, string>;
 }> => {
-  // In a real implementation, this would use a document parsing API or library
-  // For demonstration, we'll analyze the filename to determine document type
-  // and return real extracted data based on file content
-  
-  // This is a placeholder for actual text extraction
+  // This is a placeholder for the actual OCR and AI extraction implementation
   if (!files || files.length === 0) {
     return { type: "unknown", data: {} };
   }
@@ -296,11 +291,22 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     documentType = "csd";
   } else if (fileName.includes("bank")) {
     documentType = "bank";
+  } else if (fileName.includes("invoice")) {
+    documentType = "invoice";
+  } else if (fileName.includes("rfq") || fileName.includes("quote")) {
+    documentType = "rfq";
+  } else if (fileName.includes("tender")) {
+    documentType = "tender";
+  } else if (fileName.includes("application")) {
+    documentType = "application";
   }
   
-  // In a real implementation, this would process the actual file content
-  // Return real extracted data based on the document type
+  // In a real implementation, this would process the actual file content using OCR + AI
+  // For demonstration purposes, we'll return the data based on file type
   const extractedData: Record<string, string> = {};
+  
+  // Simulate extracting different data based on document type
+  console.log(`Extracting data from ${documentType} document`);
   
   return { 
     type: documentType, 
@@ -311,4 +317,140 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
 // Export document data to JSON
 export const exportToJson = (data: Record<string, any>): string => {
   return JSON.stringify(data, null, 2);
+};
+
+// Function to process fillable PDF and identify form fields
+export const identifyPdfFormFields = async (pdfFile: File): Promise<{
+  fields: Array<{
+    id: string;
+    name: string;
+    type: string;
+    rect: { x: number, y: number, width: number, height: number };
+    page: number;
+  }>;
+  pageCount: number;
+}> => {
+  // This is a placeholder for actual PDF field identification
+  // In a real implementation, this would use a PDF parsing library
+  
+  console.log(`Identifying form fields in ${pdfFile.name}`);
+  
+  // Simulate identifying form fields
+  return {
+    fields: [],
+    pageCount: 1
+  };
+};
+
+// Function to populate a fillable PDF with extracted data
+export const populateFillablePdf = async (
+  pdfFile: File, 
+  data: Record<string, string>, 
+  fieldMapping: Record<string, string> = {}
+): Promise<Blob> => {
+  // This is a placeholder for actual PDF field population
+  // In a real implementation, this would use a PDF manipulation library
+  
+  console.log(`Populating PDF form ${pdfFile.name} with data`);
+  
+  // For demonstration, we'll return the original file
+  // In a real implementation, this would return the populated PDF
+  return new Blob([await pdfFile.arrayBuffer()], { type: pdfFile.type });
+};
+
+// Function to match extracted data with form fields
+export const matchDataToFormFields = (
+  formFields: Array<{ id: string; name: string; type: string }>,
+  extractedData: Record<string, string>
+): { 
+  mapping: Record<string, string>; 
+  confidence: Record<string, number>;
+} => {
+  // This would use AI to match extracted data to form fields
+  const mapping: Record<string, string> = {};
+  const confidence: Record<string, number> = {};
+  
+  // For each form field, try to find the best match in extracted data
+  formFields.forEach(field => {
+    const fieldName = field.name.toLowerCase();
+    
+    // Simple matching logic (would be much more sophisticated with AI)
+    Object.entries(extractedData).forEach(([key, value]) => {
+      const keyLower = key.toLowerCase();
+      
+      // Check for common field names
+      if (fieldName.includes('name') && keyLower.includes('name')) {
+        mapping[field.id] = key;
+        confidence[field.id] = 0.9; // High confidence
+      } else if (fieldName.includes('email') && keyLower.includes('email')) {
+        mapping[field.id] = key;
+        confidence[field.id] = 0.95; // Very high confidence
+      } else if (fieldName.includes('phone') && (keyLower.includes('phone') || keyLower.includes('tel'))) {
+        mapping[field.id] = key;
+        confidence[field.id] = 0.9; // High confidence
+      } else if (fieldName.includes('address') && keyLower.includes('address')) {
+        mapping[field.id] = key;
+        confidence[field.id] = 0.85; // Good confidence
+      } else if (fieldName.includes('company') && keyLower.includes('company')) {
+        mapping[field.id] = key;
+        confidence[field.id] = 0.9; // High confidence
+      } else if (fieldName.includes('registration') && keyLower.includes('registration')) {
+        mapping[field.id] = key;
+        confidence[field.id] = 0.95; // Very high confidence
+      } else if (fieldName.includes('tax') && keyLower.includes('tax')) {
+        mapping[field.id] = key;
+        confidence[field.id] = 0.9; // High confidence
+      } else if (fieldName.includes('bbee') && keyLower.includes('bbee')) {
+        mapping[field.id] = key;
+        confidence[field.id] = 0.95; // Very high confidence
+      } else if (fieldName.includes('csd') && keyLower.includes('csd')) {
+        mapping[field.id] = key;
+        confidence[field.id] = 0.9; // High confidence
+      }
+    });
+    
+    // If no match was found, set confidence to 0
+    if (!mapping[field.id]) {
+      confidence[field.id] = 0;
+    }
+  });
+  
+  return { mapping, confidence };
+};
+
+// Function to store extracted data for future use
+export const storeExtractedData = (
+  documentType: string, 
+  data: Record<string, string>
+): void => {
+  // In a real implementation, this would store data in a database
+  // For demonstration, we'll use localStorage
+  try {
+    const existingDataStr = localStorage.getItem('extractedData');
+    const existingData = existingDataStr ? JSON.parse(existingDataStr) : {};
+    
+    existingData[documentType] = {
+      ...existingData[documentType],
+      ...data,
+      _lastUpdated: new Date().toISOString()
+    };
+    
+    localStorage.setItem('extractedData', JSON.stringify(existingData));
+    console.log(`Stored extracted data for ${documentType}`);
+  } catch (error) {
+    console.error('Error storing extracted data:', error);
+  }
+};
+
+// Function to retrieve stored extracted data
+export const getStoredExtractedData = (): Record<string, Record<string, string>> => {
+  // In a real implementation, this would retrieve data from a database
+  // For demonstration, we'll use localStorage
+  try {
+    const dataStr = localStorage.getItem('extractedData');
+    return dataStr ? JSON.parse(dataStr) : {};
+  } catch (error) {
+    console.error('Error retrieving extracted data:', error);
+    return {};
+  }
 };
