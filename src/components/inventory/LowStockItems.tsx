@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Package, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/utils/formatters";
 
 interface InventoryItem {
   id: string;

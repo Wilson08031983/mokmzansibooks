@@ -36,6 +36,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
 import { 
   Package, 
   Plus, 
@@ -46,10 +47,14 @@ import {
   Filter, 
   ArrowUpDown, 
   Search,
-  AlertTriangle
+  AlertTriangle,
+  Camera,
+  Barcode
 } from "lucide-react";
+import { formatCurrency } from "@/utils/formatters";
 import InventoryStats from "@/components/inventory/InventoryStats";
 import LowStockItems from "@/components/inventory/LowStockItems";
+import BarcodeScanner from "@/components/inventory/BarcodeScanner";
 
 const mockInventoryData = [
   { 
@@ -115,15 +120,69 @@ const mockInventoryData = [
 ];
 
 const Inventory = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
+  const [showScannerDialog, setShowScannerDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("items");
+  const [newItemForm, setNewItemForm] = useState({
+    name: "",
+    sku: "",
+    category: "",
+    quantity: 0,
+    unitPrice: 0,
+    location: "",
+    reorderPoint: 0
+  });
   
   const filteredItems = mockInventoryData.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleBarcodeScanned = (barcode: string) => {
+    // In a real app, we would look up the barcode in a database
+    // For this demo, we'll just pre-fill the SKU field and open the add item dialog
+    setNewItemForm({
+      ...newItemForm,
+      sku: barcode
+    });
+    setShowAddItemDialog(true);
+    
+    toast({
+      title: "Barcode Scanned",
+      description: `Item with barcode ${barcode} ready to be added`,
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setNewItemForm({
+      ...newItemForm,
+      [id]: id === 'quantity' || id === 'unitPrice' || id === 'reorderPoint' 
+        ? parseFloat(value) || 0 
+        : value
+    });
+  };
+
+  const handleAddItem = () => {
+    // In a real app, we would add the item to the database
+    toast({
+      title: "Item Added",
+      description: `${newItemForm.name} has been added to inventory`,
+    });
+    setShowAddItemDialog(false);
+    setNewItemForm({
+      name: "",
+      sku: "",
+      category: "",
+      quantity: 0,
+      unitPrice: 0,
+      location: "",
+      reorderPoint: 0
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -134,10 +193,16 @@ const Inventory = () => {
             Manage your inventory items, stock levels, and categories
           </p>
         </div>
-        <Button onClick={() => setShowAddItemDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Item
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowScannerDialog(true)} variant="outline">
+            <Barcode className="mr-2 h-4 w-4" />
+            Scan Barcode
+          </Button>
+          <Button onClick={() => setShowAddItemDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Item
+          </Button>
+        </div>
       </div>
 
       <InventoryStats />
@@ -236,7 +301,7 @@ const Inventory = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            ${item.unitPrice.toFixed(2)}
+                            {formatCurrency(item.unitPrice, "ZAR")}
                           </TableCell>
                           <TableCell>{item.location}</TableCell>
                           <TableCell className="text-right">
@@ -319,6 +384,13 @@ const Inventory = () => {
         </TabsContent>
       </Tabs>
 
+      {/* Barcode Scanner Dialog */}
+      <BarcodeScanner 
+        open={showScannerDialog} 
+        onOpenChange={setShowScannerDialog} 
+        onScan={handleBarcodeScanned} 
+      />
+
       {/* Add Inventory Item Dialog */}
       <Dialog open={showAddItemDialog} onOpenChange={setShowAddItemDialog}>
         <DialogContent className="sm:max-w-[525px]">
@@ -333,50 +405,99 @@ const Inventory = () => {
               <Label htmlFor="name" className="text-right">
                 Item Name
               </Label>
-              <Input id="name" className="col-span-3" />
+              <Input 
+                id="name" 
+                className="col-span-3" 
+                value={newItemForm.name}
+                onChange={handleInputChange}
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="sku" className="text-right">
-                SKU
+                SKU / Barcode
               </Label>
-              <Input id="sku" className="col-span-3" />
+              <div className="col-span-3 flex gap-2">
+                <Input 
+                  id="sku" 
+                  className="flex-1" 
+                  value={newItemForm.sku}
+                  onChange={handleInputChange}
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setShowScannerDialog(true)}
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="category" className="text-right">
                 Category
               </Label>
-              <Input id="category" className="col-span-3" />
+              <Input 
+                id="category" 
+                className="col-span-3"
+                value={newItemForm.category}
+                onChange={handleInputChange}
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="quantity" className="text-right">
                 Quantity
               </Label>
-              <Input id="quantity" type="number" className="col-span-3" />
+              <Input 
+                id="quantity" 
+                type="number" 
+                className="col-span-3"
+                value={newItemForm.quantity}
+                onChange={handleInputChange}
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="unitPrice" className="text-right">
-                Unit Price
+                Unit Price (ZAR)
               </Label>
-              <Input id="unitPrice" type="number" step="0.01" className="col-span-3" />
+              <Input 
+                id="unitPrice" 
+                type="number" 
+                step="0.01" 
+                className="col-span-3"
+                value={newItemForm.unitPrice}
+                onChange={handleInputChange}
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="location" className="text-right">
                 Location
               </Label>
-              <Input id="location" className="col-span-3" />
+              <Input 
+                id="location" 
+                className="col-span-3"
+                value={newItemForm.location}
+                onChange={handleInputChange}
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="reorderPoint" className="text-right">
                 Reorder Point
               </Label>
-              <Input id="reorderPoint" type="number" className="col-span-3" />
+              <Input 
+                id="reorderPoint" 
+                type="number" 
+                className="col-span-3"
+                value={newItemForm.reorderPoint}
+                onChange={handleInputChange}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddItemDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setShowAddItemDialog(false)}>Save Item</Button>
+            <Button onClick={handleAddItem}>Save Item</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
