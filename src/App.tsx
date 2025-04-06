@@ -28,6 +28,12 @@ import AccountingTransactions from "./pages/accounting/Transactions";
 import AccountingReports from "./pages/accounting/Reports";
 import AccountingIntegrations from "./pages/accounting/Integrations";
 import Tax from "./pages/Tax";
+import VatReturns from "./pages/tax/VatReturns";
+import IncomeTax from "./pages/tax/IncomeTax";
+import Paye from "./pages/tax/Paye";
+import TaxCalendar from "./pages/tax/TaxCalendar";
+import TaxDocuments from "./pages/tax/TaxDocuments";
+import TaxSettings from "./pages/tax/TaxSettings";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -75,12 +81,12 @@ const App = () => {
                     <Route path="/accounting/reports" element={<AccountingReports />} />
                     <Route path="/accounting/integrations" element={<AccountingIntegrations />} />
                     <Route path="/tax" element={<Tax />} />
-                    <Route path="/tax/vat-returns" element={<NotFound />} />
-                    <Route path="/tax/income-tax" element={<NotFound />} />
-                    <Route path="/tax/paye" element={<NotFound />} />
-                    <Route path="/tax/calendar" element={<NotFound />} />
-                    <Route path="/tax/documents" element={<NotFound />} />
-                    <Route path="/tax/settings" element={<NotFound />} />
+                    <Route path="/tax/vat-returns" element={<VatReturns />} />
+                    <Route path="/tax/income-tax" element={<IncomeTax />} />
+                    <Route path="/tax/paye" element={<Paye />} />
+                    <Route path="/tax/calendar" element={<TaxCalendar />} />
+                    <Route path="/tax/documents" element={<TaxDocuments />} />
+                    <Route path="/tax/settings" element={<TaxSettings />} />
                     <Route path="/reports" element={<Reports />} />
                     <Route path="/settings" element={<Settings />} />
                   </Route>
