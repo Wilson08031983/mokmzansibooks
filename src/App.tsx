@@ -30,6 +30,10 @@ import AccountingTransactions from "./pages/accounting/Transactions";
 import AccountingReports from "./pages/accounting/Reports";
 import AccountingIntegrations from "./pages/accounting/Integrations";
 import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
+import JournalEntries from "./pages/accounting/JournalEntries";
+import BankReconciliation from "./pages/accounting/BankReconciliation";
+import Receivables from "./pages/accounting/Receivables";
+import Payables from "./pages/accounting/Payables";
 import Tax from "./pages/Tax";
 import VatReturns from "./pages/tax/VatReturns";
 import IncomeTax from "./pages/tax/IncomeTax";
@@ -83,9 +87,13 @@ const App = () => {
                         <Route path="/quickfill" element={<QuickFill />} />
                         <Route path="/accounting" element={<Accounting />} />
                         <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-                        <Route path="/accounting/transactions" element={<AccountingTransactions />} />
+                        <Route path="/accounting/journal-entries" element={<JournalEntries />} />
+                        <Route path="/accounting/bank-reconciliation" element={<BankReconciliation />} />
                         <Route path="/accounting/reports" element={<AccountingReports />} />
+                        <Route path="/accounting/receivables" element={<Receivables />} />
+                        <Route path="/accounting/payables" element={<Payables />} />
                         <Route path="/accounting/integrations" element={<AccountingIntegrations />} />
+                        <Route path="/accounting/transactions" element={<AccountingTransactions />} />
                         <Route path="/tax" element={<Tax />} />
                         <Route path="/tax/vat-returns" element={<VatReturns />} />
                         <Route path="/tax/income-tax" element={<IncomeTax />} />
