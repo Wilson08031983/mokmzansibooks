@@ -28,6 +28,9 @@ import {
   MoreHorizontal,
   FileText,
   ArrowLeft,
+  Check,
+  X,
+  RefreshCcw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -36,8 +39,20 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  downloadAction, 
+  emailAction, 
+  deleteAction, 
+  convertAction,
+  changeStatusAction
+} from "@/utils/actionUtils";
 
 // Mock data
 const mockQuotes = [
@@ -94,8 +109,10 @@ const mockQuotes = [
 const Quotes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [quotes, setQuotes] = useState(mockQuotes);
+  const { toast } = useToast();
 
-  const filteredQuotes = mockQuotes.filter((quote) => {
+  const filteredQuotes = quotes.filter((quote) => {
     const matchesSearch =
       quote.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       quote.client.toLowerCase().includes(searchTerm.toLowerCase());
@@ -134,7 +151,7 @@ const Quotes = () => {
     }
   };
 
-  const statusCounts = mockQuotes.reduce(
+  const statusCounts = quotes.reduce(
     (acc, quote) => {
       acc.all++;
       acc[quote.status]++;
@@ -142,6 +159,43 @@ const Quotes = () => {
     },
     { all: 0, pending: 0, accepted: 0, expired: 0, declined: 0, draft: 0 }
   );
+
+  const handleDownload = async (id: string) => {
+    await downloadAction(id, "quote");
+  };
+
+  const handleEmail = async (id: string) => {
+    await emailAction(id, "quote");
+  };
+
+  const handleDelete = async (id: string) => {
+    const success = await deleteAction(id, "quote");
+    if (success) {
+      // Remove the quote from the list if deletion was successful
+      setQuotes(prevQuotes => prevQuotes.filter(quote => quote.id !== id));
+    }
+  };
+
+  const handleConvertToInvoice = async (id: string) => {
+    await convertAction(id, "quote", "invoice", {
+      onSuccess: () => {
+        // Navigate to invoices or handle as needed
+        toast({
+          title: "Quote converted to invoice",
+          description: "You can now view it in the invoices section."
+        });
+      }
+    });
+  };
+
+  const handleChangeStatus = async (id: string, newStatus: string) => {
+    await changeStatusAction(id, "quote", newStatus);
+    
+    // Update the quote's status locally
+    setQuotes(prevQuotes => prevQuotes.map(quote => 
+      quote.id === id ? { ...quote, status: newStatus } : quote
+    ));
+  };
 
   return (
     <div className="space-y-6">
@@ -219,39 +273,86 @@ const Quotes = () => {
                           </TableCell>
                           <TableCell>{getStatusBadge(quote.status)}</TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Quote</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  <span>Convert to Invoice</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Quote</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Quote
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(quote.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEmail(quote.id)}
+                                className="h-8"
+                              >
+                                <Mail className="h-4 w-4 mr-1" /> Email
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem onClick={() => handleEmail(quote.id)}>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Quote</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownload(quote.id)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleConvertToInvoice(quote.id)}>
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    <span>Convert to Invoice</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                      <span>Change Status</span>
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuPortal>
+                                      <DropdownMenuSubContent>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "pending")}>
+                                          <span className="text-amber-500 mr-2">●</span> Pending
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "accepted")}>
+                                          <Check className="mr-2 h-4 w-4 text-green-500" /> Accepted
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "declined")}>
+                                          <X className="mr-2 h-4 w-4 text-red-500" /> Declined
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "expired")}>
+                                          <span className="text-gray-500 mr-2">●</span> Expired
+                                        </DropdownMenuItem>
+                                        {quote.status === "expired" && (
+                                          <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "pending")}>
+                                            <RefreshCcw className="mr-2 h-4 w-4" /> Renew Quote
+                                          </DropdownMenuItem>
+                                        )}
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuPortal>
+                                  </DropdownMenuSub>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Quote</DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="text-destructive"
+                                    onClick={() => handleDelete(quote.id)}
+                                  >
+                                    Delete Quote
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -300,39 +401,78 @@ const Quotes = () => {
                           </TableCell>
                           <TableCell>{getStatusBadge(quote.status)}</TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Quote</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  <span>Convert to Invoice</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Quote</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Quote
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(quote.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEmail(quote.id)}
+                                className="h-8"
+                              >
+                                <Mail className="h-4 w-4 mr-1" /> Email
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem onClick={() => handleEmail(quote.id)}>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Quote</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownload(quote.id)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleConvertToInvoice(quote.id)}>
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    <span>Convert to Invoice</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                      <span>Change Status</span>
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuPortal>
+                                      <DropdownMenuSubContent>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "accepted")}>
+                                          <Check className="mr-2 h-4 w-4 text-green-500" /> Accepted
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "declined")}>
+                                          <X className="mr-2 h-4 w-4 text-red-500" /> Declined
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "expired")}>
+                                          <span className="text-gray-500 mr-2">●</span> Expired
+                                        </DropdownMenuItem>
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuPortal>
+                                  </DropdownMenuSub>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Quote</DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="text-destructive"
+                                    onClick={() => handleDelete(quote.id)}
+                                  >
+                                    Delete Quote
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -380,39 +520,78 @@ const Quotes = () => {
                           </TableCell>
                           <TableCell>{getStatusBadge(quote.status)}</TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Quote</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  <span>Convert to Invoice</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Quote</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Quote
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(quote.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEmail(quote.id)}
+                                className="h-8"
+                              >
+                                <Mail className="h-4 w-4 mr-1" /> Email
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem onClick={() => handleEmail(quote.id)}>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Quote</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownload(quote.id)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleConvertToInvoice(quote.id)}>
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    <span>Convert to Invoice</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                      <span>Change Status</span>
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuPortal>
+                                      <DropdownMenuSubContent>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "pending")}>
+                                          <span className="text-amber-500 mr-2">●</span> Pending
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "declined")}>
+                                          <X className="mr-2 h-4 w-4 text-red-500" /> Declined
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "expired")}>
+                                          <span className="text-gray-500 mr-2">●</span> Expired
+                                        </DropdownMenuItem>
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuPortal>
+                                  </DropdownMenuSub>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Quote</DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="text-destructive"
+                                    onClick={() => handleDelete(quote.id)}
+                                  >
+                                    Delete Quote
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -460,35 +639,60 @@ const Quotes = () => {
                           </TableCell>
                           <TableCell>{getStatusBadge(quote.status)}</TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  <span>Email Quote</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  <span>Download PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Renew Quote</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  Delete Quote
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(quote.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEmail(quote.id)}
+                                className="h-8"
+                              >
+                                <Mail className="h-4 w-4 mr-1" /> Email
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem onClick={() => handleEmail(quote.id)}>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    <span>Email Quote</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownload(quote.id)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download PDF</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleChangeStatus(quote.id, "pending")}>
+                                    <RefreshCcw className="mr-2 h-4 w-4" />
+                                    <span>Renew Quote</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Quote</DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="text-destructive"
+                                    onClick={() => handleDelete(quote.id)}
+                                  >
+                                    Delete Quote
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
