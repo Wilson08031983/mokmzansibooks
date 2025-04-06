@@ -10,8 +10,15 @@ import {
   Link,
   Link2Off,
   CreditCard,
-  Building
+  Building,
+  InfoIcon
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface IntegrationItem {
   id: string;
@@ -20,6 +27,7 @@ interface IntegrationItem {
   connected: boolean;
   lastSynced?: string;
   autoSync?: boolean;
+  apiKeyGuide?: string;
 }
 
 interface IntegrationCardProps {
@@ -58,7 +66,23 @@ const IntegrationCard = ({
           </div>
           <CardTitle className="text-base">{integration.name}</CardTitle>
         </div>
-        {integration.connected && <CheckCircle className="h-5 w-5 text-green-500" />}
+        <div className="flex items-center">
+          {integration.apiKeyGuide && !integration.connected && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 mr-1">
+                    <InfoIcon className="h-4 w-4 text-gray-500" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs p-4">
+                  <p className="text-sm">{integration.apiKeyGuide}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {integration.connected && <CheckCircle className="h-5 w-5 text-green-500" />}
+        </div>
       </CardHeader>
       <CardContent>
         {integration.connected && (

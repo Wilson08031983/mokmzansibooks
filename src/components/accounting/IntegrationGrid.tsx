@@ -8,6 +8,7 @@ interface IntegrationItem {
   connected: boolean;
   lastSynced?: string;
   autoSync?: boolean;
+  apiKeyGuide?: string;
 }
 
 interface IntegrationGridProps {

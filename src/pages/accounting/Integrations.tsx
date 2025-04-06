@@ -41,6 +41,7 @@ interface BankIntegration {
   connected: boolean;
   lastSynced?: string;
   autoSync?: boolean;
+  apiKeyGuide?: string;
 }
 
 interface AccountingSoftware {
@@ -50,6 +51,7 @@ interface AccountingSoftware {
   connected: boolean;
   lastSynced?: string;
   autoSync?: boolean;
+  apiKeyGuide?: string;
 }
 
 const AccountingIntegrations = () => {
@@ -77,10 +79,38 @@ const AccountingIntegrations = () => {
   ]);
 
   const [accountingSoftware, setAccountingSoftware] = useState<AccountingSoftware[]>([
-    { id: "xero", name: "Xero", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
-    { id: "quickbooks", name: "QuickBooks", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
-    { id: "sage", name: "Sage", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
-    { id: "wave", name: "Wave", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { 
+      id: "xero", 
+      name: "Xero", 
+      logoSrc: "/placeholder.svg", 
+      connected: false, 
+      autoSync: true,
+      apiKeyGuide: "To obtain a Xero API key: 1) Go to developer.xero.com and create an account. 2) Create a new app in the developer dashboard. 3) Set up the OAuth2 credentials. 4) You'll need the Client ID and Client Secret to connect your app." 
+    },
+    { 
+      id: "quickbooks", 
+      name: "QuickBooks", 
+      logoSrc: "/placeholder.svg", 
+      connected: false, 
+      autoSync: true,
+      apiKeyGuide: "For QuickBooks API access: 1) Sign up at developer.intuit.com. 2) Create an app in the developer dashboard. 3) Use the sandbox environment for testing. 4) You'll need the Client ID and Client Secret to authenticate." 
+    },
+    { 
+      id: "sage", 
+      name: "Sage", 
+      logoSrc: "/placeholder.svg", 
+      connected: false, 
+      autoSync: true,
+      apiKeyGuide: "For Sage API access: 1) Visit developers.sage.com and create an account. 2) Register a new application. 3) Choose the appropriate Sage product API. 4) You'll receive Client ID and Client Secret credentials to use for authentication." 
+    },
+    { 
+      id: "wave", 
+      name: "Wave", 
+      logoSrc: "/placeholder.svg", 
+      connected: false, 
+      autoSync: true,
+      apiKeyGuide: "Wave API access: 1) Go to developer.waveapps.com and sign up. 2) Create a new application. 3) Set the redirect URLs for OAuth. 4) You'll need the Client ID and Client Secret to authenticate with Wave." 
+    },
   ]);
   
   useEffect(() => {
@@ -438,6 +468,12 @@ const AccountingIntegrations = () => {
               {integrationType === "bank" 
                 ? "Connect your bank account to automatically import transactions."
                 : "Connect your accounting software to synchronize financial data."}
+              {currentIntegration?.apiKeyGuide && integrationType === "software" && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-md text-xs">
+                  <p className="font-medium mb-1">How to obtain API credentials:</p>
+                  <p>{currentIntegration.apiKeyGuide}</p>
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -456,7 +492,7 @@ const AccountingIntegrations = () => {
                 </div>
               </div>
             )}
-
+            
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
