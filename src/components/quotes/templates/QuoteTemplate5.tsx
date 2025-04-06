@@ -1,6 +1,8 @@
+
 import React from "react";
 import { TemplateProps } from "@/types/quote";
 import { formatDate, formatCurrency, formatPercentage, renderCompanyLogo, renderCompanyStamp, renderSignature } from "@/utils/formatters";
+import { Badge } from "@/components/ui/badge";
 
 const QuoteTemplate5 = ({ data, preview = false }: TemplateProps) => {
   // Sample data for preview mode
@@ -46,7 +48,14 @@ const QuoteTemplate5 = ({ data, preview = false }: TemplateProps) => {
     total: 25000,
     notes: "This quotation is valid for 30 days.",
     terms: "50% deposit required to commence work.",
-    signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+    signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png",
+    bankAccount: {
+      bankName: "First National Bank",
+      accountName: "MOKMzansi Holdings",
+      accountNumber: "62123456789",
+      branchCode: "250655",
+      swiftCode: "FIRNZAJJ"
+    }
   };
 
   const displayData = preview ? previewData : data;
@@ -89,6 +98,25 @@ const QuoteTemplate5 = ({ data, preview = false }: TemplateProps) => {
               </div>
             </div>
           </div>
+          
+          {/* Bank Account Details in Sidebar */}
+          {displayData.bankAccount && (
+            <div className="mb-8 pt-6 border-t border-slate-600">
+              <div className="flex items-center mb-2">
+                <h4 className="text-xs uppercase tracking-wider text-gray-400">Banking Details</h4>
+                <Badge variant="bank" className="ml-2 text-xs">Payment</Badge>
+              </div>
+              <div className="space-y-2 mt-3">
+                <p className="text-sm"><span className="text-gray-400">Bank:</span> {displayData.bankAccount.bankName}</p>
+                <p className="text-sm"><span className="text-gray-400">Account Name:</span> {displayData.bankAccount.accountName}</p>
+                <p className="text-sm"><span className="text-gray-400">Account No:</span> {displayData.bankAccount.accountNumber}</p>
+                <p className="text-sm"><span className="text-gray-400">Branch Code:</span> {displayData.bankAccount.branchCode}</p>
+                {displayData.bankAccount.swiftCode && (
+                  <p className="text-sm"><span className="text-gray-400">SWIFT Code:</span> {displayData.bankAccount.swiftCode}</p>
+                )}
+              </div>
+            </div>
+          )}
           
           <div className="mt-auto pt-6 border-t border-slate-600">
             <div className="space-y-2">

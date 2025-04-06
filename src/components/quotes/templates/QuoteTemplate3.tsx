@@ -1,6 +1,8 @@
+
 import React from "react";
 import { TemplateProps } from "@/types/quote";
 import { formatDate, formatCurrency, formatPercentage, renderCompanyLogo, renderCompanyStamp, renderSignature } from "@/utils/formatters";
+import { Badge } from "@/components/ui/badge";
 
 const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
   // Sample data for preview mode
@@ -46,7 +48,14 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
     total: 25000,
     notes: "This quotation is valid for 30 days.",
     terms: "50% deposit required to commence work.",
-    signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+    signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png",
+    bankAccount: {
+      bankName: "First National Bank",
+      accountName: "MOKMzansi Holdings",
+      accountNumber: "62123456789",
+      branchCode: "250655",
+      swiftCode: "FIRNZAJJ"
+    }
   };
 
   const displayData = preview ? previewData : data;
@@ -154,6 +163,29 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
           </div>
         </div>
       </div>
+
+      {/* Bank Account Details */}
+      {displayData.bankAccount && (
+        <div className="relative z-10 mt-8 bg-white border-l-4 border-indigo-600 p-4 shadow-sm">
+          <div className="flex items-center mb-2">
+            <h3 className="font-bold text-indigo-600">Banking Details</h3>
+            <Badge variant="bank" className="ml-2">Payment</Badge>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm"><span className="font-medium">Bank Name:</span> {displayData.bankAccount.bankName}</p>
+              <p className="text-sm"><span className="font-medium">Account Name:</span> {displayData.bankAccount.accountName}</p>
+            </div>
+            <div>
+              <p className="text-sm"><span className="font-medium">Account Number:</span> {displayData.bankAccount.accountNumber}</p>
+              <p className="text-sm"><span className="font-medium">Branch Code:</span> {displayData.bankAccount.branchCode}</p>
+              {displayData.bankAccount.swiftCode && (
+                <p className="text-sm"><span className="font-medium">SWIFT Code:</span> {displayData.bankAccount.swiftCode}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notes and Terms */}
       <div className="relative z-10 mt-8 grid grid-cols-2 gap-6">

@@ -125,6 +125,11 @@ const formSchema = z.object({
   vatRate: z.number(),
   notes: z.string(),
   terms: z.string(),
+  bankName: z.string().optional(),
+  accountName: z.string().optional(),
+  accountNumber: z.string().optional(),
+  branchCode: z.string().optional(),
+  swiftCode: z.string().optional(),
 });
 
 interface Item {
@@ -176,6 +181,11 @@ const NewQuote = () => {
       vatRate: 0,
       notes: "This quotation is valid for 30 days.",
       terms: "50% deposit required to commence work.",
+      bankName: "First National Bank",
+      accountName: "MOKMzansi Holdings",
+      accountNumber: "62123456789",
+      branchCode: "250655",
+      swiftCode: "FIRNZAJJ",
     },
   });
 
@@ -244,8 +254,18 @@ const NewQuote = () => {
     const selectedClientId = form.watch("client");
     const selectedClient = getSelectedClient(selectedClientId);
     
+    const bankAccount = {
+      bankName: form.watch("bankName") || "",
+      accountName: form.watch("accountName") || "",
+      accountNumber: form.watch("accountNumber") || "",
+      branchCode: form.watch("branchCode") || "",
+      swiftCode: form.watch("swiftCode") || "",
+    };
+    
+    const hasBankDetails = !!form.watch("bankName");
+    
     return {
-      quoteNumber: "QT-2025-0001",
+      quoteNumber: form.watch("quoteNumber"),
       issueDate: form.watch("issueDate"),
       expiryDate: form.watch("expiryDate"),
       shortDescription: form.watch("shortDescription"),
@@ -278,7 +298,8 @@ const NewQuote = () => {
       total: calculateTotal(),
       notes: form.watch("notes") || "This quotation is valid for 30 days.",
       terms: form.watch("terms") || "50% deposit required to commence work.",
-      signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+      signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png",
+      bankAccount: hasBankDetails ? bankAccount : undefined
     };
   };
 
@@ -420,6 +441,82 @@ const NewQuote = () => {
                     </FormItem>
                   )}
                 />
+
+                <div className="mt-6 border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Bank Account Details</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="bankName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bank Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Bank Name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="accountName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Account Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Account Name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="accountNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Account Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Account Number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="branchCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Branch Code</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Branch Code" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="swiftCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>SWIFT Code (optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="SWIFT Code" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}

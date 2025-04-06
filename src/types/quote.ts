@@ -37,6 +37,13 @@ export interface QuoteData {
   notes?: string;
   terms?: string;
   signature?: string;
+  bankAccount?: {
+    bankName: string;
+    accountName: string;
+    accountNumber: string;
+    branchCode: string;
+    swiftCode?: string;
+  };
 }
 
 export interface TemplateProps {
