@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -5,12 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useFinancialData } from "@/contexts/FinancialDataContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
-import { FileText, Download, Calendar, Bell, Upload } from "lucide-react";
+import { FileText, Download, Calendar, Bell, Upload, FileSearch, FilePlus2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 
 interface ExtractedFormData {
   id: string;
@@ -19,18 +21,47 @@ interface ExtractedFormData {
   extractedDate: string;
 }
 
+interface FormTemplate {
+  id: string;
+  name: string;
+  description: string;
+  requiredDocuments: string[];
+  fields: string[];
+}
+
 const TaxDocuments = () => {
   const { toast } = useToast();
   const { taxDocuments, addTaxDocument } = useFinancialData();
   const { addNotification } = useNotifications();
   const documentsTableRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFormFile, setSelectedFormFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedFormData[]>([]);
   const [activeTab, setActiveTab] = useState("upload");
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [autoFillInProgress, setAutoFillInProgress] = useState(false);
+  const [autoFillProgress, setAutoFillProgress] = useState(0);
+  const [matchedDocuments, setMatchedDocuments] = useState<string[]>([]);
+  const [formTemplates, setFormTemplates] = useState<FormTemplate[]>([
+    {
+      id: "tender-001",
+      name: "Government Tender Application",
+      description: "Standard template for government tender submissions",
+      requiredDocuments: ["Company Registration", "Tax Clearance", "BEE Certificate", "VAT Registration"],
+      fields: ["companyName", "registrationNumber", "taxNumber", "vatNumber", "beeLevel"]
+    },
+    {
+      id: "grant-001",
+      name: "Business Grant Application",
+      description: "Application for business development grants",
+      requiredDocuments: ["Company Registration", "Tax Clearance", "Financial Statements"],
+      fields: ["companyName", "registrationNumber", "taxNumber", "annualTurnover"]
+    }
+  ]);
 
   useEffect(() => {
     const today = new Date();
@@ -60,6 +91,14 @@ const TaxDocuments = () => {
     }
   };
 
+  const handleFormFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFormFile(e.target.files[0]);
+      setMatchedDocuments([]);
+      setAutoFillProgress(0);
+    }
+  };
+
   const extractFormData = async (file: File, docId: string) => {
     setIsExtracting(true);
     
@@ -76,6 +115,18 @@ const TaxDocuments = () => {
         fakeFields['invoiceNumber'] = 'INV-' + Math.floor(Math.random() * 10000);
         fakeFields['invoiceDate'] = new Date().toISOString().split('T')[0];
         fakeFields['amount'] = 'R' + (Math.floor(Math.random() * 10000) + 1000).toLocaleString();
+      } else if (file.name.toLowerCase().includes('registration') || file.name.toLowerCase().includes('company')) {
+        fakeFields['companyName'] = 'ABC Company (Pty) Ltd';
+        fakeFields['registrationNumber'] = '2020/' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0') + '/07';
+        fakeFields['registrationDate'] = new Date(2020, 0, Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0];
+        fakeFields['companyType'] = 'Private Company';
+      } else if (file.name.toLowerCase().includes('bee') || file.name.toLowerCase().includes('bbbee')) {
+        fakeFields['beeLevel'] = Math.floor(Math.random() * 3) + 1;
+        fakeFields['beeScore'] = (Math.floor(Math.random() * 40) + 60).toString();
+        fakeFields['beeExpiryDate'] = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
+      } else if (file.name.toLowerCase().includes('vat')) {
+        fakeFields['vatNumber'] = '4' + Math.floor(Math.random() * 1000000000).toString().padStart(10, '0');
+        fakeFields['vatRegistrationDate'] = new Date(2020, 0, Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0];
       } else {
         fakeFields['documentType'] = file.name.split('.').slice(0, -1).join('.');
         fakeFields['submissionDate'] = new Date().toISOString().split('T')[0];
@@ -142,7 +193,10 @@ const TaxDocuments = () => {
     let category = "General";
     if (selectedFile.name.toLowerCase().includes('tax')) {
       category = "Returns";
-    } else if (selectedFile.name.toLowerCase().includes('certificate')) {
+    } else if (selectedFile.name.toLowerCase().includes('certificate') || 
+               selectedFile.name.toLowerCase().includes('registration') ||
+               selectedFile.name.toLowerCase().includes('vat') ||
+               selectedFile.name.toLowerCase().includes('bee')) {
       category = "Certificates";
     } else if (selectedFile.name.toLowerCase().includes('letter') || 
                selectedFile.name.toLowerCase().includes('notice')) {
@@ -175,6 +229,108 @@ const TaxDocuments = () => {
     
     setUploadSuccess(true);
     setActiveTab("documents");
+  };
+
+  const processFormUpload = async () => {
+    if (!selectedFormFile) {
+      toast({
+        title: "No Form Selected",
+        description: "Please select a form or tender document to upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAutoFillInProgress(true);
+    setAutoFillProgress(0);
+    setMatchedDocuments([]);
+
+    // Determine which form template to use based on filename
+    const formType = selectedFormFile.name.toLowerCase().includes('tender') 
+      ? formTemplates[0] 
+      : formTemplates[1];
+    
+    toast({
+      title: "Form Detected",
+      description: `Processing ${formType.name}`,
+      variant: "info",
+    });
+
+    // Simulate scanning documents to find matches
+    const totalSteps = formType.requiredDocuments.length + 2;
+    let currentStep = 0;
+
+    // Step 1: Analyze the form
+    await new Promise(resolve => setTimeout(resolve, 800));
+    currentStep++;
+    setAutoFillProgress(Math.floor((currentStep / totalSteps) * 100));
+    
+    const matches: string[] = [];
+    
+    // Step 2-5: Find matching documents for each required document
+    for (const requiredDoc of formType.requiredDocuments) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      currentStep++;
+      setAutoFillProgress(Math.floor((currentStep / totalSteps) * 100));
+      
+      // Find a matching document in our uploaded documents
+      const matchingDoc = taxDocuments.find(doc => {
+        return doc.name.toLowerCase().includes(requiredDoc.toLowerCase());
+      });
+      
+      if (matchingDoc) {
+        matches.push(matchingDoc.name);
+        toast({
+          title: "Document Match Found",
+          description: `Found matching document: ${matchingDoc.name}`,
+          variant: "success",
+        });
+      } else {
+        toast({
+          title: "Missing Document",
+          description: `Could not find required document: ${requiredDoc}`,
+          variant: "warning",
+        });
+      }
+    }
+    
+    // Final step: Complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    currentStep++;
+    setAutoFillProgress(100);
+    setMatchedDocuments(matches);
+    
+    if (matches.length > 0) {
+      toast({
+        title: "Auto-Fill Ready",
+        description: `${matches.length} document(s) can be used to auto-fill the form`,
+        variant: "success",
+      });
+      
+      setActiveTab("documents");
+      
+      // Add a notification about the form
+      addNotification({
+        title: "Form Ready for Submission",
+        message: `${formType.name} has been processed and is ready for completion`,
+        type: 'info',
+        link: '/tax/documents'
+      });
+    } else {
+      toast({
+        title: "No Matching Documents",
+        description: "Could not find any matching documents for this form",
+        variant: "destructive",
+      });
+    }
+    
+    // Reset the form file input
+    setSelectedFormFile(null);
+    if (formFileInputRef.current) {
+      formFileInputRef.current.value = '';
+    }
+    
+    setAutoFillInProgress(false);
   };
 
   const handleDownload = async (id: string) => {
@@ -418,6 +574,15 @@ const TaxDocuments = () => {
       description: "The form has been auto-filled with the extracted data.",
       variant: "success",
     });
+
+    // If we have matched documents from a form/tender upload, show additional info
+    if (matchedDocuments.length > 0) {
+      toast({
+        title: "Form Submission Ready",
+        description: `All required documents are attached and the form is ready for submission.`,
+        variant: "info",
+      });
+    }
   };
 
   return (
@@ -438,9 +603,10 @@ const TaxDocuments = () => {
       </div>
 
       <Tabs defaultValue="upload" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upload">Step 1: Upload Documents</TabsTrigger>
-          <TabsTrigger value="documents">Step 2: Auto-Fill Forms</TabsTrigger>
+          <TabsTrigger value="form-upload">Step 2: Upload Form/Tender</TabsTrigger>
+          <TabsTrigger value="documents">Step 3: Auto-Fill Forms</TabsTrigger>
         </TabsList>
         
         <TabsContent value="upload" className="space-y-4">
@@ -486,7 +652,7 @@ const TaxDocuments = () => {
                   <AlertTitle>Upload Successful</AlertTitle>
                   <AlertDescription>
                     Your document has been uploaded and the data has been extracted.
-                    Please proceed to Step 2 to use the auto-fill feature.
+                    Please proceed to Step 2 to upload a form or tender document.
                   </AlertDescription>
                 </Alert>
               )}
@@ -494,8 +660,80 @@ const TaxDocuments = () => {
           </Card>
           
           <div className="text-sm text-gray-500 mt-2">
-            <p>Upload your tax forms here. The system will automatically extract information for use in Step 2.</p>
+            <p>Upload your company documents here (registration, tax clearance, BEE certificates, etc.).</p>
+            <p>The system will extract information that can be used for auto-filling forms and tenders.</p>
             <p>Supported formats: PDF, JPG, PNG</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="form-upload" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Form or Tender</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end gap-4">
+                <div className="flex-1">
+                  <Input 
+                    type="file" 
+                    ref={formFileInputRef}
+                    onChange={handleFormFileChange} 
+                  />
+                </div>
+                <Button 
+                  variant="upload"
+                  onClick={processFormUpload} 
+                  disabled={!selectedFormFile || autoFillInProgress}
+                  className="flex items-center gap-2"
+                >
+                  {autoFillInProgress ? (
+                    "Processing..."
+                  ) : (
+                    <>
+                      <FilePlus2 className="h-4 w-4" /> Process Form
+                    </>
+                  )}
+                </Button>
+              </div>
+              {selectedFormFile && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-500">
+                    <strong>Selected form:</strong> {selectedFormFile.name} 
+                    ({(selectedFormFile.size / 1024).toFixed(2)} KB)
+                  </p>
+                </div>
+              )}
+              
+              {autoFillInProgress && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Analyzing document requirements...</span>
+                    <span>{autoFillProgress}%</span>
+                  </div>
+                  <Progress value={autoFillProgress} className="h-2" />
+                </div>
+              )}
+              
+              {matchedDocuments.length > 0 && (
+                <Alert variant="success" className="mt-4">
+                  <AlertTitle>Document Matching Complete</AlertTitle>
+                  <AlertDescription>
+                    <p>Found {matchedDocuments.length} matching documents for this form:</p>
+                    <ul className="mt-2 list-disc list-inside">
+                      {matchedDocuments.map((doc, index) => (
+                        <li key={index}>{doc}</li>
+                      ))}
+                    </ul>
+                    <p className="mt-2">Proceed to Step 3 to complete the auto-fill process.</p>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+          
+          <div className="text-sm text-gray-500 mt-2">
+            <p>Upload your form or tender document here. The system will automatically scan for required documents.</p>
+            <p>If matching documents are found, they will be used to auto-fill the form in the next step.</p>
           </div>
         </TabsContent>
         
@@ -519,15 +757,34 @@ const TaxDocuments = () => {
                 </Alert>
               )}
               
+              {matchedDocuments.length > 0 && (
+                <Alert variant="upload" className="mb-4">
+                  <AlertTitle>Form Ready for Auto-Fill</AlertTitle>
+                  <AlertDescription>
+                    <p>The system has matched your uploaded form with {matchedDocuments.length} document(s).</p>
+                    <p>Click "Use for Auto-Fill" on any matched document below to complete the form.</p>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               {extractedData.length > 0 ? (
                 <div className="space-y-4">
                   {extractedData.map(data => {
                     const document = taxDocuments.find(doc => doc.id === data.documentId);
+                    const isMatchedDoc = document && matchedDocuments.includes(document.name);
+                    
                     return document ? (
-                      <Card key={data.id} className="border border-gray-200">
+                      <Card key={data.id} className={`border ${isMatchedDoc ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
                         <CardHeader className="pb-2">
                           <div className="flex justify-between items-start">
-                            <CardTitle className="text-base">{document.name}</CardTitle>
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-base">{document.name}</CardTitle>
+                              {isMatchedDoc && (
+                                <Badge variant="outline" className="border-green-500 text-green-500">
+                                  Form Match
+                                </Badge>
+                              )}
+                            </div>
                             <div className="flex space-x-2">
                               {data.fields.expiryDate && (
                                 <div className="flex items-center">
@@ -554,9 +811,9 @@ const TaxDocuments = () => {
                               variant="upload" 
                               size="sm" 
                               onClick={() => useAutoFill(data.id)}
-                              className="flex items-center gap-2"
+                              className={`flex items-center gap-2 ${isMatchedDoc ? 'bg-green-600 hover:bg-green-700' : ''}`}
                             >
-                              <Upload className="h-4 w-4" />
+                              <FileSearch className="h-4 w-4" />
                               Use for Auto-Fill
                             </Button>
                             <Button 
@@ -566,7 +823,7 @@ const TaxDocuments = () => {
                               className="flex items-center gap-2"
                             >
                               <Download className="h-4 w-4" />
-                              Download Form
+                              Download Document
                             </Button>
                           </div>
                         </CardContent>
@@ -609,9 +866,20 @@ const TaxDocuments = () => {
               <TableBody>
                 {taxDocuments.map((taxDoc) => {
                   const expiryStatus = getExpiryStatus(taxDoc.id);
+                  const isMatchedDoc = matchedDocuments.includes(taxDoc.name);
+                  
                   return (
-                    <TableRow key={taxDoc.id}>
-                      <TableCell className="font-medium">{taxDoc.name}</TableCell>
+                    <TableRow key={taxDoc.id} className={isMatchedDoc ? 'bg-green-50' : ''}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {taxDoc.name}
+                          {isMatchedDoc && (
+                            <Badge variant="outline" className="border-green-500 text-green-500">
+                              Form Match
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{taxDoc.category}</TableCell>
                       <TableCell>{taxDoc.type}</TableCell>
                       <TableCell>{taxDoc.size}</TableCell>
