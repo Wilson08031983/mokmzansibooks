@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Download, Upload, Tag, Camera, Image, FileUp } from "lucide-react";
+import { Plus, FileText, Download, Upload, Tag, Camera, Image, FileUp, User, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
 import { useState, useRef, useEffect } from "react";
@@ -27,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 const CATEGORIES = [
   { id: "all", name: "All Categories", color: "#8E9196" },
@@ -39,24 +40,54 @@ const CATEGORIES = [
   { id: "utilities", name: "Utilities", color: "#10B981" },
 ];
 
-const TRANSACTIONS = [...Array(8)].map((_, index) => {
-  const isIncome = index % 3 === 0;
-  let categoryId = isIncome ? "income" : "expense";
-  
-  if (!isIncome) {
-    const expenseCategories = ["supplies", "marketing", "salary", "rent", "utilities"];
-    categoryId = expenseCategories[index % expenseCategories.length];
-  }
+// Mock clients data
+const CLIENTS = [
+  { id: "client1", name: "Acme Corporation", email: "billing@acme.com" },
+  { id: "client2", name: "Stark Industries", email: "accounts@stark.com" },
+  { id: "client3", name: "Wayne Enterprises", email: "finance@wayne.com" },
+  { id: "client4", name: "Umbrella Corporation", email: "payments@umbrella.com" },
+  { id: "client5", name: "Oscorp Industries", email: "treasury@oscorp.com" },
+];
 
-  return {
-    id: 1000 + index,
-    date: `April ${index + 1}, 2025`,
-    amount: Math.random() * 1000,
-    type: isIncome ? "income" : "expense",
-    categoryId,
-    description: isIncome ? "Client Payment" : "Business Expense",
-  };
-});
+// Extended transaction interface with client information
+interface Transaction {
+  id: number;
+  date: string;
+  amount: number;
+  type: string;
+  categoryId: string;
+  description: string;
+  clientId?: string;
+}
+
+// Generate sample transactions
+const generateTransactions = (): Transaction[] => {
+  return [...Array(8)].map((_, index) => {
+    const isIncome = index % 3 === 0;
+    let categoryId = isIncome ? "income" : "expense";
+    
+    if (!isIncome) {
+      const expenseCategories = ["supplies", "marketing", "salary", "rent", "utilities"];
+      categoryId = expenseCategories[index % expenseCategories.length];
+    }
+
+    // Randomly assign clients to some transactions
+    const hasClient = isIncome && Math.random() > 0.4;
+    const clientId = hasClient ? CLIENTS[Math.floor(Math.random() * CLIENTS.length)].id : undefined;
+
+    return {
+      id: 1000 + index,
+      date: `April ${index + 1}, 2025`,
+      amount: Math.random() * 1000,
+      type: isIncome ? "income" : "expense",
+      categoryId,
+      description: isIncome ? "Client Payment" : "Business Expense",
+      clientId,
+    };
+  });
+};
+
+const TRANSACTIONS = generateTransactions();
 
 const AccountingTransactions = () => {
   const { toast } = useToast();
@@ -72,12 +103,16 @@ const AccountingTransactions = () => {
   const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
   const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [clientLinkDialogOpen, setClientLinkDialogOpen] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>(TRANSACTIONS);
   
   const [newTransaction, setNewTransaction] = useState({
     amount: "",
     description: "",
     type: "expense",
     categoryId: "expense",
+    clientId: "",
   });
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -121,6 +156,7 @@ const AccountingTransactions = () => {
       description: "",
       type: "expense",
       categoryId: "expense",
+      clientId: "",
     });
   };
 
@@ -156,12 +192,37 @@ const AccountingTransactions = () => {
     setExportDialogOpen(false);
   };
 
-  const filteredTransactions = TRANSACTIONS.filter(
+  const handleClientLink = () => {
+    if (selectedTransactionId && selectedClientId) {
+      setTransactions(prev => 
+        prev.map(transaction => 
+          transaction.id === selectedTransactionId 
+            ? { ...transaction, clientId: selectedClientId } 
+            : transaction
+        )
+      );
+      
+      const client = CLIENTS.find(c => c.id === selectedClientId);
+      
+      toast({
+        title: "Client Linked",
+        description: `Transaction #${selectedTransactionId} has been linked to ${client?.name}.`,
+      });
+      
+      setClientLinkDialogOpen(false);
+      setSelectedTransactionId(null);
+      setSelectedClientId(null);
+    }
+  };
+
+  const filteredTransactions = transactions.filter(
     (transaction) =>
       selectedCategory === "all" || transaction.categoryId === selectedCategory
   );
 
   const getCategoryById = (id) => CATEGORIES.find((cat) => cat.id === id) || CATEGORIES[0];
+  
+  const getClientById = (id?: string) => id ? CLIENTS.find((client) => client.id === id) : null;
 
   const startCamera = async () => {
     try {
@@ -262,6 +323,17 @@ const AccountingTransactions = () => {
     setImportDialogOpen(true);
     setCurrentImportTab("attachment");
   };
+  
+  const startClientLinkProcess = () => {
+    setAttachmentDialogOpen(false);
+    setClientLinkDialogOpen(true);
+    
+    // Find the transaction to prefill the client if already set
+    const transaction = transactions.find(t => t.id === selectedTransactionId);
+    if (transaction?.clientId) {
+      setSelectedClientId(transaction.clientId);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -329,6 +401,8 @@ const AccountingTransactions = () => {
             <div className="space-y-4">
               {filteredTransactions.map((transaction) => {
                 const category = getCategoryById(transaction.categoryId);
+                const client = getClientById(transaction.clientId);
+                
                 return (
                   <div 
                     key={transaction.id} 
@@ -353,6 +427,14 @@ const AccountingTransactions = () => {
                               <span>{category.name}</span>
                             </div>
                           </div>
+                          {client && (
+                            <div className="flex items-center ml-3">
+                              <User className="h-3 w-3 mr-1" />
+                              <Badge variant="client" className="text-xs py-0 px-1.5 ml-1">
+                                {client.name}
+                              </Badge>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -439,6 +521,29 @@ const AccountingTransactions = () => {
                 </SelectContent>
               </Select>
             </div>
+            {newTransaction.type === "income" && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="client" className="text-right">
+                  Client
+                </Label>
+                <Select
+                  value={newTransaction.clientId}
+                  onValueChange={(value) => setNewTransaction({...newTransaction, clientId: value})}
+                >
+                  <SelectTrigger id="client" className="col-span-3">
+                    <SelectValue placeholder="Select client (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No Client</SelectItem>
+                    {CLIENTS.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
                 Description
@@ -672,17 +777,65 @@ const AccountingTransactions = () => {
       <AlertDialog open={attachmentDialogOpen} onOpenChange={setAttachmentDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Attach Documents</AlertDialogTitle>
+            <AlertDialogTitle>Transaction Options</AlertDialogTitle>
             <AlertDialogDescription>
-              Would you like to attach a receipt, invoice, or other documentation to Transaction #{selectedTransactionId}?
+              What would you like to do with Transaction #{selectedTransactionId}?
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <Button variant="outline" onClick={startAttachmentProcess} className="flex flex-col items-center py-6">
+              <FileUp className="h-6 w-6 mb-2" />
+              <span>Attach Document</span>
+              <span className="text-xs text-muted-foreground mt-1">Receipt, invoice, etc.</span>
+            </Button>
+            <Button variant="outline" onClick={startClientLinkProcess} className="flex flex-col items-center py-6">
+              <LinkIcon className="h-6 w-6 mb-2" />
+              <span>Link to Client</span>
+              <span className="text-xs text-muted-foreground mt-1">Associate with customer</span>
+            </Button>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={startAttachmentProcess}>Attach Document</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={clientLinkDialogOpen} onOpenChange={setClientLinkDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Link Transaction to Client</DialogTitle>
+            <DialogDescription>
+              Associate Transaction #{selectedTransactionId} with a client
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-2">
+              <Label htmlFor="client-select">Select Client</Label>
+              <Select
+                value={selectedClientId || ""}
+                onValueChange={setSelectedClientId}
+              >
+                <SelectTrigger id="client-select">
+                  <SelectValue placeholder="Choose a client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No Client (Unlink)</SelectItem>
+                  {CLIENTS.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name} ({client.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleClientLink}>
+              {selectedClientId ? "Link Client" : "Remove Link"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

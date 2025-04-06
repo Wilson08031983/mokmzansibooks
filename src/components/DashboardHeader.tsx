@@ -16,6 +16,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 import { Notifications } from "@/components/Notifications";
+import { Badge } from "@/components/ui/badge";
 
 const DashboardHeader = () => {
   const { currentUser, signOut } = useAuth();
