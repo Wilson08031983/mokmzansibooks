@@ -2,6 +2,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Plus, Upload, Download } from "lucide-react";
 
 const Reports = () => {
   const { currentUser } = useAuth();
@@ -15,11 +17,48 @@ const Reports = () => {
     });
   };
 
+  const handleNewTransaction = () => {
+    toast({
+      title: "New Transaction",
+      description: "Creating a new transaction.",
+    });
+  };
+
+  const handleImport = () => {
+    toast({
+      title: "Import",
+      description: "Import functionality initiated.",
+    });
+  };
+
+  const handleExport = () => {
+    toast({
+      title: "Export",
+      description: "Export functionality initiated.",
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Reports</h1>
-        <p className="text-gray-500">Generate and view reports for your business</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Reports</h1>
+          <p className="text-gray-500">Generate and view reports for your business</p>
+        </div>
+        <div className="flex space-x-2">
+          <Button onClick={handleNewTransaction}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Transaction
+          </Button>
+          <Button variant="outline" onClick={handleImport}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+        </div>
       </div>
 
       {/* Removed the premium alert that was here */}
