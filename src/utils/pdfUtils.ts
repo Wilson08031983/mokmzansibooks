@@ -290,10 +290,12 @@ export const extractTextFromDocuments = async (files: File[]): Promise<{
     extractedData["Issue Date"] = "2023-01-15";
     extractedData["Expiry Date"] = "2024-01-14";
   } else if (documentType === "csd") {
-    extractedData["CSD Registration"] = "MAAA0123456";
-    extractedData["Supplier Number"] = "654321";
+    extractedData["CSD Registration"] = "MAAA0987654";
+    extractedData["Supplier Number"] = "SN12345678";
     extractedData["Registration Date"] = "2019-05-10";
     extractedData["Status"] = "Active";
+    extractedData["Company Name"] = "Morwa Moabelo (Pty) Ltd";
+    extractedData["Registration Number"] = "2018/421571/07";
   } else if (documentType === "bank") {
     extractedData["Bank Name"] = "First National Bank";
     extractedData["Account Holder"] = "Morwa Moabelo (Pty) Ltd";

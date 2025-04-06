@@ -102,8 +102,15 @@ const DataSummary = () => {
     const handleStorageChange = () => {
       try {
         const storedData = localStorage.getItem('extractedData');
-        setData(storedData ? JSON.parse(storedData) : {});
-      } catch {
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          setData(parsedData);
+          console.log('Data updated from storage:', parsedData);
+        } else {
+          setData({});
+        }
+      } catch (error) {
+        console.error('Error parsing data from storage:', error);
         setData({});
       }
     };

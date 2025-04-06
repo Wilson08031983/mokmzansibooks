@@ -47,7 +47,11 @@ export const DocumentExtractor: React.FC<DocumentExtractorProps> = ({
       setExtractedType(result.type);
       setStatus('success');
       
-      // Trigger storage event for other components to update
+      // Create and dispatch a custom event for components to update
+      const storageEvent = new Event('storageupdated');
+      window.dispatchEvent(storageEvent);
+      
+      // Also trigger standard storage event for compatibility
       window.dispatchEvent(new Event('storage'));
       
       // Call the callback if provided
