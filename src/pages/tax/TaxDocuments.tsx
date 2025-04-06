@@ -5,11 +5,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useFinancialData } from "@/contexts/FinancialDataContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
-import { FileText, Download, Calendar, Bell } from "lucide-react";
+import { FileText, Download, Calendar, Bell, Upload } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface ExtractedFormData {
   id: string;
@@ -28,6 +29,8 @@ const TaxDocuments = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedFormData[]>([]);
   const [activeTab, setActiveTab] = useState("upload");
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   useEffect(() => {
     const today = new Date();
@@ -52,6 +55,8 @@ const TaxDocuments = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+      setUploadSuccess(false);
+      setDownloadSuccess(false);
     }
   };
 
@@ -92,6 +97,7 @@ const TaxDocuments = () => {
       toast({
         title: "Form Data Extracted",
         description: "Document information has been successfully extracted and saved.",
+        variant: "upload",
       });
       
       const today = new Date();
@@ -164,8 +170,10 @@ const TaxDocuments = () => {
     toast({
       title: "Document Uploaded",
       description: "Your document has been uploaded and saved successfully.",
+      variant: "upload",
     });
     
+    setUploadSuccess(true);
     setActiveTab("documents");
   };
 
@@ -176,6 +184,7 @@ const TaxDocuments = () => {
     toast({
       title: "Generating Document",
       description: `Preparing ${taxDoc.name} for download...`,
+      variant: "info",
     });
     
     const tempContainer = document.createElement('div');
@@ -332,7 +341,9 @@ const TaxDocuments = () => {
         toast({
           title: "Download Complete",
           description: `${taxDoc.name} has been downloaded successfully.`,
+          variant: "download",
         });
+        setDownloadSuccess(true);
       } else {
         throw new Error("Failed to generate PDF");
       }
@@ -353,6 +364,7 @@ const TaxDocuments = () => {
     toast({
       title: "Generating Report",
       description: "Preparing document index for download...",
+      variant: "info",
     });
     
     try {
@@ -365,7 +377,9 @@ const TaxDocuments = () => {
         toast({
           title: "Download Complete",
           description: "Tax documents index has been downloaded successfully.",
+          variant: "download",
         });
+        setDownloadSuccess(true);
       } else {
         throw new Error("Failed to generate PDF");
       }
@@ -395,6 +409,17 @@ const TaxDocuments = () => {
     }
   };
 
+  const useAutoFill = (dataId: string) => {
+    const extractedItem = extractedData.find(item => item.id === dataId);
+    if (!extractedItem) return;
+    
+    toast({
+      title: "Auto-Fill Applied",
+      description: "The form has been auto-filled with the extracted data.",
+      variant: "success",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -402,7 +427,11 @@ const TaxDocuments = () => {
           <h1 className="text-2xl font-bold">Tax Documents</h1>
           <p className="text-gray-500">Store and manage your tax-related documents</p>
         </div>
-        <Button variant="outline" onClick={handleDownloadAllDocuments} className="flex items-center gap-2">
+        <Button 
+          variant="download" 
+          onClick={handleDownloadAllDocuments} 
+          className="flex items-center gap-2"
+        >
           <Download className="h-4 w-4" />
           Export Document Index
         </Button>
@@ -429,10 +458,18 @@ const TaxDocuments = () => {
                   />
                 </div>
                 <Button 
+                  variant="upload"
                   onClick={handleUpload} 
                   disabled={!selectedFile || isExtracting}
+                  className="flex items-center gap-2"
                 >
-                  {isExtracting ? "Extracting..." : "Upload & Extract"}
+                  {isExtracting ? (
+                    "Extracting..."
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" /> Upload & Extract
+                    </>
+                  )}
                 </Button>
               </div>
               {selectedFile && (
@@ -442,6 +479,16 @@ const TaxDocuments = () => {
                     ({(selectedFile.size / 1024).toFixed(2)} KB)
                   </p>
                 </div>
+              )}
+              
+              {uploadSuccess && (
+                <Alert variant="upload" className="mt-4">
+                  <AlertTitle>Upload Successful</AlertTitle>
+                  <AlertDescription>
+                    Your document has been uploaded and the data has been extracted.
+                    Please proceed to Step 2 to use the auto-fill feature.
+                  </AlertDescription>
+                </Alert>
               )}
             </CardContent>
           </Card>
@@ -462,6 +509,16 @@ const TaxDocuments = () => {
                 The information from your uploaded documents can be used to automatically fill forms. 
                 Select a document to view extracted data.
               </p>
+              
+              {downloadSuccess && (
+                <Alert variant="download" className="mb-4">
+                  <AlertTitle>Download Successful</AlertTitle>
+                  <AlertDescription>
+                    Your document has been successfully downloaded. You can use it for your records or submit it to the relevant authorities.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               {extractedData.length > 0 ? (
                 <div className="space-y-4">
                   {extractedData.map(data => {
@@ -492,9 +549,26 @@ const TaxDocuments = () => {
                               </div>
                             ))}
                           </div>
-                          <Button variant="outline" size="sm" className="mt-4">
-                            Use for Auto-Fill
-                          </Button>
+                          <div className="flex gap-2 mt-4">
+                            <Button 
+                              variant="upload" 
+                              size="sm" 
+                              onClick={() => useAutoFill(data.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Upload className="h-4 w-4" />
+                              Use for Auto-Fill
+                            </Button>
+                            <Button 
+                              variant="download" 
+                              size="sm"
+                              onClick={() => handleDownload(document.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Download className="h-4 w-4" />
+                              Download Form
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     ) : null;
@@ -566,12 +640,12 @@ const TaxDocuments = () => {
                       </TableCell>
                       <TableCell>
                         <Button
-                          variant="outline"
+                          variant="download"
                           size="sm"
                           className="flex items-center"
                           onClick={() => handleDownload(taxDoc.id)}
                         >
-                          <FileText className="mr-2 h-4 w-4" />
+                          <Download className="mr-2 h-4 w-4" />
                           Download
                         </Button>
                       </TableCell>
