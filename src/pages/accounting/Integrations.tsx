@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BankIntegration {
   id: string;
@@ -32,6 +34,7 @@ interface BankIntegration {
   logoSrc: string;
   connected: boolean;
   lastSynced?: string;
+  autoSync?: boolean;
 }
 
 interface AccountingSoftware {
@@ -40,6 +43,7 @@ interface AccountingSoftware {
   logoSrc: string;
   connected: boolean;
   lastSynced?: string;
+  autoSync?: boolean;
 }
 
 const AccountingIntegrations = () => {
@@ -54,23 +58,23 @@ const AccountingIntegrations = () => {
   const [integrationType, setIntegrationType] = useState<"bank" | "software">("bank");
   
   const [banks, setBanks] = useState<BankIntegration[]>([
-    { id: "absa", name: "ABSA", logoSrc: "/placeholder.svg", connected: false },
-    { id: "fnb", name: "First National Bank", logoSrc: "/placeholder.svg", connected: false },
-    { id: "nedbank", name: "Nedbank", logoSrc: "/placeholder.svg", connected: false },
-    { id: "standard-bank", name: "Standard Bank", logoSrc: "/placeholder.svg", connected: false },
-    { id: "capitec", name: "Capitec", logoSrc: "/placeholder.svg", connected: false },
-    { id: "bank-zero", name: "Bank Zero", logoSrc: "/placeholder.svg", connected: false },
-    { id: "lula", name: "Lula", logoSrc: "/placeholder.svg", connected: false },
-    { id: "tyme-bank", name: "TymeBank", logoSrc: "/placeholder.svg", connected: false },
-    { id: "al-baraka", name: "Al Baraka Bank", logoSrc: "/placeholder.svg", connected: false },
-    { id: "bidvest", name: "Bidvest Bank", logoSrc: "/placeholder.svg", connected: false },
+    { id: "absa", name: "ABSA", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "fnb", name: "First National Bank", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "nedbank", name: "Nedbank", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "standard-bank", name: "Standard Bank", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "capitec", name: "Capitec", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "bank-zero", name: "Bank Zero", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "lula", name: "Lula", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "tyme-bank", name: "TymeBank", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "al-baraka", name: "Al Baraka Bank", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "bidvest", name: "Bidvest Bank", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
   ]);
 
   const [accountingSoftware, setAccountingSoftware] = useState<AccountingSoftware[]>([
-    { id: "xero", name: "Xero", logoSrc: "/placeholder.svg", connected: false },
-    { id: "quickbooks", name: "QuickBooks", logoSrc: "/placeholder.svg", connected: false },
-    { id: "sage", name: "Sage", logoSrc: "/placeholder.svg", connected: false },
-    { id: "wave", name: "Wave", logoSrc: "/placeholder.svg", connected: false },
+    { id: "xero", name: "Xero", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "quickbooks", name: "QuickBooks", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "sage", name: "Sage", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
+    { id: "wave", name: "Wave", logoSrc: "/placeholder.svg", connected: false, autoSync: true },
   ]);
   
   useEffect(() => {
@@ -94,12 +98,66 @@ const AccountingIntegrations = () => {
     localStorage.setItem('connectedSoftware', JSON.stringify(accountingSoftware));
   }, [accountingSoftware]);
 
+  // Check for connections that need to be synced (24 hour interval)
+  useEffect(() => {
+    const checkForAutoSync = () => {
+      const now = new Date();
+      
+      // Check banks that need syncing
+      const banksToSync = banks.filter(bank => {
+        if (!bank.connected || !bank.lastSynced || bank.autoSync === false) return false;
+        
+        const lastSyncDate = new Date(bank.lastSynced);
+        const hoursDifference = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60 * 60);
+        
+        return hoursDifference >= 24;
+      });
+      
+      // Check software that needs syncing
+      const softwareToSync = accountingSoftware.filter(software => {
+        if (!software.connected || !software.lastSynced || software.autoSync === false) return false;
+        
+        const lastSyncDate = new Date(software.lastSynced);
+        const hoursDifference = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60 * 60);
+        
+        return hoursDifference >= 24;
+      });
+      
+      // Perform syncs if needed
+      if (banksToSync.length > 0 || softwareToSync.length > 0) {
+        toast({
+          title: "Auto-Sync Started",
+          description: `Synchronizing data for ${banksToSync.length} banks and ${softwareToSync.length} accounting software.`,
+        });
+        
+        // Sync banks
+        banksToSync.forEach(bank => {
+          syncIntegration(bank.id, 'bank', true);
+        });
+        
+        // Sync software
+        softwareToSync.forEach(software => {
+          syncIntegration(software.id, 'software', true);
+        });
+      }
+    };
+    
+    // Check immediately on component mount
+    checkForAutoSync();
+    
+    // Set up interval to check every hour (we don't need to check every second)
+    const intervalId = setInterval(checkForAutoSync, 60 * 60 * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [banks, accountingSoftware]);
+
   const handleOpenIntegrationDialog = (integration: BankIntegration | AccountingSoftware, type: "bank" | "software") => {
     setCurrentIntegration(integration);
     setIntegrationType(type);
     setApiKey("");
     setUsername("");
     setPassword("");
+    setAutoSync(integration.autoSync !== false);
     setOpenDialog(true);
   };
 
@@ -135,7 +193,8 @@ const AccountingIntegrations = () => {
             ? { 
                 ...bank, 
                 connected: true, 
-                lastSynced: new Date().toISOString() 
+                lastSynced: new Date().toISOString(),
+                autoSync: autoSync
               } 
             : bank
         );
@@ -146,7 +205,8 @@ const AccountingIntegrations = () => {
             ? { 
                 ...software, 
                 connected: true, 
-                lastSynced: new Date().toISOString() 
+                lastSynced: new Date().toISOString(),
+                autoSync: autoSync
               } 
             : software
         );
@@ -175,11 +235,13 @@ const AccountingIntegrations = () => {
     }, 2000);
   };
 
-  const syncIntegration = (id: string, type: "bank" | "software") => {
-    toast({
-      title: "Syncing Data",
-      description: `Synchronizing data from ${type === 'bank' ? 'bank account' : 'accounting software'}...`,
-    });
+  const syncIntegration = (id: string, type: "bank" | "software", isAutoSync = false) => {
+    if (!isAutoSync) {
+      toast({
+        title: "Syncing Data",
+        description: `Synchronizing data from ${type === 'bank' ? 'bank account' : 'accounting software'}...`,
+      });
+    }
     
     setTimeout(() => {
       if (type === "bank") {
@@ -194,11 +256,32 @@ const AccountingIntegrations = () => {
         setAccountingSoftware(updatedSoftware);
       }
       
-      toast({
-        title: "Sync Complete",
-        description: "Your financial data has been synchronized successfully.",
-      });
-    }, 2000);
+      if (!isAutoSync) {
+        toast({
+          title: "Sync Complete",
+          description: "Your financial data has been synchronized successfully.",
+        });
+      }
+    }, isAutoSync ? 500 : 2000);
+  };
+
+  const toggleAutoSync = (id: string, type: "bank" | "software", newStatus: boolean) => {
+    if (type === "bank") {
+      const updatedBanks = banks.map(bank => 
+        bank.id === id ? { ...bank, autoSync: newStatus } : bank
+      );
+      setBanks(updatedBanks);
+    } else {
+      const updatedSoftware = accountingSoftware.map(software => 
+        software.id === id ? { ...software, autoSync: newStatus } : software
+      );
+      setAccountingSoftware(updatedSoftware);
+    }
+    
+    toast({
+      title: newStatus ? "Auto-Sync Enabled" : "Auto-Sync Disabled",
+      description: `Automatic synchronization has been ${newStatus ? 'enabled' : 'disabled'} for this integration.`,
+    });
   };
 
   const formatLastSynced = (dateString?: string) => {
@@ -236,6 +319,16 @@ const AccountingIntegrations = () => {
                   {bank.connected && (
                     <div className="mb-3 text-sm text-gray-500">
                       <p>Last synced: {formatLastSynced(bank.lastSynced)}</p>
+                      <div className="flex items-center mt-2">
+                        <Switch
+                          id={`auto-sync-${bank.id}`}
+                          checked={bank.autoSync !== false}
+                          onCheckedChange={(checked) => toggleAutoSync(bank.id, 'bank', checked)}
+                        />
+                        <Label htmlFor={`auto-sync-${bank.id}`} className="ml-2 text-xs">
+                          Auto-sync every 24 hours
+                        </Label>
+                      </div>
                     </div>
                   )}
                   <div className="flex justify-end space-x-2">
@@ -306,6 +399,16 @@ const AccountingIntegrations = () => {
                   {software.connected && (
                     <div className="mb-3 text-sm text-gray-500">
                       <p>Last synced: {formatLastSynced(software.lastSynced)}</p>
+                      <div className="flex items-center mt-2">
+                        <Switch
+                          id={`auto-sync-${software.id}`}
+                          checked={software.autoSync !== false}
+                          onCheckedChange={(checked) => toggleAutoSync(software.id, 'software', checked)}
+                        />
+                        <Label htmlFor={`auto-sync-${software.id}`} className="ml-2 text-xs">
+                          Auto-sync every 24 hours
+                        </Label>
+                      </div>
                     </div>
                   )}
                   <div className="flex justify-end space-x-2">
@@ -432,7 +535,7 @@ const AccountingIntegrations = () => {
                 checked={autoSync}
                 onCheckedChange={setAutoSync}
               />
-              <Label htmlFor="auto-sync">Enable automatic synchronization</Label>
+              <Label htmlFor="auto-sync">Enable automatic synchronization every 24 hours</Label>
             </div>
           </div>
           <DialogFooter className="flex space-x-2 sm:justify-end">
