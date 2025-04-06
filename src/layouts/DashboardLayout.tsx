@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -33,7 +32,6 @@ const DashboardLayout = () => {
     }
     
     if (location.pathname.includes('/accounting')) {
-      // Determine the active tab based on the current path
       const currentPath = location.pathname;
       let defaultValue = "overview";
       
@@ -74,8 +72,8 @@ const DashboardLayout = () => {
         >
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="filings" disabled={currentUser?.subscriptionStatus !== "active"}>Tax Filings</TabsTrigger>
-            <TabsTrigger value="documents" disabled={currentUser?.subscriptionStatus !== "active"}>Documents</TabsTrigger>
+            <TabsTrigger value="filings">Tax Filings</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
           </TabsList>
         </Tabs>
       );
