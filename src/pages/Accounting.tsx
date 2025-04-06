@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 const Accounting = () => {
   const { currentUser } = useAuth();
@@ -90,6 +91,19 @@ const Accounting = () => {
             </p>
           </CardContent>
         </Card>
+
+        <Link to="/accounting/integrations" className="block">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+            <CardHeader>
+              <CardTitle>Banking Integrations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500">
+                Connect to your bank accounts and accounting software
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   );

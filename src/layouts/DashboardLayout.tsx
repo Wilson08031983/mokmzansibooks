@@ -41,6 +41,8 @@ const DashboardLayout = () => {
         defaultValue = "transactions";
       } else if (currentPath.includes("/accounting/reports")) {
         defaultValue = "reports";
+      } else if (currentPath.includes("/accounting/integrations")) {
+        defaultValue = "integrations";
       }
       
       return (
@@ -55,6 +57,7 @@ const DashboardLayout = () => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="integrations">Integrations</TabsTrigger>
           </TabsList>
         </Tabs>
       );

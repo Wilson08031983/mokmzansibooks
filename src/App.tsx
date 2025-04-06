@@ -25,6 +25,7 @@ import QuickFill from "./pages/QuickFill";
 import Accounting from "./pages/Accounting";
 import AccountingTransactions from "./pages/accounting/Transactions";
 import AccountingReports from "./pages/accounting/Reports";
+import AccountingIntegrations from "./pages/accounting/Integrations";
 import Tax from "./pages/Tax";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
@@ -70,6 +71,7 @@ const App = () => {
                     <Route path="/accounting" element={<Accounting />} />
                     <Route path="/accounting/transactions" element={<AccountingTransactions />} />
                     <Route path="/accounting/reports" element={<AccountingReports />} />
+                    <Route path="/accounting/integrations" element={<AccountingIntegrations />} />
                     <Route path="/tax" element={<Tax />} />
                     <Route path="/reports" element={<Reports />} />
                     <Route path="/settings" element={<Settings />} />
