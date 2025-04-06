@@ -2,12 +2,28 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFinancialData } from "@/contexts/FinancialDataContext";
 import { Link } from "react-router-dom";
 import { CalendarIcon, FileText, Settings } from "lucide-react";
 
 const Tax = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const { 
+    vatReturns, 
+    payeReturns, 
+    taxDocuments, 
+    taxDeadlines, 
+    getTotalTaxLiability 
+  } = useFinancialData();
+
+  // Calculate tax status for each card
+  const dueVatReturns = vatReturns.filter(item => item.status === "Due").length;
+  const duePayeReturns = payeReturns.filter(item => item.status === "Due").length;
+  const upcomingDeadlines = taxDeadlines
+    .filter(deadline => new Date(deadline.date) >= new Date())
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 2);
 
   const taxCards = [
     {
@@ -16,8 +32,8 @@ const Tax = () => {
       path: "/tax/vat-returns",
       icon: <FileText className="h-10 w-10 text-blue-500" />,
       status: {
-        text: "1 Due",
-        color: "text-yellow-600 bg-yellow-100"
+        text: dueVatReturns ? `${dueVatReturns} Due` : "Up to date",
+        color: dueVatReturns ? "text-yellow-600 bg-yellow-100" : "text-green-600 bg-green-100"
       }
     },
     {
@@ -36,8 +52,8 @@ const Tax = () => {
       path: "/tax/paye",
       icon: <FileText className="h-10 w-10 text-purple-500" />,
       status: {
-        text: "Due in 2 days",
-        color: "text-yellow-600 bg-yellow-100"
+        text: duePayeReturns ? `${duePayeReturns} Due` : "Up to date",
+        color: duePayeReturns ? "text-yellow-600 bg-yellow-100" : "text-green-600 bg-green-100"
       }
     },
     {
@@ -46,7 +62,7 @@ const Tax = () => {
       path: "/tax/calendar",
       icon: <CalendarIcon className="h-10 w-10 text-red-500" />,
       status: {
-        text: "2 Upcoming",
+        text: `${upcomingDeadlines.length} Upcoming`,
         color: "text-blue-600 bg-blue-100"
       }
     },
@@ -56,7 +72,7 @@ const Tax = () => {
       path: "/tax/documents",
       icon: <FileText className="h-10 w-10 text-orange-500" />,
       status: {
-        text: "5 Documents",
+        text: `${taxDocuments.length} Documents`,
         color: "text-gray-600 bg-gray-100"
       }
     },

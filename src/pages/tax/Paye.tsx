@@ -1,45 +1,31 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { useFinancialData } from "@/contexts/FinancialDataContext";
 import { CalendarIcon, FileText, Download } from "lucide-react";
 import { useState, useRef } from "react";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 
 const Paye = () => {
   const { toast } = useToast();
+  const { payeReturns, addPayeReturn } = useFinancialData();
   const payeTableRef = useRef<HTMLDivElement>(null);
-  const [payeReturns] = useState([
-    {
-      id: "PAYE-2025-03",
-      period: "March 2025",
-      dueDate: "2025-04-07",
-      status: "Due",
-      amount: 45250.50,
-    },
-    {
-      id: "PAYE-2025-02",
-      period: "February 2025",
-      dueDate: "2025-03-07",
-      status: "Submitted",
-      amount: 44830.75,
-      submissionDate: "2025-03-05",
-    },
-    {
-      id: "PAYE-2025-01",
-      period: "January 2025",
-      dueDate: "2025-02-07",
-      status: "Submitted",
-      amount: 44125.25,
-      submissionDate: "2025-02-06",
-    },
-  ]);
 
   const handleNewPaye = () => {
+    const newPayeReturn = {
+      id: `PAYE-2025-04`,
+      period: "April 2025",
+      dueDate: "2025-05-07",
+      status: "Due",
+      amount: 45875.25,
+    };
+    
+    addPayeReturn(newPayeReturn);
+    
     toast({
       title: "New PAYE Return",
-      description: "Creating a new PAYE return submission",
+      description: "A new PAYE return has been created successfully.",
     });
   };
 
@@ -52,11 +38,9 @@ const Paye = () => {
       description: `Preparing ${payeReturn.id} for download...`,
     });
     
-    // Create a temporary container with the PAYE return data
     const tempContainer = document.createElement('div');
     tempContainer.className = 'p-8 bg-white';
     
-    // Style the container with some basic PAYE return layout
     tempContainer.innerHTML = `
       <div style="font-family: Arial, sans-serif;">
         <h1 style="text-align: center; font-size: 24px; margin-bottom: 20px;">PAYE Return</h1>
@@ -130,7 +114,6 @@ const Paye = () => {
       </div>
     `;
     
-    // Append to document temporarily
     document.body.appendChild(tempContainer);
     
     try {
@@ -154,7 +137,6 @@ const Paye = () => {
         variant: "destructive",
       });
     } finally {
-      // Clean up
       document.body.removeChild(tempContainer);
     }
   };

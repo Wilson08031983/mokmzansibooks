@@ -4,60 +4,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { useFinancialData } from "@/contexts/FinancialDataContext";
 import { FileText, Download } from "lucide-react";
 import { useState, useRef } from "react";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 
 const TaxDocuments = () => {
   const { toast } = useToast();
+  const { taxDocuments, addTaxDocument } = useFinancialData();
   const documentsTableRef = useRef<HTMLDivElement>(null);
-  const [taxDocuments] = useState([
-    {
-      id: "doc-1",
-      name: "Tax Clearance Certificate",
-      type: "PDF",
-      size: "1.2 MB",
-      uploadDate: "2025-02-15",
-      category: "Certificates",
-    },
-    {
-      id: "doc-2",
-      name: "VAT Registration Certificate",
-      type: "PDF",
-      size: "854 KB",
-      uploadDate: "2024-11-20",
-      category: "Certificates",
-    },
-    {
-      id: "doc-3",
-      name: "ITR14 2023 Submission",
-      type: "PDF",
-      size: "2.3 MB",
-      uploadDate: "2023-12-01",
-      category: "Returns",
-    },
-    {
-      id: "doc-4",
-      name: "PAYE Registration Certificate",
-      type: "PDF",
-      size: "1.1 MB",
-      uploadDate: "2023-10-15",
-      category: "Certificates",
-    },
-    {
-      id: "doc-5",
-      name: "Tax Exemption Letter",
-      type: "PDF",
-      size: "590 KB",
-      uploadDate: "2024-05-22",
-      category: "Correspondence",
-    },
-  ]);
 
   const handleUpload = () => {
+    const newDocument = {
+      id: `doc-${taxDocuments.length + 1}`,
+      name: "New Tax Document",
+      type: "PDF",
+      size: "1.5 MB",
+      uploadDate: new Date().toISOString().split('T')[0],
+      category: "Returns",
+    };
+    
+    addTaxDocument(newDocument);
+    
     toast({
-      title: "Upload Document",
-      description: "Document upload functionality would be triggered here",
+      title: "Document Uploaded",
+      description: "Your document has been uploaded successfully.",
     });
   };
 
@@ -129,7 +100,7 @@ const TaxDocuments = () => {
             <h2 style="font-size: 18px; margin-bottom: 10px;">Tax Calculation Summary</h2>
             <table style="width: 100%; border-collapse: collapse;">
               <tr style="background-color: #f2f2f2;">
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Description</th>
+                <th style="border: a1px solid #ddd; padding: 8px; text-align: left;">Description</th>
                 <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Amount (ZAR)</th>
               </tr>
               <tr>
@@ -350,4 +321,3 @@ const TaxDocuments = () => {
 };
 
 export default TaxDocuments;
-
