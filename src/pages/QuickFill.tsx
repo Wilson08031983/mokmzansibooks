@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -45,6 +44,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
+import { formatCurrency } from "@/utils/formatters";
 
 const QuickFill = () => {
   const [activeTab, setActiveTab] = useState("upload");
@@ -146,10 +146,11 @@ const QuickFill = () => {
           id: 1,
           item: "Office Chair - Ergonomic",
           description: "High-quality ergonomic office chair with lumbar support",
+          priceCheckUrl: "https://www.pricecheck.co.za/search?search=ergonomic+office+chair",
           suppliers: [
-            { name: "Office Supplies SA", price: 1250, rating: 4.7, shipping: 120 },
-            { name: "Corporate Furniture", price: 1499, rating: 4.8, shipping: 0 },
-            { name: "Durban Office", price: 1150, rating: 4.3, shipping: 250 },
+            { name: "Incredible Connection", price: 1899, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
+            { name: "Takealot", price: 1699, rating: 4.7, shipping: 0, url: "https://www.takealot.com" },
+            { name: "Office National", price: 2150, rating: 4.8, shipping: 0, url: "https://www.officenational.co.za" },
           ],
         });
       }
@@ -159,10 +160,11 @@ const QuickFill = () => {
           id: 2,
           item: "Laptop - Business Grade",
           description: "15.6-inch business laptop, i7, 16GB RAM, 512GB SSD",
+          priceCheckUrl: "https://www.pricecheck.co.za/search?search=business+laptop+i7",
           suppliers: [
-            { name: "Tech Solutions", price: 15499, rating: 4.6, shipping: 0 },
-            { name: "Computer Warehouse", price: 14750, rating: 4.4, shipping: 150 },
-            { name: "Digital World", price: 16200, rating: 4.9, shipping: 0 },
+            { name: "Evetech", price: 15999, rating: 4.6, shipping: 0, url: "https://www.evetech.co.za" },
+            { name: "Wootware", price: 16599, rating: 4.8, shipping: 0, url: "https://www.wootware.co.za" },
+            { name: "Takealot", price: 17450, rating: 4.5, shipping: 0, url: "https://www.takealot.com" },
           ],
         });
       }
@@ -172,10 +174,11 @@ const QuickFill = () => {
           id: 3,
           item: "Multifunction Printer",
           description: "Color laser printer with scanning and copying capabilities",
+          priceCheckUrl: "https://www.pricecheck.co.za/search?search=multifunction+laser+printer",
           suppliers: [
-            { name: "Office Tech", price: 3899, rating: 4.2, shipping: 0 },
-            { name: "PrintSolutions", price: 4250, rating: 4.5, shipping: 0 },
-            { name: "Corporate Systems", price: 3750, rating: 4.0, shipping: 199 },
+            { name: "Takealot", price: 4299, rating: 4.2, shipping: 0, url: "https://www.takealot.com" },
+            { name: "Incredible Connection", price: 4599, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
+            { name: "Game", price: 3999, rating: 4.0, shipping: 250, url: "https://www.game.co.za" },
           ],
         });
       }
@@ -187,30 +190,32 @@ const QuickFill = () => {
             id: 1,
             item: "Office Chair - Ergonomic",
             description: "High-quality ergonomic office chair with lumbar support",
+            priceCheckUrl: "https://www.pricecheck.co.za/search?search=ergonomic+office+chair",
             suppliers: [
-              { name: "Office Supplies SA", price: 1250, rating: 4.7, shipping: 120 },
-              { name: "Corporate Furniture", price: 1499, rating: 4.8, shipping: 0 },
-              { name: "Durban Office", price: 1150, rating: 4.3, shipping: 250 },
+              { name: "Incredible Connection", price: 1899, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
+              { name: "Takealot", price: 1699, rating: 4.7, shipping: 0, url: "https://www.takealot.com" },
+              { name: "Office National", price: 2150, rating: 4.8, shipping: 0, url: "https://www.officenational.co.za" },
             ],
           },
           {
             id: 2,
             item: "Laptop - Business Grade",
             description: "15.6-inch business laptop, i7, 16GB RAM, 512GB SSD",
+            priceCheckUrl: "https://www.pricecheck.co.za/search?search=business+laptop+i7",
             suppliers: [
-              { name: "Tech Solutions", price: 15499, rating: 4.6, shipping: 0 },
-              { name: "Computer Warehouse", price: 14750, rating: 4.4, shipping: 150 },
-              { name: "Digital World", price: 16200, rating: 4.9, shipping: 0 },
+              { name: "Evetech", price: 15999, rating: 4.6, shipping: 0, url: "https://www.evetech.co.za" },
+              { name: "Wootware", price: 16599, rating: 4.8, shipping: 0, url: "https://www.wootware.co.za" },
+              { name: "Takealot", price: 17450, rating: 4.5, shipping: 0, url: "https://www.takealot.com" },
             ],
           },
         ];
       }
       
       setSearchResults(results);
-      toast.success(`Found ${results.length} items matching your search`);
+      toast.success(`Found ${results.length} items matching your search from top South African retailers`);
     }, 2000);
   };
-  
+
   const handleRfqUpload = () => {
     toast.success("RFQ document uploaded successfully");
     
@@ -224,54 +229,57 @@ const QuickFill = () => {
             id: 1,
             item: "Office Chair - Ergonomic",
             description: "High-quality ergonomic office chair with lumbar support",
+            priceCheckUrl: "https://www.pricecheck.co.za/search?search=ergonomic+office+chair",
             suppliers: [
-              { name: "Office Supplies SA", price: 1250, rating: 4.7, shipping: 120 },
-              { name: "Corporate Furniture", price: 1499, rating: 4.8, shipping: 0 },
-              { name: "Durban Office", price: 1150, rating: 4.3, shipping: 250 },
+              { name: "Incredible Connection", price: 1899, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
+              { name: "Takealot", price: 1699, rating: 4.7, shipping: 0, url: "https://www.takealot.com" },
+              { name: "Office National", price: 2150, rating: 4.8, shipping: 0, url: "https://www.officenational.co.za" },
             ],
           },
           {
             id: 2,
             item: "Laptop - Business Grade",
             description: "15.6-inch business laptop, i7, 16GB RAM, 512GB SSD",
+            priceCheckUrl: "https://www.pricecheck.co.za/search?search=business+laptop+i7",
             suppliers: [
-              { name: "Tech Solutions", price: 15499, rating: 4.6, shipping: 0 },
-              { name: "Computer Warehouse", price: 14750, rating: 4.4, shipping: 150 },
-              { name: "Digital World", price: 16200, rating: 4.9, shipping: 0 },
+              { name: "Evetech", price: 15999, rating: 4.6, shipping: 0, url: "https://www.evetech.co.za" },
+              { name: "Wootware", price: 16599, rating: 4.8, shipping: 0, url: "https://www.wootware.co.za" },
+              { name: "Takealot", price: 17450, rating: 4.5, shipping: 0, url: "https://www.takealot.com" },
             ],
           },
           {
             id: 3,
             item: "Multifunction Printer",
             description: "Color laser printer with scanning and copying capabilities",
+            priceCheckUrl: "https://www.pricecheck.co.za/search?search=multifunction+laser+printer",
             suppliers: [
-              { name: "Office Tech", price: 3899, rating: 4.2, shipping: 0 },
-              { name: "PrintSolutions", price: 4250, rating: 4.5, shipping: 0 },
-              { name: "Corporate Systems", price: 3750, rating: 4.0, shipping: 199 },
+              { name: "Takealot", price: 4299, rating: 4.2, shipping: 0, url: "https://www.takealot.com" },
+              { name: "Incredible Connection", price: 4599, rating: 4.5, shipping: 150, url: "https://www.incredible.co.za" },
+              { name: "Game", price: 3999, rating: 4.0, shipping: 250, url: "https://www.game.co.za" },
             ],
           },
         ]);
-        toast.success("RFQ items extracted and prices found");
+        toast.success("RFQ items extracted and prices found from South African retailers");
       }, 3000);
     }, 1000);
   };
-  
+
   const handleDownloadAllForms = () => {
     toast.success("All forms downloaded as ZIP file");
   };
-  
+
   const handleDownloadForm = (formName: string) => {
     toast.success(`${formName} downloaded successfully`);
   };
-  
+
   const handleViewForm = (formName: string) => {
     toast.success(`Previewing ${formName}`);
   };
-  
+
   const handleEditForm = (formName: string) => {
     toast.success(`Editing ${formName}`);
   };
-  
+
   const handleGeneratePriceReport = () => {
     toast.success("Price comparison report generated");
     
@@ -285,14 +293,20 @@ const QuickFill = () => {
       });
     }, 2000);
   };
-  
+
   const handleAddToQuote = (item: string, supplier: string) => {
     toast.success(`Added ${item} from ${supplier} to your quote`);
   };
-  
-  const handleViewSupplier = (supplier: string) => {
-    toast(`Viewing ${supplier} details`, {
-      description: "This would typically open the supplier's website in a new tab"
+
+  const handleViewPriceCheck = (url: string) => {
+    window.open(url, '_blank');
+    toast.success("Viewing price comparisons on PriceCheck.co.za");
+  };
+
+  const handleViewSupplier = (supplier: string, url: string) => {
+    window.open(url, '_blank');
+    toast(`Viewing ${supplier} website`, {
+      description: "Opening the supplier's website in a new tab"
     });
   };
 
@@ -311,7 +325,7 @@ const QuickFill = () => {
       <div>
         <h1 className="text-2xl font-bold">QuickFill System</h1>
         <p className="text-gray-500">
-          Streamline your tendering process with document auto-fill and price suggestions
+          Streamline your tendering process with document auto-fill and South African price comparisons
         </p>
       </div>
 
@@ -622,7 +636,7 @@ const QuickFill = () => {
               <CardHeader>
                 <CardTitle>RFQ Item Search</CardTitle>
                 <CardDescription>
-                  Search for items from your Request for Quotation to find the best prices
+                  Search for items from your Request for Quotation to find the best prices from South African suppliers
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -682,7 +696,7 @@ const QuickFill = () => {
               <CardHeader>
                 <CardTitle>How It Works</CardTitle>
                 <CardDescription>
-                  Get the best prices for your RFQ items in three easy steps
+                  Get the best prices from South African retailers in three easy steps
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -704,7 +718,7 @@ const QuickFill = () => {
                   <div>
                     <h3 className="font-medium">Automatic Parsing</h3>
                     <p className="text-sm text-gray-500">
-                      Our system extracts items and searches for the best prices
+                      Our system extracts items and searches PriceCheck.co.za for the best prices
                     </p>
                   </div>
                 </div>
@@ -721,7 +735,7 @@ const QuickFill = () => {
                 </div>
                 <div className="rounded-md bg-gray-50 p-3 mt-2">
                   <p className="text-sm text-gray-600">
-                    <strong>Premium feature:</strong> Price comparison from multiple suppliers, including major South African retailers and distributors.
+                    <strong>Premium feature:</strong> Price comparison from top South African retailers like Takealot, Incredible Connection, and more.
                   </p>
                 </div>
               </CardContent>
@@ -733,9 +747,9 @@ const QuickFill = () => {
               <CardContent className="p-6">
                 <div className="flex flex-col items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
-                  <h3 className="text-lg font-medium">Searching for prices...</h3>
+                  <h3 className="text-lg font-medium">Searching for prices on PriceCheck.co.za...</h3>
                   <p className="text-gray-500 mt-1">
-                    Checking multiple suppliers for the best deals
+                    Checking multiple South African suppliers for the best deals
                   </p>
                 </div>
               </CardContent>
@@ -747,7 +761,7 @@ const QuickFill = () => {
               <CardHeader>
                 <CardTitle>Price Comparison Results</CardTitle>
                 <CardDescription>
-                  Found {searchResults.length} items with price options from multiple suppliers
+                  Found {searchResults.length} items with price options from top South African retailers
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -766,6 +780,16 @@ const QuickFill = () => {
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
+                        <div className="mb-2">
+                          <Button 
+                            variant="outline" 
+                            className="text-sm" 
+                            onClick={() => handleViewPriceCheck(result.priceCheckUrl)}
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" /> 
+                            View more on PriceCheck.co.za
+                          </Button>
+                        </div>
                         <Table className="mt-2">
                           <TableHeader>
                             <TableRow>
@@ -783,7 +807,7 @@ const QuickFill = () => {
                                   {supplier.name}
                                 </TableCell>
                                 <TableCell>
-                                  R{supplier.price.toLocaleString()}
+                                  {formatCurrency(supplier.price, "ZAR")}
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center">
@@ -794,14 +818,14 @@ const QuickFill = () => {
                                 <TableCell>
                                   {supplier.shipping === 0
                                     ? "Free"
-                                    : `R${supplier.shipping}`}
+                                    : formatCurrency(supplier.shipping, "ZAR")}
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     className="mr-2"
-                                    onClick={() => handleViewSupplier(supplier.name)}
+                                    onClick={() => handleViewSupplier(supplier.name, supplier.url)}
                                   >
                                     View <ExternalLink className="ml-1 h-3 w-3" />
                                   </Button>
@@ -824,7 +848,7 @@ const QuickFill = () => {
               <CardFooter>
                 <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <p className="text-sm text-gray-500">
-                    Prices are updated daily. Click "View" to see full product details.
+                    Prices are updated daily from PriceCheck.co.za. Click "View" to see full product details.
                   </p>
                   <Button onClick={handleGeneratePriceReport}>
                     Generate Price Report
