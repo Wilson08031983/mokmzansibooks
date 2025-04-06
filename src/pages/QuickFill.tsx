@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -65,6 +64,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/formatters";
 import { QuoteData } from "@/types/quote";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const QuickFill = () => {
   const [activeTab, setActiveTab] = useState("upload");
@@ -731,6 +731,9 @@ const QuickFill = () => {
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         PDF, DOCX, PNG or JPG (MAX. 10MB)
                       </p>
+                      <Button variant="upload" className="mt-4">
+                        <Upload className="mr-2 h-4 w-4" /> Select Files
+                      </Button>
                     </div>
                     <Input
                       id="documentUpload"
@@ -766,22 +769,40 @@ const QuickFill = () => {
                             <FileText className="h-4 w-4 mr-2 text-gray-500" />
                             <span className="text-sm">{file.name}</span>
                           </div>
-                          <Badge
-                            variant={file.status === "success" ? "outline" : "default"}
-                            className={file.status === "success" ? "border-green-500 text-green-500" : ""}
-                          >
-                            {file.status === "success" ? (
-                              <span className="flex items-center">
-                                <CheckCircle2 className="h-3 w-3 mr-1" /> Success
-                              </span>
-                            ) : (
-                              file.status
-                            )}
-                          </Badge>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDownloadForm(file.name)}
+                            >
+                              <Download className="h-3.5 w-3.5 text-gray-500" />
+                            </Button>
+                            <Badge
+                              variant={file.status === "success" ? "outline" : "default"}
+                              className={file.status === "success" ? "border-green-500 text-green-500" : ""}
+                            >
+                              {file.status === "success" ? (
+                                <span className="flex items-center">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Success
+                                </span>
+                              ) : (
+                                file.status
+                              )}
+                            </Badge>
+                          </div>
                         </li>
                       ))}
                     </ul>
                   </div>
+                )}
+                {uploadedFiles.length > 0 && (
+                  <Alert variant="upload" className="mt-4">
+                    <Upload className="h-4 w-4" />
+                    <AlertTitle>Documents Uploaded Successfully</AlertTitle>
+                    <AlertDescription>
+                      Your {uploadedFiles.length} document(s) have been uploaded and processed.
+                    </AlertDescription>
+                  </Alert>
                 )}
               </CardContent>
               <CardFooter className="flex justify-between">
@@ -865,6 +886,11 @@ const QuickFill = () => {
                           </div>
                         </div>
                       </div>
+                      <div className="flex justify-end">
+                        <Button variant="download" size="sm">
+                          <Download className="mr-2 h-3.5 w-3.5" /> Export Data
+                        </Button>
+                      </div>
                     </div>
                   ) : processingStatus === "processing" ? (
                     <div className="flex flex-col items-center justify-center h-full">
@@ -877,7 +903,15 @@ const QuickFill = () => {
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400">
                       <FileText className="h-10 w-10 mb-2" />
-                      <p className="text-sm">Upload documents to see extracted data</p>
+                      <p className="text-sm mb-4">Upload documents to see extracted data</p>
+                      <div className="flex flex-col gap-2 items-center">
+                        <Button variant="upload" size="sm" onClick={() => fileInputRef.current?.click()}>
+                          <Upload className="mr-2 h-4 w-4" /> Upload Documents
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Download className="mr-2 h-4 w-4" /> Download Template
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -924,7 +958,7 @@ const QuickFill = () => {
                       <Button variant="outline" size="sm" onClick={() => handleViewForm("SBD 1")}>
                         Preview
                       </Button>
-                      <Button size="sm" onClick={() => handleDownloadForm("SBD 1")}>
+                      <Button variant="download" size="sm" onClick={() => handleDownloadForm("SBD 1")}>
                         <Download className="mr-2 h-3 w-3" />
                         Download
                       </Button>
@@ -947,7 +981,7 @@ const QuickFill = () => {
                       <Button variant="outline" size="sm" onClick={() => handleViewForm("SBD 4")}>
                         Preview
                       </Button>
-                      <Button size="sm" onClick={() => handleDownloadForm("SBD 4")}>
+                      <Button variant="download" size="sm" onClick={() => handleDownloadForm("SBD 4")}>
                         <Download className="mr-2 h-3 w-3" />
                         Download
                       </Button>
@@ -970,8 +1004,9 @@ const QuickFill = () => {
                       <Button variant="outline" size="sm" onClick={() => handleViewForm("SBD 6.1")}>
                         Preview
                       </Button>
-                      <Button size="sm" onClick={() => handleEditForm("SBD 6.1")}>
-                        Edit
+                      <Button variant="download" size="sm" onClick={() => handleEditForm("SBD 6.1")}>
+                        <Download className="mr-2 h-3 w-3" />
+                        Download
                       </Button>
                     </div>
                   </div>
@@ -982,7 +1017,7 @@ const QuickFill = () => {
                   <p className="text-sm text-gray-500">
                     All mandatory forms are pre-populated. Review and make any necessary adjustments before submission.
                   </p>
-                  <Button onClick={handleDownloadAllForms}>
+                  <Button variant="download" onClick={handleDownloadAllForms}>
                     <Download className="mr-2 h-4 w-4" />
                     Download All Forms
                   </Button>
