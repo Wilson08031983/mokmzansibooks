@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -51,13 +51,34 @@ import {
   Camera,
   Barcode,
   Image as ImageIcon,
-  Upload
+  Upload,
+  Building,
+  UserRound
 } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
 import InventoryStats from "@/components/inventory/InventoryStats";
 import LowStockItems from "@/components/inventory/LowStockItems";
 import BarcodeScanner from "@/components/inventory/BarcodeScanner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useNotifications } from "@/contexts/NotificationsContext";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription
+} from "@/components/ui/alert";
+
+interface SupplierInfo {
+  name: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+}
 
 interface InventoryItem {
   id: string;
@@ -69,6 +90,7 @@ interface InventoryItem {
   location: string;
   reorderPoint: number;
   image?: string;
+  supplier?: SupplierInfo;
 }
 
 const mockInventoryData: InventoryItem[] = [
@@ -81,7 +103,13 @@ const mockInventoryData: InventoryItem[] = [
     unitPrice: 149.99, 
     location: "Warehouse A",
     reorderPoint: 10,
-    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
+    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    supplier: {
+      name: "Office Furniture Inc.",
+      contactPerson: "John Smith",
+      email: "john@officefurn.com",
+      phone: "+27 12 345 6789"
+    }
   },
   { 
     id: "INV002", 
@@ -91,7 +119,13 @@ const mockInventoryData: InventoryItem[] = [
     quantity: 16, 
     unitPrice: 299.99, 
     location: "Warehouse A",
-    reorderPoint: 5
+    reorderPoint: 5,
+    supplier: {
+      name: "Office Furniture Inc.",
+      contactPerson: "John Smith",
+      email: "john@officefurn.com",
+      phone: "+27 12 345 6789"
+    }
   },
   { 
     id: "INV003", 
@@ -102,7 +136,13 @@ const mockInventoryData: InventoryItem[] = [
     unitPrice: 29.99, 
     location: "Warehouse B",
     reorderPoint: 15,
-    image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901"
+    image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901",
+    supplier: {
+      name: "TechSupply Co.",
+      contactPerson: "Sarah Johnson",
+      email: "sarah@techsupply.co.za",
+      phone: "+27 21 456 7890"
+    }
   },
   { 
     id: "INV004", 
@@ -112,7 +152,13 @@ const mockInventoryData: InventoryItem[] = [
     quantity: 18, 
     unitPrice: 89.99, 
     location: "Warehouse B",
-    reorderPoint: 10
+    reorderPoint: 10,
+    supplier: {
+      name: "TechSupply Co.",
+      contactPerson: "Sarah Johnson",
+      email: "sarah@techsupply.co.za",
+      phone: "+27 21 456 7890"
+    }
   },
   { 
     id: "INV005", 
@@ -139,10 +185,12 @@ const mockInventoryData: InventoryItem[] = [
 
 const Inventory = () => {
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
   const [showScannerDialog, setShowScannerDialog] = useState(false);
   const [showImageUploadDialog, setShowImageUploadDialog] = useState(false);
+  const [showSupplierDialog, setShowSupplierDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("items");
   const [activeItem, setActiveItem] = useState<InventoryItem | null>(null);
   const [newItemForm, setNewItemForm] = useState({
@@ -153,15 +201,37 @@ const Inventory = () => {
     unitPrice: 0,
     location: "",
     reorderPoint: 0,
-    image: ""
+    image: "",
+    supplier: {
+      name: "",
+      contactPerson: "",
+      email: "",
+      phone: ""
+    }
   });
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(mockInventoryData);
   
   const filteredItems = inventoryItems.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
+    item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.supplier?.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Check for low stock items and create notifications on initial load
+  useEffect(() => {
+    const lowStockItems = inventoryItems.filter(item => item.quantity <= item.reorderPoint);
+    
+    if (lowStockItems.length > 0) {
+      addNotification({
+        title: "Low Stock Alert",
+        message: `${lowStockItems.length} items are at or below reorder point.`,
+        type: "warning",
+        link: "/inventory?tab=low-stock"
+      });
+    }
+  }, []);
 
   const handleBarcodeScanned = (barcode: string) => {
     // In a real app, we would look up the barcode in a database
@@ -180,12 +250,26 @@ const Inventory = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    setNewItemForm({
-      ...newItemForm,
-      [id]: id === 'quantity' || id === 'unitPrice' || id === 'reorderPoint' 
-        ? parseFloat(value) || 0 
-        : value
-    });
+    
+    // Handle nested supplier fields
+    if (id.startsWith('supplier.')) {
+      const supplierField = id.split('.')[1];
+      setNewItemForm({
+        ...newItemForm,
+        supplier: {
+          ...newItemForm.supplier,
+          [supplierField]: value
+        }
+      });
+    } else {
+      // Handle other fields
+      setNewItemForm({
+        ...newItemForm,
+        [id]: id === 'quantity' || id === 'unitPrice' || id === 'reorderPoint' 
+          ? parseFloat(value) || 0 
+          : value
+      });
+    }
   };
 
   const handleAddItem = () => {
@@ -199,7 +283,13 @@ const Inventory = () => {
       unitPrice: newItemForm.unitPrice,
       location: newItemForm.location,
       reorderPoint: newItemForm.reorderPoint,
-      image: newItemForm.image
+      image: newItemForm.image,
+      supplier: newItemForm.supplier.name ? {
+        name: newItemForm.supplier.name,
+        contactPerson: newItemForm.supplier.contactPerson,
+        email: newItemForm.supplier.email,
+        phone: newItemForm.supplier.phone
+      } : undefined
     };
     
     setInventoryItems([...inventoryItems, newItem]);
@@ -217,7 +307,13 @@ const Inventory = () => {
       unitPrice: 0,
       location: "",
       reorderPoint: 0,
-      image: ""
+      image: "",
+      supplier: {
+        name: "",
+        contactPerson: "",
+        email: "",
+        phone: ""
+      }
     });
   };
 
@@ -257,6 +353,57 @@ const Inventory = () => {
       setActiveItem(item);
     }
     setShowImageUploadDialog(true);
+  };
+
+  const openSupplierDialog = (item?: InventoryItem) => {
+    if (item) {
+      setActiveItem(item);
+    } else {
+      setActiveItem(null);
+    }
+    setShowSupplierDialog(true);
+  };
+
+  const handleUpdateSupplier = () => {
+    if (!activeItem) return;
+    
+    const updatedItems = inventoryItems.map(item => 
+      item.id === activeItem.id 
+        ? { 
+            ...item, 
+            supplier: {
+              name: newItemForm.supplier.name,
+              contactPerson: newItemForm.supplier.contactPerson,
+              email: newItemForm.supplier.email,
+              phone: newItemForm.supplier.phone
+            } 
+          } 
+        : item
+    );
+    
+    setInventoryItems(updatedItems);
+    
+    toast({
+      title: "Supplier Updated",
+      description: `Supplier information for ${activeItem.name} has been updated`,
+    });
+    
+    setShowSupplierDialog(false);
+    setActiveItem(null);
+  };
+
+  const editSupplier = (item: InventoryItem) => {
+    setActiveItem(item);
+    setNewItemForm({
+      ...newItemForm,
+      supplier: {
+        name: item.supplier?.name || "",
+        contactPerson: item.supplier?.contactPerson || "",
+        email: item.supplier?.email || "",
+        phone: item.supplier?.phone || ""
+      }
+    });
+    setShowSupplierDialog(true);
   };
 
   return (
@@ -344,13 +491,14 @@ const Inventory = () => {
                       <TableHead className="text-right">Quantity</TableHead>
                       <TableHead className="text-right">Unit Price</TableHead>
                       <TableHead>Location</TableHead>
+                      <TableHead>Supplier</TableHead>
                       <TableHead className="text-right"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">
+                        <TableCell colSpan={8} className="h-24 text-center">
                           No items found
                         </TableCell>
                       </TableRow>
@@ -395,6 +543,29 @@ const Inventory = () => {
                             {formatCurrency(item.unitPrice, "ZAR")}
                           </TableCell>
                           <TableCell>{item.location}</TableCell>
+                          <TableCell>
+                            {item.supplier ? (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="px-2 h-7 text-xs flex items-center gap-1"
+                                onClick={() => editSupplier(item)}
+                              >
+                                <Building className="h-3 w-3" />
+                                {item.supplier.name}
+                              </Button>
+                            ) : (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="px-2 h-7 text-xs"
+                                onClick={() => editSupplier(item)}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Supplier
+                              </Button>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -414,6 +585,10 @@ const Inventory = () => {
                                 <DropdownMenuItem onClick={() => openImageUploadDialog(item)}>
                                   <ImageIcon className="mr-2 h-4 w-4" />
                                   Change Image
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => editSupplier(item)}>
+                                  <Building className="mr-2 h-4 w-4" />
+                                  Edit Supplier
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
                                   <FileText className="mr-2 h-4 w-4" />
@@ -488,7 +663,7 @@ const Inventory = () => {
 
       {/* Add Inventory Item Dialog */}
       <Dialog open={showAddItemDialog} onOpenChange={setShowAddItemDialog}>
-        <DialogContent className="sm:max-w-[525px]">
+        <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
             <DialogTitle>Add Inventory Item</DialogTitle>
             <DialogDescription>
@@ -614,6 +789,66 @@ const Inventory = () => {
                 </Button>
               </div>
             </div>
+
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="supplier">
+                <AccordionTrigger className="text-sm">
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    Supplier Information
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4 pt-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="supplier.name" className="text-right">
+                        Supplier Name
+                      </Label>
+                      <Input 
+                        id="supplier.name" 
+                        className="col-span-3"
+                        value={newItemForm.supplier.name}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="supplier.contactPerson" className="text-right">
+                        Contact Person
+                      </Label>
+                      <Input 
+                        id="supplier.contactPerson" 
+                        className="col-span-3"
+                        value={newItemForm.supplier.contactPerson}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="supplier.email" className="text-right">
+                        Email
+                      </Label>
+                      <Input 
+                        id="supplier.email" 
+                        type="email"
+                        className="col-span-3"
+                        value={newItemForm.supplier.email}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="supplier.phone" className="text-right">
+                        Phone
+                      </Label>
+                      <Input 
+                        id="supplier.phone" 
+                        className="col-span-3"
+                        value={newItemForm.supplier.phone}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddItemDialog(false)}>
@@ -666,6 +901,73 @@ const Inventory = () => {
             <Button variant="outline" onClick={() => setShowImageUploadDialog(false)}>
               Cancel
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Supplier Dialog */}
+      <Dialog open={showSupplierDialog} onOpenChange={setShowSupplierDialog}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>
+              {activeItem ? `Edit Supplier for ${activeItem.name}` : 'Add Supplier Information'}
+            </DialogTitle>
+            <DialogDescription>
+              Enter the supplier details for this inventory item.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="supplier.name" className="text-right">
+                Supplier Name
+              </Label>
+              <Input 
+                id="supplier.name" 
+                className="col-span-3"
+                value={newItemForm.supplier.name}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="supplier.contactPerson" className="text-right">
+                Contact Person
+              </Label>
+              <Input 
+                id="supplier.contactPerson" 
+                className="col-span-3"
+                value={newItemForm.supplier.contactPerson}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="supplier.email" className="text-right">
+                Email
+              </Label>
+              <Input 
+                id="supplier.email" 
+                type="email"
+                className="col-span-3"
+                value={newItemForm.supplier.email}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="supplier.phone" className="text-right">
+                Phone
+              </Label>
+              <Input 
+                id="supplier.phone" 
+                className="col-span-3"
+                value={newItemForm.supplier.phone}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSupplierDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateSupplier}>Save Supplier</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -16,10 +16,19 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Package, Plus, Image as ImageIcon } from "lucide-react";
+import { AlertTriangle, Package, Plus, Image as ImageIcon, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatCurrency } from "@/utils/formatters";
+import { useNotifications } from "@/contexts/NotificationsContext";
+import { useEffect } from "react";
+
+interface SupplierInfo {
+  name: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+}
 
 interface InventoryItem {
   id: string;
@@ -31,6 +40,7 @@ interface InventoryItem {
   location: string;
   reorderPoint: number;
   image?: string;
+  supplier?: SupplierInfo;
 }
 
 interface LowStockItemsProps {
@@ -38,6 +48,25 @@ interface LowStockItemsProps {
 }
 
 const LowStockItems = ({ items }: LowStockItemsProps) => {
+  const { addNotification } = useNotifications();
+
+  // Add notifications for low stock items
+  useEffect(() => {
+    if (items.length > 0) {
+      // Only notify for items that are critically low (less than half of reorder point)
+      const criticalItems = items.filter(item => item.quantity <= item.reorderPoint / 2);
+      
+      if (criticalItems.length > 0) {
+        addNotification({
+          title: "Critical Low Stock Alert",
+          message: `${criticalItems.length} items are critically low on stock and need immediate attention.`,
+          type: "warning",
+          link: "/inventory"
+        });
+      }
+    }
+  }, [items, addNotification]);
+
   return (
     <Card>
       <CardHeader>
@@ -66,6 +95,7 @@ const LowStockItems = ({ items }: LowStockItemsProps) => {
                   <TableHead className="text-right">Current Quantity</TableHead>
                   <TableHead className="text-right">Reorder Point</TableHead>
                   <TableHead>Location</TableHead>
+                  <TableHead>Supplier</TableHead>
                   <TableHead className="text-right"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -99,6 +129,13 @@ const LowStockItems = ({ items }: LowStockItemsProps) => {
                       {item.reorderPoint}
                     </TableCell>
                     <TableCell>{item.location}</TableCell>
+                    <TableCell>
+                      {item.supplier?.name ? (
+                        <span className="text-sm">{item.supplier.name}</span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No supplier</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline">
                         <Plus className="h-4 w-4 mr-1" />
