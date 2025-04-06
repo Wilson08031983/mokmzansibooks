@@ -24,18 +24,24 @@ const Reports = () => {
     if (reportsRef.current) {
       toast({
         title: "Generating PDF",
-        description: "Your report is being prepared for download...",
+        description: "Your comprehensive report is being prepared for download...",
       });
+      
+      // Temporarily add a class for print styling
+      reportsRef.current.classList.add('printing-reports');
       
       const success = await downloadDocumentAsPdf(
         reportsRef.current,
-        "business-reports.pdf"
+        "comprehensive-business-reports.pdf"
       );
+      
+      // Remove the temporary class
+      reportsRef.current.classList.remove('printing-reports');
       
       if (success) {
         toast({
-          title: "PDF Generated",
-          description: "Your report has been downloaded successfully.",
+          title: "Full Report Generated",
+          description: "Your comprehensive business report has been downloaded successfully.",
         });
       } else {
         toast({
@@ -56,7 +62,7 @@ const Reports = () => {
         </div>
         <Button onClick={handlePrintReports} className="bg-primary">
           <Printer className="mr-2 h-4 w-4" />
-          Print Reports
+          Print Full Reports
         </Button>
       </div>
 
