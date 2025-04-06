@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -121,7 +120,7 @@ const TaxDocuments = () => {
         fakeFields['registrationDate'] = new Date(2020, 0, Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0];
         fakeFields['companyType'] = 'Private Company';
       } else if (file.name.toLowerCase().includes('bee') || file.name.toLowerCase().includes('bbbee')) {
-        fakeFields['beeLevel'] = Math.floor(Math.random() * 3) + 1;
+        fakeFields['beeLevel'] = Math.floor(Math.random() * 3 + 1).toString(); // Fixed: Convert number to string
         fakeFields['beeScore'] = (Math.floor(Math.random() * 40) + 60).toString();
         fakeFields['beeExpiryDate'] = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
       } else if (file.name.toLowerCase().includes('vat')) {
