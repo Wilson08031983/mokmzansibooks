@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface BankIntegration {
   id: string;
@@ -98,12 +107,10 @@ const AccountingIntegrations = () => {
     localStorage.setItem('connectedSoftware', JSON.stringify(accountingSoftware));
   }, [accountingSoftware]);
 
-  // Check for connections that need to be synced (24 hour interval)
   useEffect(() => {
     const checkForAutoSync = () => {
       const now = new Date();
       
-      // Check banks that need syncing
       const banksToSync = banks.filter(bank => {
         if (!bank.connected || !bank.lastSynced || bank.autoSync === false) return false;
         
@@ -113,7 +120,6 @@ const AccountingIntegrations = () => {
         return hoursDifference >= 24;
       });
       
-      // Check software that needs syncing
       const softwareToSync = accountingSoftware.filter(software => {
         if (!software.connected || !software.lastSynced || software.autoSync === false) return false;
         
@@ -123,29 +129,24 @@ const AccountingIntegrations = () => {
         return hoursDifference >= 24;
       });
       
-      // Perform syncs if needed
       if (banksToSync.length > 0 || softwareToSync.length > 0) {
         toast({
           title: "Auto-Sync Started",
           description: `Synchronizing data for ${banksToSync.length} banks and ${softwareToSync.length} accounting software.`,
         });
         
-        // Sync banks
         banksToSync.forEach(bank => {
           syncIntegration(bank.id, 'bank', true);
         });
         
-        // Sync software
         softwareToSync.forEach(software => {
           syncIntegration(software.id, 'software', true);
         });
       }
     };
     
-    // Check immediately on component mount
     checkForAutoSync();
     
-    // Set up interval to check every hour (we don't need to check every second)
     const intervalId = setInterval(checkForAutoSync, 60 * 60 * 1000);
     
     return () => clearInterval(intervalId);
@@ -289,6 +290,16 @@ const AccountingIntegrations = () => {
     const date = new Date(dateString);
     return date.toLocaleString();
   };
+
+  const getConnectedIntegrations = () => {
+    const connectedBanks = banks.filter(bank => bank.connected);
+    const connectedSoftware = accountingSoftware.filter(software => software.connected);
+    
+    return [...connectedBanks.map(bank => ({ ...bank, type: 'bank' as const })), 
+            ...connectedSoftware.map(software => ({ ...software, type: 'software' as const }))];
+  };
+
+  const connectedIntegrations = getConnectedIntegrations();
 
   return (
     <div className="space-y-6">
@@ -480,6 +491,89 @@ const AccountingIntegrations = () => {
           </Card>
         </div>
       </div>
+
+      {connectedIntegrations.length > 0 && (
+        <div>
+          <h2 className="text-xl font-medium mb-4 flex items-center">
+            <Link className="mr-2 h-5 w-5" />
+            Connected Integrations Summary
+          </h2>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Integration Status</CardTitle>
+              <CardDescription>
+                Overview of all your connected financial services
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Integration</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Synced</TableHead>
+                    <TableHead>Auto-Sync</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {connectedIntegrations.map((integration) => (
+                    <TableRow key={`${integration.type}-${integration.id}`}>
+                      <TableCell className="font-medium">{integration.name}</TableCell>
+                      <TableCell>
+                        {integration.type === 'bank' ? 'Banking' : 'Accounting Software'}
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <CheckCircle className="mr-1 h-3 w-3" /> Connected
+                        </span>
+                      </TableCell>
+                      <TableCell>{formatLastSynced(integration.lastSynced)}</TableCell>
+                      <TableCell>
+                        <Switch
+                          id={`summary-auto-sync-${integration.id}`}
+                          checked={integration.autoSync !== false}
+                          onCheckedChange={(checked) => toggleAutoSync(integration.id, integration.type, checked)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => syncIntegration(integration.id, integration.type)}
+                          >
+                            <RefreshCw className="mr-2 h-3 w-3" />
+                            Sync
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDisconnect(integration.id, integration.type)}
+                          >
+                            <Link2Off className="mr-2 h-3 w-3" />
+                            Disconnect
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                {connectedIntegrations.length === 0 && (
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">
+                        No connected integrations
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                )}
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="sm:max-w-md">
