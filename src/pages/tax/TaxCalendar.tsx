@@ -1,11 +1,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon } from "lucide-react";
-import { useState } from "react";
+import { CalendarIcon, Download, FileText } from "lucide-react";
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 
 const TaxCalendar = () => {
   const { toast } = useToast();
+  const calendarRef = useRef<HTMLDivElement>(null);
   const [taxDeadlines] = useState([
     {
       id: "deadline-1",
@@ -83,11 +86,48 @@ const TaxCalendar = () => {
     }).format(date);
   };
 
+  const handleDownloadCalendar = async () => {
+    if (!calendarRef.current) return;
+    
+    toast({
+      title: "Generating PDF",
+      description: "Your tax calendar is being prepared for download...",
+    });
+    
+    try {
+      const success = await downloadDocumentAsPdf(
+        calendarRef.current,
+        "tax-calendar.pdf"
+      );
+      
+      if (success) {
+        toast({
+          title: "Download Complete",
+          description: "Tax calendar has been downloaded successfully.",
+        });
+      } else {
+        throw new Error("Failed to generate PDF");
+      }
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "There was a problem generating your tax calendar PDF.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Tax Calendar</h1>
-        <p className="text-gray-500">Stay on top of important tax deadlines</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Tax Calendar</h1>
+          <p className="text-gray-500">Stay on top of important tax deadlines</p>
+        </div>
+        <Button onClick={handleDownloadCalendar} className="flex items-center gap-2">
+          <Download className="h-4 w-4" />
+          Download Calendar
+        </Button>
       </div>
 
       <Card>
@@ -95,7 +135,7 @@ const TaxCalendar = () => {
           <CardTitle>Upcoming Tax Deadlines</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-4" ref={calendarRef}>
             {sortedDeadlines.map((deadline) => (
               <div 
                 key={deadline.id}
