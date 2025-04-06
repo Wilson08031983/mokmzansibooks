@@ -1,10 +1,9 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, Download, Upload, Tag, Camera, Image, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -71,8 +70,8 @@ const AccountingTransactions = () => {
   const [attachmentType, setAttachmentType] = useState<string | null>(null);
   const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
   const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   
-  // Adding the missing newTransaction state
   const [newTransaction, setNewTransaction] = useState({
     amount: "",
     description: "",
@@ -83,6 +82,22 @@ const AccountingTransactions = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
+
+  useEffect(() => {
+    if (!importDialogOpen && cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+      setShowCameraPreview(false);
+    }
+  }, [importDialogOpen, cameraStream]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -115,6 +130,12 @@ const AccountingTransactions = () => {
     setAttachmentPreview(null);
     setAttachmentType(null);
     setShowCameraPreview(false);
+    
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    
     if (type === "attachment" && selectedTransactionId) {
       toast({
         title: "Attachment Linked",
@@ -141,40 +162,58 @@ const AccountingTransactions = () => {
 
   const startCamera = async () => {
     try {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+      
+      console.log("Starting camera...");
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "environment" } 
+      });
+      
       if (videoRef.current) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         videoRef.current.srcObject = stream;
+        setCameraStream(stream);
         setShowCameraPreview(true);
         setCameraError("");
+        console.log("Camera started successfully");
+      } else {
+        console.error("Video ref is not available");
+        throw new Error("Camera initialization failed");
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
-      setCameraError("Could not access camera. Please check permissions and try again.");
+      setCameraError(`Could not access camera: ${err.message || "Please check permissions and try again."}`);
     }
   };
 
   const takePhoto = () => {
-    if (videoRef.current) {
+    if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+      console.log("Taking photo...");
       const canvas = document.createElement("canvas");
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      canvas.getContext("2d")?.drawImage(
-        videoRef.current, 
-        0, 
-        0, 
-        videoRef.current.videoWidth, 
-        videoRef.current.videoHeight
-      );
+      const video = videoRef.current;
       
-      const dataUrl = canvas.toDataURL("image/jpeg");
-      setAttachmentPreview(dataUrl);
-      setAttachmentType("camera");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       
-      const stream = videoRef.current.srcObject as MediaStream;
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg");
+        setAttachmentPreview(dataUrl);
+        setAttachmentType("camera");
+        
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
+          setCameraStream(null);
+        }
+        
+        setShowCameraPreview(false);
+        console.log("Photo taken successfully");
       }
-      setShowCameraPreview(false);
+    } else {
+      console.error("Video not ready for capture");
+      setCameraError("Camera not ready. Please wait a moment and try again.");
     }
   };
 
@@ -405,7 +444,14 @@ const AccountingTransactions = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+      <Dialog open={importDialogOpen} onOpenChange={(open) => {
+        if (!open && cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
+          setCameraStream(null);
+          setShowCameraPreview(false);
+        }
+        setImportDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
