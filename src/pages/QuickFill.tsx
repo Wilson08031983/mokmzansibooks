@@ -831,9 +831,11 @@ const QuickFill = () => {
                                   </Button>
                                   <Button 
                                     size="sm"
-                                    onClick={() => handleAddToQuote(result.item, supplier.name)}
+                                    asChild
                                   >
-                                    <ShoppingCart className="h-3 w-3 mr-1" /> Add
+                                    <Link to="/invoices/quotes" className="flex items-center">
+                                      <FileText className="h-3 w-3 mr-1" /> Link to Quote
+                                    </Link>
                                   </Button>
                                 </TableCell>
                               </TableRow>
