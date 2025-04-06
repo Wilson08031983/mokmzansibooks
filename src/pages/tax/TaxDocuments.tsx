@@ -11,7 +11,7 @@ import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 const TaxDocuments = () => {
   const { toast } = useToast();
   const documentsTableRef = useRef<HTMLDivElement>(null);
-  const [documents] = useState([
+  const [taxDocuments] = useState([
     {
       id: "doc-1",
       name: "Tax Clearance Certificate",
@@ -62,12 +62,12 @@ const TaxDocuments = () => {
   };
 
   const handleDownload = async (id: string) => {
-    const document = documents.find(doc => doc.id === id);
-    if (!document) return;
+    const taxDoc = taxDocuments.find(doc => doc.id === id);
+    if (!taxDoc) return;
     
     toast({
       title: "Generating Document",
-      description: `Preparing ${document.name} for download...`,
+      description: `Preparing ${taxDoc.name} for download...`,
     });
     
     // Create a temporary container with the document data
@@ -75,12 +75,12 @@ const TaxDocuments = () => {
     tempContainer.className = 'p-8 bg-white';
     
     // Style the container with different content based on document type
-    if (document.category === "Certificates") {
+    if (taxDoc.category === "Certificates") {
       tempContainer.innerHTML = `
         <div style="font-family: Arial, sans-serif; border: 2px solid #000; padding: 20px; max-width: 800px; margin: 0 auto;">
           <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="font-size: 28px; margin-bottom: 10px;">${document.name}</h1>
-            <p style="font-size: 18px;">Certificate #: ${document.id.toUpperCase()}</p>
+            <h1 style="font-size: 28px; margin-bottom: 10px;">${taxDoc.name}</h1>
+            <p style="font-size: 18px;">Certificate #: ${taxDoc.id.toUpperCase()}</p>
           </div>
           
           <div style="margin-bottom: 40px;">
@@ -88,7 +88,7 @@ const TaxDocuments = () => {
             <p style="font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 20px;">ABC Company (Pty) Ltd</p>
             <p style="font-size: 16px; margin-bottom: 20px;">Registration Number: 2020/123456/07</p>
             
-            <p style="font-size: 16px; margin-bottom: 20px; text-align: center;">Has been registered for ${document.name.replace(" Certificate", "")} purposes with the South African Revenue Service.</p>
+            <p style="font-size: 16px; margin-bottom: 20px; text-align: center;">Has been registered for ${taxDoc.name.replace(" Certificate", "")} purposes with the South African Revenue Service.</p>
           </div>
           
           <div style="display: flex; justify-content: space-between; margin-top: 60px;">
@@ -96,20 +96,20 @@ const TaxDocuments = () => {
               <p style="border-top: 1px solid #000; padding-top: 10px; width: 200px;">Authorized Signature</p>
             </div>
             <div>
-              <p style="border-top: 1px solid #000; padding-top: 10px; width: 200px;">Date: ${new Date(document.uploadDate).toLocaleDateString()}</p>
+              <p style="border-top: 1px solid #000; padding-top: 10px; width: 200px;">Date: ${new Date(taxDoc.uploadDate).toLocaleDateString()}</p>
             </div>
           </div>
           
           <div style="margin-top: 40px; text-align: center;">
-            <p>This certificate is valid from ${new Date(document.uploadDate).toLocaleDateString()} to ${new Date(new Date(document.uploadDate).setFullYear(new Date(document.uploadDate).getFullYear() + 1)).toLocaleDateString()}</p>
+            <p>This certificate is valid from ${new Date(taxDoc.uploadDate).toLocaleDateString()} to ${new Date(new Date(taxDoc.uploadDate).setFullYear(new Date(taxDoc.uploadDate).getFullYear() + 1)).toLocaleDateString()}</p>
           </div>
         </div>
       `;
-    } else if (document.category === "Returns") {
+    } else if (taxDoc.category === "Returns") {
       tempContainer.innerHTML = `
         <div style="font-family: Arial, sans-serif;">
-          <h1 style="text-align: center; font-size: 24px; margin-bottom: 20px;">${document.name}</h1>
-          <p style="text-align: center; margin-bottom: 30px;">Submission ID: ${document.id.toUpperCase()}</p>
+          <h1 style="text-align: center; font-size: 24px; margin-bottom: 20px;">${taxDoc.name}</h1>
+          <p style="text-align: center; margin-bottom: 30px;">Submission ID: ${taxDoc.id.toUpperCase()}</p>
           
           <div style="margin-bottom: 30px;">
             <h2 style="font-size: 18px; margin-bottom: 10px;">Company Information</h2>
@@ -121,7 +121,7 @@ const TaxDocuments = () => {
           <div style="margin-bottom: 30px;">
             <h2 style="font-size: 18px; margin-bottom: 10px;">Return Details</h2>
             <p><strong>Tax Year:</strong> 2023</p>
-            <p><strong>Submission Date:</strong> ${new Date(document.uploadDate).toLocaleDateString()}</p>
+            <p><strong>Submission Date:</strong> ${new Date(taxDoc.uploadDate).toLocaleDateString()}</p>
             <p><strong>Status:</strong> Submitted</p>
           </div>
           
@@ -173,7 +173,7 @@ const TaxDocuments = () => {
             <p>299 Bronkhorst Street</p>
             <p>Nieuw Muckleneuk, Pretoria</p>
             <p>0181</p>
-            <p>Date: ${new Date(document.uploadDate).toLocaleDateString()}</p>
+            <p>Date: ${new Date(taxDoc.uploadDate).toLocaleDateString()}</p>
           </div>
           
           <div style="margin-bottom: 40px;">
@@ -184,8 +184,8 @@ const TaxDocuments = () => {
           </div>
           
           <div style="margin-bottom: 20px;">
-            <p><strong>Subject: ${document.name}</strong></p>
-            <p><strong>Reference: ${document.id.toUpperCase()}</strong></p>
+            <p><strong>Subject: ${taxDoc.name}</strong></p>
+            <p><strong>Reference: ${taxDoc.id.toUpperCase()}</strong></p>
           </div>
           
           <div style="margin-bottom: 30px;">
@@ -193,7 +193,7 @@ const TaxDocuments = () => {
             
             <p style="margin-top: 20px;">This letter serves to confirm that ABC Company (Pty) Ltd (Registration Number: 2020/123456/07) has been granted tax exemption status under Section 10(1)(cN) of the Income Tax Act, 1962 (Act No. 58 of 1962).</p>
             
-            <p style="margin-top: 20px;">This exemption is valid from ${new Date(document.uploadDate).toLocaleDateString()} and will remain in effect unless revoked by the Commissioner for the South African Revenue Service.</p>
+            <p style="margin-top: 20px;">This exemption is valid from ${new Date(taxDoc.uploadDate).toLocaleDateString()} and will remain in effect unless revoked by the Commissioner for the South African Revenue Service.</p>
             
             <p style="margin-top: 20px;">Please note the following conditions associated with this exemption:</p>
             <ul style="margin-left: 20px;">
@@ -221,13 +221,13 @@ const TaxDocuments = () => {
     try {
       const success = await downloadDocumentAsPdf(
         tempContainer,
-        `${document.name.toLowerCase().replace(/\s+/g, '-')}.pdf`
+        `${taxDoc.name.toLowerCase().replace(/\s+/g, '-')}.pdf`
       );
       
       if (success) {
         toast({
           title: "Download Complete",
-          description: `${document.name} has been downloaded successfully.`,
+          description: `${taxDoc.name} has been downloaded successfully.`,
         });
       } else {
         throw new Error("Failed to generate PDF");
@@ -320,19 +320,19 @@ const TaxDocuments = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.map((document) => (
-                  <TableRow key={document.id}>
-                    <TableCell className="font-medium">{document.name}</TableCell>
-                    <TableCell>{document.category}</TableCell>
-                    <TableCell>{document.type}</TableCell>
-                    <TableCell>{document.size}</TableCell>
-                    <TableCell>{new Date(document.uploadDate).toLocaleDateString()}</TableCell>
+                {taxDocuments.map((taxDoc) => (
+                  <TableRow key={taxDoc.id}>
+                    <TableCell className="font-medium">{taxDoc.name}</TableCell>
+                    <TableCell>{taxDoc.category}</TableCell>
+                    <TableCell>{taxDoc.type}</TableCell>
+                    <TableCell>{taxDoc.size}</TableCell>
+                    <TableCell>{new Date(taxDoc.uploadDate).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <Button
                         variant="outline"
                         size="sm"
                         className="flex items-center"
-                        onClick={() => handleDownload(document.id)}
+                        onClick={() => handleDownload(taxDoc.id)}
                       >
                         <FileText className="mr-2 h-4 w-4" />
                         Download
@@ -350,3 +350,4 @@ const TaxDocuments = () => {
 };
 
 export default TaxDocuments;
+
