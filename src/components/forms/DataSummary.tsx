@@ -1,96 +1,12 @@
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
+import React, { useState, useEffect } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import DocumentExtractor from '@/components/documents/DocumentExtractor';
-import FillablePdfForm from '@/components/documents/FillablePdfForm';
-import { ChevronDown, ChevronUp, FileText, Clock } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp, FileText, Clock, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
-const QuickFill = () => {
-  const [activeTab, setActiveTab] = useState<string>("rfq");
-
-  return (
-    <div className="container mx-auto py-6 space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Quick Fill</h1>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 lg:w-[400px]">
-          <TabsTrigger value="rfq">RFQ Search & Pricing</TabsTrigger>
-          <TabsTrigger value="forms">Smart Forms</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="rfq" className="mt-6">
-          {/* Existing RFQ Search & Pricing content */}
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>RFQ Search & Pricing</CardTitle>
-              <CardDescription>
-                Search for RFQs and generate pricing quickly
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* This is where the existing RFQ content would be */}
-              <p className="text-center text-gray-500 py-12">
-                RFQ Search & Pricing functionality is preserved here
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="forms" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <Card className="w-full mb-6">
-                <CardHeader>
-                  <CardTitle>Document AI</CardTitle>
-                  <CardDescription>
-                    Extract and store data from your business documents
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DocumentExtractor />
-                </CardContent>
-              </Card>
-              
-              <Card className="w-full">
-                <CardHeader>
-                  <CardTitle>Stored Business Data</CardTitle>
-                  <CardDescription>
-                    All your extracted business data that can be used to fill forms
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DataSummary />
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div>
-              <Card className="w-full">
-                <CardHeader>
-                  <CardTitle>Smart Form Filler</CardTitle>
-                  <CardDescription>
-                    Upload fillable PDF forms and auto-fill them with your data
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FillablePdfForm />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
-
-// Enhanced DataSummary component to display stored data
-const DataSummary = () => {
+export const DataSummary = () => {
   const [data, setData] = useState<Record<string, Record<string, string>>>(() => {
     try {
       const storedData = localStorage.getItem('extractedData');
@@ -128,7 +44,6 @@ const DataSummary = () => {
           }, {} as Record<string, boolean>);
           
           setExpandedSections(prev => ({ ...prev, ...newSections }));
-          console.log('Data updated from storage:', parsedData);
         } else {
           setData({});
         }
@@ -150,6 +65,23 @@ const DataSummary = () => {
       window.removeEventListener('storageupdated', handleStorageChange);
     };
   }, [data]);
+  
+  const copyToClipboard = (type: string) => {
+    if (!data[type]) return;
+    
+    const typeData = data[type];
+    let text = `${type.toUpperCase()} DATA:\n\n`;
+    
+    Object.entries(typeData)
+      .filter(([key]) => !key.startsWith('_'))
+      .forEach(([key, value]) => {
+        text += `${key}: ${value}\n`;
+      });
+    
+    navigator.clipboard.writeText(text)
+      .then(() => toast.success(`${type.replace('_', ' ')} data copied to clipboard`))
+      .catch(() => toast.error('Failed to copy to clipboard'));
+  };
   
   if (Object.keys(data).length === 0) {
     return (
@@ -215,9 +147,20 @@ const DataSummary = () => {
                   )}
                 </div>
                 
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyToClipboard(type);
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                   {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </Button>
+                </div>
               </div>
             </CollapsibleTrigger>
             
@@ -238,4 +181,4 @@ const DataSummary = () => {
   );
 };
 
-export default QuickFill;
+export default DataSummary;

@@ -22,7 +22,8 @@ const buttonVariants = cva(
         download: "bg-green-500 text-white hover:bg-green-600",
         preview: "bg-purple-500 text-white hover:bg-purple-600",
         extract: "bg-amber-500 text-white hover:bg-amber-600",
-        success: "bg-green-500 text-white hover:bg-green-600", // Added success variant
+        success: "bg-green-500 text-white hover:bg-green-600",
+        fillout: "bg-indigo-600 text-white hover:bg-indigo-700", // Added fillout variant
       },
       size: {
         default: "h-10 px-4 py-2",
