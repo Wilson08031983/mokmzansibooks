@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +15,16 @@ import {
   Phone,
   MapPin,
   Clock,
+  CreditCard,
+  AlertCircle,
+  DollarSign,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { useNotifications } from "@/contexts/NotificationsContext";
 
+// Enhanced mockup data with credit info
 const mockClients = {
   companies: [
     {
@@ -29,6 +36,9 @@ const mockClients = {
       address: "45 Main Road, Cape Town, 8001",
       lastInteraction: "2023-03-25",
       type: "company",
+      credit: 5000,
+      outstanding: 2500,
+      overdue: 0,
     },
     {
       id: "c2",
@@ -39,6 +49,9 @@ const mockClients = {
       address: "12 Beach Avenue, Durban, 4001",
       lastInteraction: "2023-03-20",
       type: "company",
+      credit: 3000,
+      outstanding: 3000,
+      overdue: 1500,
     },
   ],
   individuals: [
@@ -50,6 +63,9 @@ const mockClients = {
       address: "78 Oak Street, Johannesburg, 2000",
       lastInteraction: "2023-03-28",
       type: "individual",
+      credit: 1000,
+      outstanding: 500,
+      overdue: 0,
     },
   ],
   vendors: [
@@ -62,6 +78,9 @@ const mockClients = {
       address: "56 Commerce Park, Pretoria, 0002",
       lastInteraction: "2023-03-15",
       type: "vendor",
+      credit: 0,
+      outstanding: 0,
+      overdue: 0,
     },
   ],
 };
@@ -70,6 +89,10 @@ const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("companies");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [creditAmount, setCreditAmount] = useState("");
+  
   const [newClientData, setNewClientData] = useState({
     name: "",
     contactPerson: "",
@@ -81,8 +104,11 @@ const Clients = () => {
     province: "",
     postalCode: "",
     type: "company",
+    credit: 0,
   });
+  
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
 
   const clientCount = {
     companies: mockClients.companies.length,
@@ -91,7 +117,7 @@ const Clients = () => {
     all: mockClients.companies.length + mockClients.individuals.length + mockClients.vendors.length,
   };
 
-  const filteredClients = (type: string) => {
+  const filteredClients = (type) => {
     let clients = [];
     
     switch (type) {
@@ -121,11 +147,15 @@ const Clients = () => {
     );
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-ZA");
   };
 
-  const getClientIcon = (type: string) => {
+  const formatCurrency = (amount) => {
+    return "R" + amount.toLocaleString("en-ZA");
+  };
+
+  const getClientIcon = (type) => {
     switch (type) {
       case "company":
         return <Building2 className="h-10 w-10 text-blue-500" />;
@@ -156,16 +186,70 @@ const Clients = () => {
       province: "",
       postalCode: "",
       type: "company",
+      credit: 0,
     });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewClientData({
       ...newClientData,
       [name]: value,
     });
   };
+
+  const openCreditDialog = (client) => {
+    setSelectedClient(client);
+    setCreditAmount("");
+    setIsCreditDialogOpen(true);
+  };
+
+  const handleAddCredit = () => {
+    const amount = parseFloat(creditAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid credit amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Here you would update the client's credit in a real application
+    toast({
+      title: "Credit added",
+      description: `R${amount.toLocaleString('en-ZA')} credit has been added to ${selectedClient.name}.`,
+    });
+
+    // Add notification for the credit update
+    addNotification({
+      title: "Credit Added",
+      message: `R${amount.toLocaleString('en-ZA')} credit has been added to ${selectedClient.name}.`,
+      type: "success",
+    });
+
+    setIsCreditDialogOpen(false);
+    setSelectedClient(null);
+    setCreditAmount("");
+  };
+
+  // Check if any clients have overdue payments and notify
+  useState(() => {
+    const overdueClients = [
+      ...mockClients.companies,
+      ...mockClients.individuals,
+      ...mockClients.vendors,
+    ].filter(client => client.overdue > 0);
+    
+    overdueClients.forEach(client => {
+      addNotification({
+        title: "Overdue Payment",
+        message: `${client.name} has an overdue payment of ${formatCurrency(client.overdue)}.`,
+        type: "warning",
+        link: "/clients",
+      });
+    });
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -319,6 +403,20 @@ const Clients = () => {
                   onChange={handleInputChange}
                 />
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="initialCredit" className="text-right">
+                  Initial Credit
+                </Label>
+                <Input
+                  id="credit"
+                  name="credit"
+                  type="number"
+                  min="0"
+                  className="col-span-3"
+                  value={newClientData.credit}
+                  onChange={handleInputChange}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
@@ -398,10 +496,28 @@ const Clients = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                              <h3 className="text-lg font-medium truncate">{client.name}</h3>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <Clock className="mr-1 h-4 w-4" />
-                                Last interaction: {formatDate(client.lastInteraction)}
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                                {client.overdue > 0 && (
+                                  <Badge variant="overdue">Overdue: {formatCurrency(client.overdue)}</Badge>
+                                )}
+                                {client.outstanding > 0 && client.overdue === 0 && (
+                                  <Badge variant="outstanding">Outstanding: {formatCurrency(client.outstanding)}</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Clock className="mr-1 h-4 w-4" />
+                                  Last interaction: {formatDate(client.lastInteraction)}
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => openCreditDialog(client)}
+                                  className="ml-2"
+                                >
+                                  <CreditCard className="mr-1 h-4 w-4" /> Add Credit
+                                </Button>
                               </div>
                             </div>
                             <p className="text-sm text-gray-600">
@@ -420,6 +536,12 @@ const Clients = () => {
                                 <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
                                 <span className="truncate">{client.address}</span>
                               </div>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              <Badge variant="credit" className="flex items-center">
+                                <DollarSign className="mr-1 h-3 w-3" /> 
+                                Credit: {formatCurrency(client.credit)}
+                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -452,10 +574,28 @@ const Clients = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                              <h3 className="text-lg font-medium truncate">{client.name}</h3>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <Clock className="mr-1 h-4 w-4" />
-                                Last interaction: {formatDate(client.lastInteraction)}
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                                {client.overdue > 0 && (
+                                  <Badge variant="overdue">Overdue: {formatCurrency(client.overdue)}</Badge>
+                                )}
+                                {client.outstanding > 0 && client.overdue === 0 && (
+                                  <Badge variant="outstanding">Outstanding: {formatCurrency(client.outstanding)}</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Clock className="mr-1 h-4 w-4" />
+                                  Last interaction: {formatDate(client.lastInteraction)}
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => openCreditDialog(client)}
+                                  className="ml-2"
+                                >
+                                  <CreditCard className="mr-1 h-4 w-4" /> Add Credit
+                                </Button>
                               </div>
                             </div>
                             <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
@@ -471,6 +611,12 @@ const Clients = () => {
                                 <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
                                 <span className="truncate">{client.address}</span>
                               </div>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              <Badge variant="credit" className="flex items-center">
+                                <DollarSign className="mr-1 h-3 w-3" /> 
+                                Credit: {formatCurrency(client.credit)}
+                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -503,10 +649,28 @@ const Clients = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                              <h3 className="text-lg font-medium truncate">{client.name}</h3>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <Clock className="mr-1 h-4 w-4" />
-                                Last interaction: {formatDate(client.lastInteraction)}
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                                {client.overdue > 0 && (
+                                  <Badge variant="overdue">Overdue: {formatCurrency(client.overdue)}</Badge>
+                                )}
+                                {client.outstanding > 0 && client.overdue === 0 && (
+                                  <Badge variant="outstanding">Outstanding: {formatCurrency(client.outstanding)}</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Clock className="mr-1 h-4 w-4" />
+                                  Last interaction: {formatDate(client.lastInteraction)}
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => openCreditDialog(client)}
+                                  className="ml-2"
+                                >
+                                  <CreditCard className="mr-1 h-4 w-4" /> Add Credit
+                                </Button>
                               </div>
                             </div>
                             <p className="text-sm text-gray-600">
@@ -526,6 +690,12 @@ const Clients = () => {
                                 <span className="truncate">{client.address}</span>
                               </div>
                             </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              <Badge variant="credit" className="flex items-center">
+                                <DollarSign className="mr-1 h-3 w-3" /> 
+                                Credit: {formatCurrency(client.credit)}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       ))
@@ -541,6 +711,58 @@ const Clients = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Add Credit Dialog */}
+      <Dialog open={isCreditDialogOpen} onOpenChange={setIsCreditDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Add Credit</DialogTitle>
+            <DialogDescription>
+              Add credit to {selectedClient?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="creditAmount" className="text-right">
+                Amount (R)
+              </Label>
+              <Input
+                id="creditAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                className="col-span-3"
+                value={creditAmount}
+                onChange={(e) => setCreditAmount(e.target.value)}
+              />
+            </div>
+            {selectedClient && (
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <p className="text-sm font-medium">Client Information:</p>
+                <div className="flex justify-between text-sm">
+                  <span>Current Credit:</span>
+                  <span className="font-medium">{formatCurrency(selectedClient.credit)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Outstanding Balance:</span>
+                  <span className="font-medium">{formatCurrency(selectedClient.outstanding)}</span>
+                </div>
+                {selectedClient.overdue > 0 && (
+                  <div className="flex justify-between text-sm text-red-500">
+                    <span>Overdue Amount:</span>
+                    <span className="font-medium">{formatCurrency(selectedClient.overdue)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddCredit}>Add Credit</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

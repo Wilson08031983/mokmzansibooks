@@ -18,6 +18,12 @@ const badgeVariants = cva(
         outline: "text-foreground",
         client: 
           "border-transparent bg-blue-500 text-white hover:bg-blue-600",
+        credit: 
+          "border-transparent bg-green-500 text-white hover:bg-green-600",
+        overdue: 
+          "border-transparent bg-red-500 text-white hover:bg-red-600",
+        outstanding: 
+          "border-transparent bg-yellow-500 text-white hover:bg-yellow-600",
       },
     },
     defaultVariants: {

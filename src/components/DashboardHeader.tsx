@@ -1,6 +1,6 @@
 
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, Users, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,11 +17,25 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 import { Notifications } from "@/components/Notifications";
 import { Badge } from "@/components/ui/badge";
+import { useNotifications } from "@/contexts/NotificationsContext";
 
 const DashboardHeader = () => {
   const { currentUser, signOut } = useAuth();
   const { state, setOpen } = useSidebar();
   const navigate = useNavigate();
+  const { notifications } = useNotifications();
+  const [overdueClientsCount, setOverdueClientsCount] = useState(0);
+
+  useEffect(() => {
+    // Count overdue client notifications
+    const count = notifications.filter(n => 
+      (n.message.includes("overdue") || n.message.includes("Overdue")) && 
+      n.message.includes("client") || n.message.includes("Client") && 
+      !n.read
+    ).length;
+    
+    setOverdueClientsCount(count);
+  }, [notifications]);
 
   const handleLogout = async () => {
     await signOut();
@@ -56,6 +70,16 @@ const DashboardHeader = () => {
       </div>
 
       <div className="flex items-center gap-4">
+        {overdueClientsCount > 0 && (
+          <Button 
+            variant="ghost" 
+            className="relative flex items-center gap-1 text-xs text-red-500"
+            onClick={() => navigate("/clients")}
+          >
+            <AlertCircle className="h-4 w-4" />
+            <span>{overdueClientsCount} overdue {overdueClientsCount === 1 ? 'client' : 'clients'}</span>
+          </Button>
+        )}
         <ThemeToggle />
         <Notifications />
         <DropdownMenu>
