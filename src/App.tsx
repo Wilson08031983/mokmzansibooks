@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { useState } from "react";
 
 // Pages
 import Index from "./pages/Index";
@@ -37,8 +38,9 @@ import PublicLayout from "./layouts/PublicLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () => {
-  // Create a new QueryClient instance inside the component
-  const queryClient = new QueryClient();
+  // Move the QueryClient creation inside the component function
+  // and use useState to ensure it's stable across renders
+  const [queryClient] = useState(() => new QueryClient());
   
   return (
     <QueryClientProvider client={queryClient}>
