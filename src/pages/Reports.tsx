@@ -64,7 +64,7 @@ const Reports = () => {
       {/* Removed the premium alert that was here */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
           <CardHeader>
             <CardTitle>Financial Reports</CardTitle>
           </CardHeader>
@@ -90,7 +90,7 @@ const Reports = () => {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
           <CardHeader>
             <CardTitle>Sales Reports</CardTitle>
           </CardHeader>
