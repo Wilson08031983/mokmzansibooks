@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { Camera, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { BrowserMultiFormatReader, Result, Exception } from '@zxing/library';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -23,23 +24,69 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanning, setScanning] = useState(false);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   
   useEffect(() => {
-    let stream: MediaStream | null = null;
+    // Initialize the code reader
+    codeReaderRef.current = new BrowserMultiFormatReader();
     
-    const startCamera = async () => {
+    return () => {
+      // Clean up when component unmounts
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+      }
+    };
+  }, []);
+  
+  useEffect(() => {
+    let mounted = true;
+    
+    const startScanner = async () => {
+      if (!open || !codeReaderRef.current) return;
+      
       try {
-        if (open) {
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' } 
-          });
-          
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            setHasPermission(true);
-            setScanning(true);
-          }
+        setScanning(true);
+        
+        // Get available video devices
+        const videoInputDevices = await codeReaderRef.current.listVideoInputDevices();
+        
+        // Use the environment-facing camera if available (usually back camera on mobile devices)
+        const device = videoInputDevices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('environment')
+        ) || videoInputDevices[0];
+        
+        if (!device) {
+          throw new Error('No camera found');
         }
+        
+        // Start continuous scanning with selected device
+        await codeReaderRef.current.decodeFromVideoDevice(
+          device.deviceId,
+          videoRef.current as HTMLVideoElement,
+          (result: Result | null, error: Exception | undefined) => {
+            if (!mounted) return;
+            
+            if (result) {
+              const scannedCode = result.getText();
+              if (scannedCode) {
+                // Handle successful scan
+                handleScanComplete(scannedCode);
+                
+                toast({
+                  title: "Barcode Scanned",
+                  description: `Scanned barcode: ${scannedCode}`,
+                });
+              }
+            }
+            
+            if (error && !(error instanceof Exception)) {
+              console.error("Scanning error:", error);
+            }
+          }
+        );
+        
+        setHasPermission(true);
       } catch (err) {
         console.error("Error accessing camera:", err);
         setHasPermission(false);
@@ -51,32 +98,27 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
       }
     };
     
-    startCamera();
-    
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+    if (open) {
+      startScanner();
+    } else {
+      // Stop scanning when dialog is closed
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
       }
       setScanning(false);
+    }
+    
+    return () => {
+      mounted = false;
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+      }
     };
   }, [open, toast]);
   
   const handleScanComplete = (barcode: string) => {
     onScan(barcode);
     onOpenChange(false);
-  };
-  
-  // In a real app, we would integrate with a barcode scanning library
-  // For this demo, we'll simulate a scan with a button
-  const simulateScan = () => {
-    // Generate a random barcode for demonstration
-    const randomBarcode = `ITEM${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
-    handleScanComplete(randomBarcode);
-    
-    toast({
-      title: "Barcode Scanned",
-      description: `Scanned barcode: ${randomBarcode}`,
-    });
   };
   
   return (
@@ -119,10 +161,6 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             <X className="mr-2 h-4 w-4" />
             Cancel
-          </Button>
-          <Button onClick={simulateScan}>
-            <Camera className="mr-2 h-4 w-4" />
-            Simulate Scan
           </Button>
         </DialogFooter>
       </DialogContent>
