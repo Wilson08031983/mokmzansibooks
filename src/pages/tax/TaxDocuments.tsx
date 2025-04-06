@@ -5,13 +5,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useFinancialData } from "@/contexts/FinancialDataContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
-import { FileText, Download, Calendar, Bell, Upload, FileSearch, FilePlus2 } from "lucide-react";
+import { FileText, Download, Calendar, Bell, Upload, FileSearch, FilePlus2, Save, Eye, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface ExtractedFormData {
   id: string;
@@ -45,7 +47,16 @@ const TaxDocuments = () => {
   const [autoFillInProgress, setAutoFillInProgress] = useState(false);
   const [autoFillProgress, setAutoFillProgress] = useState(0);
   const [matchedDocuments, setMatchedDocuments] = useState<string[]>([]);
-  const [formTemplates, setFormTemplates] = useState<FormTemplate[]>([
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<{
+    title: string;
+    fields: Record<string, string>;
+    missingFields: string[];
+  } | null>(null);
+  const [manualInputs, setManualInputs] = useState<Record<string, string>>({});
+  const [learnedInputs, setLearnedInputs] = useState<Record<string, string>>({});
+
+  const formTemplates = [
     {
       id: "tender-001",
       name: "Government Tender Application",
@@ -60,7 +71,7 @@ const TaxDocuments = () => {
       requiredDocuments: ["Company Registration", "Tax Clearance", "Financial Statements"],
       fields: ["companyName", "registrationNumber", "taxNumber", "annualTurnover"]
     }
-  ]);
+  ];
 
   useEffect(() => {
     const today = new Date();
@@ -120,7 +131,7 @@ const TaxDocuments = () => {
         fakeFields['registrationDate'] = new Date(2020, 0, Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0];
         fakeFields['companyType'] = 'Private Company';
       } else if (file.name.toLowerCase().includes('bee') || file.name.toLowerCase().includes('bbbee')) {
-        fakeFields['beeLevel'] = Math.floor(Math.random() * 3 + 1).toString(); // Fixed: Convert number to string
+        fakeFields['beeLevel'] = Math.floor(Math.random() * 3 + 1).toString();
         fakeFields['beeScore'] = (Math.floor(Math.random() * 40) + 60).toString();
         fakeFields['beeExpiryDate'] = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
       } else if (file.name.toLowerCase().includes('vat')) {
@@ -244,7 +255,6 @@ const TaxDocuments = () => {
     setAutoFillProgress(0);
     setMatchedDocuments([]);
 
-    // Determine which form template to use based on filename
     const formType = selectedFormFile.name.toLowerCase().includes('tender') 
       ? formTemplates[0] 
       : formTemplates[1];
@@ -255,24 +265,20 @@ const TaxDocuments = () => {
       variant: "info",
     });
 
-    // Simulate scanning documents to find matches
     const totalSteps = formType.requiredDocuments.length + 2;
     let currentStep = 0;
 
-    // Step 1: Analyze the form
     await new Promise(resolve => setTimeout(resolve, 800));
     currentStep++;
     setAutoFillProgress(Math.floor((currentStep / totalSteps) * 100));
     
     const matches: string[] = [];
     
-    // Step 2-5: Find matching documents for each required document
     for (const requiredDoc of formType.requiredDocuments) {
       await new Promise(resolve => setTimeout(resolve, 600));
       currentStep++;
       setAutoFillProgress(Math.floor((currentStep / totalSteps) * 100));
       
-      // Find a matching document in our uploaded documents
       const matchingDoc = taxDocuments.find(doc => {
         return doc.name.toLowerCase().includes(requiredDoc.toLowerCase());
       });
@@ -293,7 +299,6 @@ const TaxDocuments = () => {
       }
     }
     
-    // Final step: Complete
     await new Promise(resolve => setTimeout(resolve, 1000));
     currentStep++;
     setAutoFillProgress(100);
@@ -308,7 +313,6 @@ const TaxDocuments = () => {
       
       setActiveTab("documents");
       
-      // Add a notification about the form
       addNotification({
         title: "Form Ready for Submission",
         message: `${formType.name} has been processed and is ready for completion`,
@@ -323,7 +327,6 @@ const TaxDocuments = () => {
       });
     }
     
-    // Reset the form file input
     setSelectedFormFile(null);
     if (formFileInputRef.current) {
       formFileInputRef.current.value = '';
@@ -568,19 +571,155 @@ const TaxDocuments = () => {
     const extractedItem = extractedData.find(item => item.id === dataId);
     if (!extractedItem) return;
     
+    const formTemplate = matchedDocuments.length > 0 ? 
+      formTemplates.find(t => t.requiredDocuments.some(doc => 
+        matchedDocuments.some(match => match.toLowerCase().includes(doc.toLowerCase()))
+      )) : 
+      formTemplates[0];
+    
+    if (!formTemplate) return;
+    
+    const filledFields: Record<string, string> = {};
+    const missingFields: string[] = [];
+    
+    formTemplate.fields.forEach(field => {
+      if (extractedItem.fields[field]) {
+        filledFields[field] = extractedItem.fields[field];
+      } 
+      else if (learnedInputs[field]) {
+        filledFields[field] = learnedInputs[field];
+      }
+      else {
+        missingFields.push(field);
+        filledFields[field] = '';
+      }
+    });
+    
+    setPreviewData({
+      title: `${formTemplate.name} Preview`,
+      fields: filledFields,
+      missingFields: missingFields
+    });
+    
+    setManualInputs(filledFields);
+    
+    setIsPreviewOpen(true);
+    
     toast({
       title: "Auto-Fill Applied",
-      description: "The form has been auto-filled with the extracted data.",
+      description: "Preview the form and fill in any missing information.",
       variant: "success",
     });
+  };
 
-    // If we have matched documents from a form/tender upload, show additional info
-    if (matchedDocuments.length > 0) {
-      toast({
-        title: "Form Submission Ready",
-        description: `All required documents are attached and the form is ready for submission.`,
-        variant: "info",
+  const handleFieldChange = (field: string, value: string) => {
+    setManualInputs(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const saveManualInputs = () => {
+    if (previewData) {
+      previewData.missingFields.forEach(field => {
+        if (manualInputs[field] && manualInputs[field].trim() !== '') {
+          setLearnedInputs(prev => ({
+            ...prev,
+            [field]: manualInputs[field]
+          }));
+        }
       });
+    }
+    
+    toast({
+      title: "Form Saved",
+      description: "Manual inputs have been saved and will be used for future forms.",
+      variant: "success",
+    });
+    
+    if (previewData) {
+      generateFilledPdf();
+    }
+    
+    setIsPreviewOpen(false);
+  };
+
+  const generateFilledPdf = () => {
+    if (!previewData) return;
+    
+    const tempContainer = document.createElement('div');
+    tempContainer.className = 'p-8 bg-white';
+    
+    let formHtml = `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="font-size: 24px; margin-bottom: 10px;">${previewData.title}</h1>
+          <p style="font-size: 16px;">Auto-filled form with manually completed fields</p>
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr style="background-color: #f2f2f2;">
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Field</th>
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Value</th>
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Source</th>
+            </tr>
+    `;
+    
+    Object.entries(manualInputs).forEach(([field, value]) => {
+      const isManuallyFilled = previewData.missingFields.includes(field) && value.trim() !== '';
+      const source = isManuallyFilled ? 'Manually Filled' : 'Auto-filled';
+      const bgColor = isManuallyFilled ? '#f0fff4' : '#ffffff';
+      
+      formHtml += `
+        <tr style="background-color: ${bgColor};">
+          <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</td>
+          <td style="border: 1px solid #ddd; padding: 12px;">${value || '(Not provided)'}</td>
+          <td style="border: 1px solid #ddd; padding: 12px;">${source}</td>
+        </tr>
+      `;
+    });
+    
+    formHtml += `
+          </table>
+        </div>
+        
+        <div style="margin-top: 40px;">
+          <p style="text-align: center; margin-bottom: 20px;">This document was auto-generated with data from your saved documents.</p>
+          <div style="display: flex; justify-content: space-between; margin-top: 60px;">
+            <div>
+              <p style="border-top: 1px solid #000; padding-top: 10px; width: 200px;">Signature</p>
+            </div>
+            <div>
+              <p style="border-top: 1px solid #000; padding-top: 10px; width: 200px;">Date: ${new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    tempContainer.innerHTML = formHtml;
+    document.body.appendChild(tempContainer);
+    
+    try {
+      downloadDocumentAsPdf(
+        tempContainer,
+        `auto-filled-form-${Date.now()}.pdf`
+      );
+      
+      toast({
+        title: "Form Generated",
+        description: "Your completed form has been downloaded as a PDF.",
+        variant: "download",
+      });
+    } catch (error) {
+      toast({
+        title: "Generation Failed",
+        description: "There was a problem generating your form PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      document.body.removeChild(tempContainer);
     }
   };
 
@@ -761,7 +900,7 @@ const TaxDocuments = () => {
                   <AlertTitle>Form Ready for Auto-Fill</AlertTitle>
                   <AlertDescription>
                     <p>The system has matched your uploaded form with {matchedDocuments.length} document(s).</p>
-                    <p>Click "Use for Auto-Fill" on any matched document below to complete the form.</p>
+                    <p>Click "Preview & Complete Form" on any matched document below to preview, fill missing fields, and complete the form.</p>
                   </AlertDescription>
                 </Alert>
               )}
@@ -812,8 +951,8 @@ const TaxDocuments = () => {
                               onClick={() => useAutoFill(data.id)}
                               className={`flex items-center gap-2 ${isMatchedDoc ? 'bg-green-600 hover:bg-green-700' : ''}`}
                             >
-                              <FileSearch className="h-4 w-4" />
-                              Use for Auto-Fill
+                              <Eye className="h-4 w-4" />
+                              Preview & Complete Form
                             </Button>
                             <Button 
                               variant="download" 
@@ -843,6 +982,70 @@ const TaxDocuments = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{previewData?.title || 'Form Preview'}</DialogTitle>
+          </DialogHeader>
+          
+          {previewData && (
+            <div className="space-y-6 py-4">
+              <Alert variant="info" className="mb-4">
+                <AlertTitle>Auto-Fill Information</AlertTitle>
+                <AlertDescription>
+                  This form has been auto-filled with information from your documents. 
+                  {previewData.missingFields.length > 0 ? (
+                    <p className="mt-2">Please fill in the missing fields highlighted below. The system will learn from your inputs for future forms.</p>
+                  ) : (
+                    <p className="mt-2">All fields have been filled automatically. You can review and edit any information if needed.</p>
+                  )}
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-4">
+                {Object.entries(previewData.fields).map(([field, value]) => {
+                  const isMissingField = previewData.missingFields.includes(field);
+                  const fieldLabel = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                  
+                  return (
+                    <div key={field} className={`p-3 rounded-md ${isMissingField ? 'bg-yellow-50 border border-yellow-200' : ''}`}>
+                      <Label htmlFor={field} className="flex items-center gap-2">
+                        {fieldLabel}
+                        {isMissingField && (
+                          <Badge variant="outline" className="bg-yellow-100 border-yellow-400 text-yellow-700">
+                            Required
+                          </Badge>
+                        )}
+                      </Label>
+                      <Input
+                        id={field}
+                        value={manualInputs[field] || ''}
+                        onChange={(e) => handleFieldChange(field, e.target.value)}
+                        className={`mt-1 ${isMissingField ? 'border-yellow-300 focus:border-yellow-500' : ''}`}
+                        placeholder={`Enter ${fieldLabel.toLowerCase()}`}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="flex justify-between items-center">
+            <DialogClose asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button onClick={saveManualInputs} variant="default" className="flex items-center gap-2">
+              <Save className="h-4 w-4" />
+              Save & Generate PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
