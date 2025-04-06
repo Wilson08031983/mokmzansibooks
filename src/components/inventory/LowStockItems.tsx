@@ -16,8 +16,9 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Package, Plus } from "lucide-react";
+import { AlertTriangle, Package, Plus, Image as ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatCurrency } from "@/utils/formatters";
 
 interface InventoryItem {
@@ -29,6 +30,7 @@ interface InventoryItem {
   unitPrice: number;
   location: string;
   reorderPoint: number;
+  image?: string;
 }
 
 interface LowStockItemsProps {
@@ -71,8 +73,19 @@ const LowStockItems = ({ items }: LowStockItemsProps) => {
                 {items.map(item => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <Package className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <div className="flex items-center gap-3">
+                        {item.image ? (
+                          <Avatar className="h-9 w-9 border">
+                            <AvatarImage src={item.image} alt={item.name} />
+                            <AvatarFallback>
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <div className="h-9 w-9 rounded-full border flex items-center justify-center">
+                            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
                         {item.name}
                       </div>
                     </TableCell>

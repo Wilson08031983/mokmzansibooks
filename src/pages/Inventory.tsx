@@ -49,14 +49,29 @@ import {
   Search,
   AlertTriangle,
   Camera,
-  Barcode
+  Barcode,
+  Image as ImageIcon,
+  Upload
 } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
 import InventoryStats from "@/components/inventory/InventoryStats";
 import LowStockItems from "@/components/inventory/LowStockItems";
 import BarcodeScanner from "@/components/inventory/BarcodeScanner";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-const mockInventoryData = [
+interface InventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  unitPrice: number;
+  location: string;
+  reorderPoint: number;
+  image?: string;
+}
+
+const mockInventoryData: InventoryItem[] = [
   { 
     id: "INV001", 
     name: "Office Chair", 
@@ -65,7 +80,8 @@ const mockInventoryData = [
     quantity: 24, 
     unitPrice: 149.99, 
     location: "Warehouse A",
-    reorderPoint: 10
+    reorderPoint: 10,
+    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   },
   { 
     id: "INV002", 
@@ -85,7 +101,8 @@ const mockInventoryData = [
     quantity: 42, 
     unitPrice: 29.99, 
     location: "Warehouse B",
-    reorderPoint: 15
+    reorderPoint: 15,
+    image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901"
   },
   { 
     id: "INV004", 
@@ -115,7 +132,8 @@ const mockInventoryData = [
     quantity: 32, 
     unitPrice: 3.99, 
     location: "Warehouse C",
-    reorderPoint: 15
+    reorderPoint: 15,
+    image: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07"
   },
 ];
 
@@ -124,7 +142,9 @@ const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
   const [showScannerDialog, setShowScannerDialog] = useState(false);
+  const [showImageUploadDialog, setShowImageUploadDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("items");
+  const [activeItem, setActiveItem] = useState<InventoryItem | null>(null);
   const [newItemForm, setNewItemForm] = useState({
     name: "",
     sku: "",
@@ -132,10 +152,12 @@ const Inventory = () => {
     quantity: 0,
     unitPrice: 0,
     location: "",
-    reorderPoint: 0
+    reorderPoint: 0,
+    image: ""
   });
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(mockInventoryData);
   
-  const filteredItems = mockInventoryData.filter(item => 
+  const filteredItems = inventoryItems.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -168,6 +190,20 @@ const Inventory = () => {
 
   const handleAddItem = () => {
     // In a real app, we would add the item to the database
+    const newItem: InventoryItem = {
+      id: `INV${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+      name: newItemForm.name,
+      sku: newItemForm.sku,
+      category: newItemForm.category,
+      quantity: newItemForm.quantity,
+      unitPrice: newItemForm.unitPrice,
+      location: newItemForm.location,
+      reorderPoint: newItemForm.reorderPoint,
+      image: newItemForm.image
+    };
+    
+    setInventoryItems([...inventoryItems, newItem]);
+    
     toast({
       title: "Item Added",
       description: `${newItemForm.name} has been added to inventory`,
@@ -180,8 +216,47 @@ const Inventory = () => {
       quantity: 0,
       unitPrice: 0,
       location: "",
-      reorderPoint: 0
+      reorderPoint: 0,
+      image: ""
     });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // In a real app, we would upload the file to a storage service
+    // For this demo, we'll create a local URL
+    const imageUrl = URL.createObjectURL(file);
+    
+    if (activeItem) {
+      // Updating existing item
+      const updatedItems = inventoryItems.map(item => 
+        item.id === activeItem.id ? { ...item, image: imageUrl } : item
+      );
+      setInventoryItems(updatedItems);
+      
+      toast({
+        title: "Image Updated",
+        description: `Image for ${activeItem.name} has been updated`,
+      });
+    } else {
+      // Adding to new item form
+      setNewItemForm({
+        ...newItemForm,
+        image: imageUrl
+      });
+    }
+    
+    setShowImageUploadDialog(false);
+    setActiveItem(null);
+  };
+
+  const openImageUploadDialog = (item?: InventoryItem) => {
+    if (item) {
+      setActiveItem(item);
+    }
+    setShowImageUploadDialog(true);
   };
 
   return (
@@ -283,8 +358,24 @@ const Inventory = () => {
                       filteredItems.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">
-                            <div className="flex items-center">
-                              <Package className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <div className="flex items-center gap-3">
+                              {item.image ? (
+                                <Avatar className="h-9 w-9 border">
+                                  <AvatarImage src={item.image} alt={item.name} />
+                                  <AvatarFallback>
+                                    <Package className="h-4 w-4 text-muted-foreground" />
+                                  </AvatarFallback>
+                                </Avatar>
+                              ) : (
+                                <Button 
+                                  variant="outline" 
+                                  size="icon"
+                                  className="h-9 w-9 rounded-full"
+                                  onClick={() => openImageUploadDialog(item)}
+                                >
+                                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              )}
                               {item.name}
                             </div>
                           </TableCell>
@@ -320,6 +411,10 @@ const Inventory = () => {
                                   <Plus className="mr-2 h-4 w-4" />
                                   Adjust Stock
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openImageUploadDialog(item)}>
+                                  <ImageIcon className="mr-2 h-4 w-4" />
+                                  Change Image
+                                </DropdownMenuItem>
                                 <DropdownMenuItem>
                                   <FileText className="mr-2 h-4 w-4" />
                                   View History
@@ -340,7 +435,7 @@ const Inventory = () => {
             </CardContent>
             <CardFooter className="flex items-center justify-between pt-3">
               <div className="text-sm text-muted-foreground">
-                Showing {filteredItems.length} of {mockInventoryData.length} items
+                Showing {filteredItems.length} of {inventoryItems.length} items
               </div>
             </CardFooter>
           </Card>
@@ -363,7 +458,7 @@ const Inventory = () => {
                     </CardHeader>
                     <CardContent>
                       <p className="text-2xl font-bold">
-                        {mockInventoryData.filter(item => item.category === category).length}
+                        {inventoryItems.filter(item => item.category === category).length}
                       </p>
                       <p className="text-sm text-muted-foreground">items</p>
                     </CardContent>
@@ -380,7 +475,7 @@ const Inventory = () => {
         </TabsContent>
         
         <TabsContent value="low-stock" className="space-y-4">
-          <LowStockItems items={mockInventoryData.filter(item => item.quantity <= item.reorderPoint)} />
+          <LowStockItems items={inventoryItems.filter(item => item.quantity <= item.reorderPoint)} />
         </TabsContent>
       </Tabs>
 
@@ -492,12 +587,85 @@ const Inventory = () => {
                 onChange={handleInputChange}
               />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Product Image</Label>
+              <div className="col-span-3 flex items-center gap-4">
+                {newItemForm.image ? (
+                  <div className="relative">
+                    <Avatar className="h-12 w-12 border">
+                      <AvatarImage src={newItemForm.image} alt="Product" />
+                      <AvatarFallback>
+                        <Package className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                ) : (
+                  <div className="h-12 w-12 rounded-md border flex items-center justify-center">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => openImageUploadDialog()}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Image
+                </Button>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddItemDialog(false)}>
               Cancel
             </Button>
             <Button onClick={handleAddItem}>Save Item</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Upload Dialog */}
+      <Dialog open={showImageUploadDialog} onOpenChange={setShowImageUploadDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Upload Product Image</DialogTitle>
+            <DialogDescription>
+              Select an image file to upload for this product.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center">
+                <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Click to browse or drag and drop
+                </p>
+                <Input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+                <Label 
+                  htmlFor="image-upload" 
+                  className="mt-4 inline-flex items-center justify-center cursor-pointer"
+                >
+                  <Button type="button">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Select Image
+                  </Button>
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Supports JPG, PNG and GIF up to 5MB
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowImageUploadDialog(false)}>
+              Cancel
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
