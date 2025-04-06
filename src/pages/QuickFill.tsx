@@ -65,6 +65,7 @@ import { toast } from "sonner";
 import { formatCurrency } from "@/utils/formatters";
 import { QuoteData } from "@/types/quote";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { downloadDocumentAsPdf, previewDocument } from "@/utils/pdfUtils";
 
 const QuickFill = () => {
   const [activeTab, setActiveTab] = useState("upload");
@@ -85,6 +86,7 @@ const QuickFill = () => {
   const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
   const [attachedQuote, setAttachedQuote] = useState<QuoteData | null>(null);
   const [isAutoSearchDone, setIsAutoSearchDone] = useState(false);
+  const [extractedData, setExtractedData] = useState<{[key: string]: {[key: string]: string}}|null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentUser } = useAuth();
@@ -211,17 +213,106 @@ const QuickFill = () => {
         if (nextProgress >= 100) {
           clearInterval(interval);
           setTimeout(() => {
-            const newFiles = Array.from(files).map((file) => ({
-              name: file.name,
-              status: "success",
-              type: file.type.includes("pdf") ? "PDF" : "Document",
-            }));
+            // Create mock file types based on file names
+            const newFiles = Array.from(files).map((file) => {
+              let fileType = "Document";
+              if (file.name.toLowerCase().includes('pdf')) fileType = "PDF";
+              else if (file.name.toLowerCase().includes('cipc')) fileType = "CIPC Registration";
+              else if (file.name.toLowerCase().includes('tax')) fileType = "Tax Clearance";
+              else if (file.name.toLowerCase().includes('bbee')) fileType = "B-BBEE Certificate";
+              else if (file.name.toLowerCase().includes('csd')) fileType = "CSD Registration";
+              else if (file.name.toLowerCase().includes('quote')) fileType = "Quote";
+              else if (file.name.toLowerCase().includes('bank')) fileType = "Bank Confirmation";
+              
+              return {
+                name: file.name,
+                status: "success",
+                type: fileType,
+              };
+            });
+            
             setUploadedFiles([...uploadedFiles, ...newFiles]);
             setIsUploading(false);
             setProcessingStatus("processing");
             
             setTimeout(() => {
               setProcessingStatus("completed");
+              
+              // Generate different mock data based on uploaded file types
+              const mockExtractedData: {[key: string]: {[key: string]: string}} = {};
+              
+              if (newFiles.some(f => f.type === "CIPC Registration")) {
+                mockExtractedData["Company Information"] = {
+                  "Company Name": "Morwa Moabelo (Pty) Ltd",
+                  "Registration Number": "2018/421571/07",
+                  "Registration Date": "15 August 2018",
+                  "Business Status": "In Business",
+                  "Company Type": "Private Company",
+                  "Director": "Wilson Mokgethwa Moabelo",
+                  "Physical Address": "81 Monokane Street, Pretoria, Gauteng",
+                };
+              }
+              
+              if (newFiles.some(f => f.type === "Tax Clearance")) {
+                mockExtractedData["Tax Information"] = {
+                  "Tax Number": "9012/3456/78",
+                  "Tax Status": "Compliant",
+                  "VAT Registration": "4690123456",
+                  "Expiry Date": "31 March 2025",
+                  "Issue Date": "1 April 2024",
+                  "Tax Office": "SARS Pretoria",
+                };
+              }
+              
+              if (newFiles.some(f => f.type === "B-BBEE Certificate")) {
+                mockExtractedData["B-BBEE Information"] = {
+                  "B-BBEE Level": "Level 1",
+                  "Expiry Date": "30 June 2025",
+                  "Issue Date": "1 July 2023",
+                  "Verification Agency": "AQRate Verification Services",
+                  "Black Ownership": "100%",
+                  "Female Ownership": "51%",
+                  "Procurement Recognition": "135%",
+                };
+              }
+              
+              if (newFiles.some(f => f.type === "CSD Registration")) {
+                mockExtractedData["CSD Information"] = {
+                  "CSD Registration": "MAAA0123456",
+                  "Registration Date": "20 September 2018",
+                  "Status": "Active",
+                  "Banking Details": "Verified",
+                  "Tax Status": "Verified",
+                  "Directors": "Verified",
+                };
+              }
+              
+              if (newFiles.some(f => f.type === "Bank Confirmation")) {
+                mockExtractedData["Banking Information"] = {
+                  "Account Holder": "Morwa Moabelo (Pty) Ltd",
+                  "Bank": "First National Bank",
+                  "Account Number": "6234 5678 9012",
+                  "Branch Code": "250655",
+                  "Account Type": "Business Account",
+                  "Confirmation Date": "15 March 2024",
+                };
+              }
+              
+              // If no specific document was uploaded, show generic company info
+              if (Object.keys(mockExtractedData).length === 0) {
+                mockExtractedData["Company Information"] = {
+                  "Company Name": "Morwa Moabelo (Pty) Ltd",
+                  "Registration Number": "2018/421571/07",
+                  "Director": "Wilson Mokgethwa Moabelo",
+                  "Phone Number": "+27 64 550 4029",
+                  "Email": "mokgethwamoabelo@gmail.com",
+                  "Tax Status": "Compliant",
+                  "B-BBEE Level": "Level 1",
+                  "CSD Registration": "MAAA0123456",
+                };
+              }
+              
+              setExtractedData(mockExtractedData);
               
               const hasQuoteFile = newFiles.some(file => 
                 file.name.toLowerCase().includes('quote') || 
@@ -310,6 +401,120 @@ const QuickFill = () => {
       fileInputRef.current.files = dataTransfer.files;
       handleFileUpload({ target: { files: dataTransfer.files } } as React.ChangeEvent<HTMLInputElement>);
     }
+  };
+
+  const handleExportData = () => {
+    if (!extractedData) return;
+    
+    // Create a simple div to hold the extracted data
+    const exportElement = document.createElement('div');
+    exportElement.style.padding = '20px';
+    exportElement.style.fontFamily = 'Arial, sans-serif';
+    
+    // Add a title
+    const title = document.createElement('h2');
+    title.textContent = 'Extracted Document Data';
+    title.style.marginBottom = '20px';
+    title.style.color = '#333';
+    exportElement.appendChild(title);
+    
+    // Add each data section
+    Object.keys(extractedData).forEach(section => {
+      const sectionTitle = document.createElement('h3');
+      sectionTitle.textContent = section;
+      sectionTitle.style.marginTop = '15px';
+      sectionTitle.style.marginBottom = '10px';
+      sectionTitle.style.color = '#333';
+      exportElement.appendChild(sectionTitle);
+      
+      const dataGrid = document.createElement('div');
+      dataGrid.style.display = 'grid';
+      dataGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+      dataGrid.style.gap = '8px';
+      dataGrid.style.marginBottom = '15px';
+      
+      Object.entries(extractedData[section]).forEach(([key, value]) => {
+        const keyElement = document.createElement('div');
+        keyElement.textContent = key;
+        keyElement.style.fontWeight = 'bold';
+        keyElement.style.color = '#555';
+        
+        const valueElement = document.createElement('div');
+        valueElement.textContent = value;
+        
+        dataGrid.appendChild(keyElement);
+        dataGrid.appendChild(valueElement);
+      });
+      
+      exportElement.appendChild(dataGrid);
+    });
+    
+    // Append to document temporarily to render it
+    document.body.appendChild(exportElement);
+    
+    // Download as PDF
+    downloadDocumentAsPdf(exportElement, 'ExtractedData.pdf');
+    
+    // Remove from document
+    document.body.removeChild(exportElement);
+    
+    toast.success("Extracted data exported as PDF");
+  };
+  
+  const handlePreviewData = () => {
+    if (!extractedData) return;
+    
+    // Create a simple div to hold the extracted data
+    const previewElement = document.createElement('div');
+    previewElement.style.padding = '20px';
+    previewElement.style.fontFamily = 'Arial, sans-serif';
+    
+    // Add a title
+    const title = document.createElement('h2');
+    title.textContent = 'Extracted Document Data';
+    title.style.marginBottom = '20px';
+    title.style.color = '#333';
+    previewElement.appendChild(title);
+    
+    // Add each data section
+    Object.keys(extractedData).forEach(section => {
+      const sectionTitle = document.createElement('h3');
+      sectionTitle.textContent = section;
+      sectionTitle.style.marginTop = '15px';
+      sectionTitle.style.marginBottom = '10px';
+      sectionTitle.style.color = '#333';
+      previewElement.appendChild(sectionTitle);
+      
+      const dataGrid = document.createElement('div');
+      dataGrid.style.display = 'grid';
+      dataGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+      dataGrid.style.gap = '8px';
+      dataGrid.style.marginBottom = '15px';
+      
+      Object.entries(extractedData[section]).forEach(([key, value]) => {
+        const keyElement = document.createElement('div');
+        keyElement.textContent = key;
+        keyElement.style.fontWeight = 'bold';
+        keyElement.style.color = '#555';
+        
+        const valueElement = document.createElement('div');
+        valueElement.textContent = value;
+        
+        dataGrid.appendChild(keyElement);
+        dataGrid.appendChild(valueElement);
+      });
+      
+      previewElement.appendChild(dataGrid);
+    });
+    
+    // Append to document temporarily to render it
+    document.body.appendChild(previewElement);
+    
+    // Preview the document
+    previewDocument(previewElement, 'Extracted Document Data');
+    
+    // Remove from document
+    document.body.removeChild(previewElement);
   };
 
   const handleSearch = () => {
@@ -771,7 +976,13 @@ const QuickFill = () => {
                             <FileText className="h-4 w-4 mr-2 text-gray-500" />
                             <span className="text-sm">{file.name}</span>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 items-center">
+                            <Badge
+                              variant="outline"
+                              className="border-primary/50 text-primary"
+                            >
+                              {file.type}
+                            </Badge>
                             <Button 
                               variant="ghost" 
                               size="sm"
@@ -849,47 +1060,26 @@ const QuickFill = () => {
                     processingStatus === "completed" ? "" : "opacity-50"
                   }`}
                 >
-                  {processingStatus === "completed" ? (
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="text-sm font-medium mb-2">Extracted Information</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-xs text-gray-500">Company Name</p>
-                            <p className="text-sm font-medium">Morwa Moabelo (Pty) Ltd</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Registration Number</p>
-                            <p className="text-sm font-medium">2018/421571/07</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Director</p>
-                            <p className="text-sm font-medium">Wilson Mokgethwa Moabelo</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Phone Number</p>
-                            <p className="text-sm font-medium">+27 64 550 4029</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Email</p>
-                            <p className="text-sm font-medium">mokgethwamoabelo@gmail.com</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Tax Status</p>
-                            <p className="text-sm font-medium">Compliant</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">B-BBEE Level</p>
-                            <p className="text-sm font-medium">Level 1</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">CSD Registration</p>
-                            <p className="text-sm font-medium">MAAA0123456</p>
+                  {processingStatus === "completed" && extractedData ? (
+                    <div className="space-y-6">
+                      {Object.keys(extractedData).map((section, sectionIndex) => (
+                        <div key={sectionIndex}>
+                          <h3 className="text-sm font-medium mb-2">{section}</h3>
+                          <div className="grid grid-cols-2 gap-3">
+                            {Object.entries(extractedData[section]).map(([key, value], dataIndex) => (
+                              <div key={dataIndex}>
+                                <p className="text-xs text-gray-500">{key}</p>
+                                <p className="text-sm font-medium">{value}</p>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                      <div className="flex justify-end">
-                        <Button variant="download" size="sm">
+                      ))}
+                      <div className="flex justify-end space-x-2">
+                        <Button variant="preview" size="sm" onClick={handlePreviewData}>
+                          <FileText className="mr-2 h-3.5 w-3.5" /> Preview Data
+                        </Button>
+                        <Button variant="download" size="sm" onClick={handleExportData}>
                           <Download className="mr-2 h-3.5 w-3.5" /> Export Data
                         </Button>
                       </div>
