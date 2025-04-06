@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -82,13 +83,121 @@ const QuickFill = () => {
   const [itemQuantity, setItemQuantity] = useState(1);
   const [itemDiscount, setItemDiscount] = useState(0);
   const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
+  const [attachedQuote, setAttachedQuote] = useState<QuoteData | null>(null);
+  const [isAutoSearchDone, setIsAutoSearchDone] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentUser } = useAuth();
   const { toast: useToastHook } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const isPremiumUser = currentUser?.subscriptionStatus === "active";
+
+  // Check if there's an attached quote in the location state
+  useEffect(() => {
+    if (location.state?.attachedQuote && !isAutoSearchDone) {
+      const quote = location.state.attachedQuote;
+      setAttachedQuote(quote);
+      setActiveTab("rfq");
+      toast.info("Found attached quote", {
+        description: `Automatically searching for items in quote ${quote.quoteNumber}`
+      });
+      
+      // Auto-search for items in the quote
+      autoSearchQuoteItems(quote);
+      setIsAutoSearchDone(true);
+    }
+  }, [location, isAutoSearchDone]);
+
+  // Function to automatically search for items in the attached quote
+  const autoSearchQuoteItems = (quote: QuoteData) => {
+    if (!quote || !quote.items || quote.items.length === 0) return;
+    
+    setIsSearching(true);
+    
+    // Create a batch of search queries based on quote items
+    setTimeout(() => {
+      // Simulate searching for each item in the quote
+      const results: any[] = [];
+      
+      quote.items.forEach(item => {
+        const searchTerms = item.description.toLowerCase();
+        
+        // Add search results based on the item description
+        if (searchTerms.includes("chair") || searchTerms.includes("office")) {
+          results.push({
+            id: Math.random().toString(36).substr(2, 9),
+            item: item.description,
+            description: `Based on quote item: ${item.description}`,
+            priceCheckUrl: "https://www.pricecheck.co.za/search?search=" + encodeURIComponent(item.description),
+            googleShoppingUrl: "https://shopping.google.co.za/search?q=" + encodeURIComponent(item.description),
+            suppliers: [
+              { name: "Incredible Connection", price: Math.round(item.amount * 0.9), rating: 4.5, shipping: 150, url: "https://www.incredible.co.za", source: "PriceCheck" },
+              { name: "Takealot", price: Math.round(item.amount * 0.85), rating: 4.7, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+              { name: "Office National", price: Math.round(item.amount * 0.95), rating: 4.8, shipping: 0, url: "https://www.officenational.co.za", source: "PriceCheck" },
+              { name: "Game", price: Math.round(item.amount * 0.8), rating: 4.4, shipping: 99, url: "https://www.game.co.za", source: "Google Shopping" },
+              { name: "Makro", price: Math.round(item.amount * 0.92), rating: 4.6, shipping: 0, url: "https://www.makro.co.za", source: "Google Shopping" },
+            ],
+          });
+        } else if (searchTerms.includes("laptop") || searchTerms.includes("computer")) {
+          results.push({
+            id: Math.random().toString(36).substr(2, 9),
+            item: item.description,
+            description: `Based on quote item: ${item.description}`,
+            priceCheckUrl: "https://www.pricecheck.co.za/search?search=" + encodeURIComponent(item.description),
+            googleShoppingUrl: "https://shopping.google.co.za/search?q=" + encodeURIComponent(item.description),
+            suppliers: [
+              { name: "Evetech", price: Math.round(item.amount * 0.92), rating: 4.6, shipping: 0, url: "https://www.evetech.co.za", source: "PriceCheck" },
+              { name: "Wootware", price: Math.round(item.amount * 0.97), rating: 4.8, shipping: 0, url: "https://www.wootware.co.za", source: "PriceCheck" },
+              { name: "Takealot", price: Math.round(item.amount * 1.03), rating: 4.5, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+              { name: "Technomobi", price: Math.round(item.amount * 0.89), rating: 4.4, shipping: 0, url: "https://www.technomobi.co.za", source: "Google Shopping" },
+              { name: "Incredible Connection", price: Math.round(item.amount * 0.99), rating: 4.7, shipping: 0, url: "https://www.incredible.co.za", source: "Google Shopping" },
+            ],
+          });
+        } else if (searchTerms.includes("printer") || searchTerms.includes("scanner")) {
+          results.push({
+            id: Math.random().toString(36).substr(2, 9),
+            item: item.description,
+            description: `Based on quote item: ${item.description}`,
+            priceCheckUrl: "https://www.pricecheck.co.za/search?search=" + encodeURIComponent(item.description),
+            googleShoppingUrl: "https://shopping.google.co.za/search?q=" + encodeURIComponent(item.description),
+            suppliers: [
+              { name: "Takealot", price: Math.round(item.amount * 0.91), rating: 4.2, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+              { name: "Incredible Connection", price: Math.round(item.amount * 0.98), rating: 4.5, shipping: 150, url: "https://www.incredible.co.za", source: "PriceCheck" },
+              { name: "Game", price: Math.round(item.amount * 0.85), rating: 4.0, shipping: 250, url: "https://www.game.co.za", source: "PriceCheck" },
+              { name: "Makro", price: Math.round(item.amount * 0.88), rating: 4.3, shipping: 0, url: "https://www.makro.co.za", source: "Google Shopping" },
+              { name: "Loot", price: Math.round(item.amount * 0.96), rating: 4.1, shipping: 0, url: "https://www.loot.co.za", source: "Google Shopping" },
+            ],
+          });
+        } else {
+          // Generic result for any other type of item
+          results.push({
+            id: Math.random().toString(36).substr(2, 9),
+            item: item.description,
+            description: `Based on quote item: ${item.description}`,
+            priceCheckUrl: "https://www.pricecheck.co.za/search?search=" + encodeURIComponent(item.description),
+            googleShoppingUrl: "https://shopping.google.co.za/search?q=" + encodeURIComponent(item.description),
+            suppliers: [
+              { name: "Takealot", price: Math.round(item.amount * 0.92), rating: 4.5, shipping: 0, url: "https://www.takealot.com", source: "PriceCheck" },
+              { name: "Incredible Connection", price: Math.round(item.amount * 0.98), rating: 4.3, shipping: 150, url: "https://www.incredible.co.za", source: "PriceCheck" },
+              { name: "Makro", price: Math.round(item.amount * 0.85), rating: 4.4, shipping: 0, url: "https://www.makro.co.za", source: "Google Shopping" },
+              { name: "Game", price: Math.round(item.amount * 0.88), rating: 4.2, shipping: 99, url: "https://www.game.co.za", source: "Google Shopping" },
+            ],
+          });
+        }
+      });
+      
+      setIsSearching(false);
+      setSearchResults(results);
+      
+      if (results.length > 0) {
+        toast.success(`Found ${results.length} items matching your quote from top South African retailers`);
+      } else {
+        toast.error("No matching products found for the quote items");
+      }
+    }, 2500);
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -114,7 +223,69 @@ const QuickFill = () => {
             
             setTimeout(() => {
               setProcessingStatus("completed");
-              toast.success("Documents processed successfully!");
+              
+              // Check if we have a quote file in the uploaded files
+              const hasQuoteFile = newFiles.some(file => 
+                file.name.toLowerCase().includes('quote') || 
+                file.name.toLowerCase().includes('rfq')
+              );
+              
+              if (hasQuoteFile) {
+                toast.success("Documents processed successfully! Found quote document in uploads.");
+                
+                // Simulate finding a quote in the uploaded documents
+                setTimeout(() => {
+                  const simulatedQuote: QuoteData = {
+                    quoteNumber: "Q-2023-003",
+                    issueDate: "2023-06-01",
+                    expiryDate: "2023-07-01",
+                    client: {
+                      name: "Digital Solutions Inc.",
+                      address: "456 Tech Avenue, Sandton",
+                      email: "info@digitalsolutions.co.za",
+                      phone: "+27 11 555 6789"
+                    },
+                    company: {
+                      name: "Morwa Moabelo (Pty) Ltd",
+                      address: "456 Business Park, Pretoria",
+                      email: "mokgethwamoabelo@gmail.com",
+                      phone: "+27 64 550 4029"
+                    },
+                    items: [
+                      {
+                        description: "HP OfficeJet Pro MFP Printer",
+                        quantity: 2,
+                        amount: 3499,
+                      },
+                      {
+                        description: "Dell Latitude Business Laptop i7",
+                        quantity: 3,
+                        amount: 15999,
+                      },
+                      {
+                        description: "Ergonomic Office Chair - Premium",
+                        quantity: 5,
+                        amount: 2499,
+                      }
+                    ],
+                    subtotal: 57492,
+                    tax: 8624,
+                    total: 66116
+                  };
+                  
+                  setAttachedQuote(simulatedQuote);
+                  setActiveTab("rfq");
+                  toast.info("Quote extracted from documents", {
+                    description: `Automatically searching for items from Quote ${simulatedQuote.quoteNumber}`
+                  });
+                  
+                  // Auto-search for items in the quote
+                  autoSearchQuoteItems(simulatedQuote);
+                  setIsAutoSearchDone(true);
+                }, 1500);
+              } else {
+                toast.success("Documents processed successfully!");
+              }
             }, 2000);
           }, 500);
         }
@@ -428,6 +599,11 @@ const QuickFill = () => {
       }
     ];
     
+    // If we have an attached quote, add it to the list
+    if (attachedQuote) {
+      mockQuotes.push(attachedQuote);
+    }
+    
     setQuotes(mockQuotes);
   };
 
@@ -490,6 +666,30 @@ const QuickFill = () => {
           Streamline your tendering process with document auto-fill and South African price comparisons
         </p>
       </div>
+
+      {attachedQuote && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="font-medium">Working with Quote: {attachedQuote.quoteNumber}</h3>
+                <p className="text-sm text-muted-foreground">
+                  Client: {attachedQuote.client.name} | Total: {formatCurrency(attachedQuote.total, "ZAR")}
+                </p>
+              </div>
+              <Badge variant="outline" className="border-primary text-primary">
+                {attachedQuote.items.length} items
+              </Badge>
+            </div>
+            
+            <div className="mt-4">
+              <p className="text-sm">
+                Automatically searching for the best prices for items in this quote from South African retailers.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs
         defaultValue="upload"
@@ -934,7 +1134,10 @@ const QuickFill = () => {
               <CardHeader>
                 <CardTitle>Price Comparison Results</CardTitle>
                 <CardDescription>
-                  Found {searchResults.length} items with price options from top South African retailers
+                  {attachedQuote 
+                    ? `Found ${searchResults.length} items from Quote ${attachedQuote.quoteNumber} with price options from top South African retailers`
+                    : `Found ${searchResults.length} items with price options from top South African retailers`
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>
