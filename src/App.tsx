@@ -29,6 +29,7 @@ import Accounting from "./pages/Accounting";
 import AccountingTransactions from "./pages/accounting/Transactions";
 import AccountingReports from "./pages/accounting/Reports";
 import AccountingIntegrations from "./pages/accounting/Integrations";
+import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
 import Tax from "./pages/Tax";
 import VatReturns from "./pages/tax/VatReturns";
 import IncomeTax from "./pages/tax/IncomeTax";
@@ -81,6 +82,7 @@ const App = () => {
                         <Route path="/invoices/quotes/select-template" element={<SelectQuoteTemplate />} />
                         <Route path="/quickfill" element={<QuickFill />} />
                         <Route path="/accounting" element={<Accounting />} />
+                        <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
                         <Route path="/accounting/transactions" element={<AccountingTransactions />} />
                         <Route path="/accounting/reports" element={<AccountingReports />} />
                         <Route path="/accounting/integrations" element={<AccountingIntegrations />} />

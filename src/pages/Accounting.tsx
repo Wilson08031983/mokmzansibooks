@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
@@ -14,62 +14,72 @@ interface AccountingModule {
   title: string;
   description: string;
   path: string;
+  keywords?: string[];
 }
 
 const Accounting = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
-  // Define all accounting modules
+  // Define all accounting modules with keywords for better similarity matching
   const modules: AccountingModule[] = [
     {
       id: "chart-of-accounts",
       title: "Chart of Accounts",
       description: "Organize your accounts in a structured hierarchy",
-      path: "/accounting/chart-of-accounts"
+      path: "/accounting/chart-of-accounts",
+      keywords: ["chart", "accounts", "organize", "hierarchy", "structure"]
     },
     {
       id: "journal-entries",
       title: "Journal Entries",
       description: "Record and manage your accounting transactions",
-      path: "/accounting/journal-entries"
+      path: "/accounting/journal-entries",
+      keywords: ["journal", "entries", "record", "transactions", "accounting"]
     },
     {
       id: "bank-reconciliation",
       title: "Bank Reconciliation",
       description: "Match your accounting records with bank statements",
-      path: "/accounting/bank-reconciliation"
+      path: "/accounting/bank-reconciliation",
+      keywords: ["bank", "reconciliation", "match", "statements", "records"]
     },
     {
       id: "reports",
       title: "Financial Reports",
       description: "Generate income statements, balance sheets, and cash flow reports",
-      path: "/accounting/reports"
+      path: "/accounting/reports",
+      keywords: ["financial", "reports", "income", "balance", "cash flow"]
     },
     {
       id: "receivables",
       title: "Accounts Receivable",
       description: "Track money owed to your business by customers",
-      path: "/accounting/receivables"
+      path: "/accounting/receivables",
+      keywords: ["accounts", "receivable", "track", "money", "customers", "owed"]
     },
     {
       id: "payables",
       title: "Accounts Payable",
       description: "Manage bills and payments to your suppliers",
-      path: "/accounting/payables"
+      path: "/accounting/payables",
+      keywords: ["accounts", "payable", "bills", "payments", "suppliers"]
     },
     {
       id: "integrations",
       title: "Banking Integrations",
       description: "Connect to your bank accounts and accounting software",
-      path: "/accounting/integrations"
+      path: "/accounting/integrations",
+      keywords: ["banking", "integrations", "connect", "accounts", "software"]
     },
     {
       id: "transactions",
       title: "Transactions",
       description: "View and categorize all your financial transactions",
-      path: "/accounting/transactions"
+      path: "/accounting/transactions",
+      keywords: ["transactions", "view", "categorize", "financial"]
     }
   ];
 
@@ -99,19 +109,21 @@ const Accounting = () => {
       return;
     }
 
-    // This is a simple implementation - in a real app you'd use more sophisticated matching
+    // Get keywords from selected modules
     const selectedKeywords = selectedModules.flatMap(id => {
       const module = modules.find(m => m.id === id);
       if (!module) return [];
-      return [...module.title.toLowerCase().split(' '), ...module.description.toLowerCase().split(' ')];
+      return module.keywords || [];
     });
 
     // Find modules with similar keywords
     const similarModuleIds = modules
       .filter(module => !selectedModules.includes(module.id))
       .map(module => {
-        const moduleKeywords = [...module.title.toLowerCase().split(' '), ...module.description.toLowerCase().split(' ')];
-        const matchCount = moduleKeywords.filter(keyword => selectedKeywords.includes(keyword)).length;
+        const moduleKeywords = module.keywords || [];
+        const matchCount = moduleKeywords.filter(keyword => 
+          selectedKeywords.includes(keyword)
+        ).length;
         return { id: module.id, matchCount };
       })
       .filter(item => item.matchCount > 0)
@@ -132,6 +144,11 @@ const Accounting = () => {
       title: "Similar modules added",
       description: `Added ${similarModuleIds.length} similar modules to your selection`,
     });
+  };
+
+  const openModule = (path: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(path);
   };
 
   return (
@@ -177,13 +194,13 @@ const Accounting = () => {
                   {module.description}
                 </p>
                 <div className="mt-4 flex justify-between items-center">
-                  <Link 
-                    to={module.path} 
-                    className="text-primary hover:underline text-sm"
-                    onClick={(e) => e.stopPropagation()} // Prevent the card click from triggering
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-primary hover:underline text-sm"
+                    onClick={(e) => openModule(module.path, e)} 
                   >
                     Open {module.title}
-                  </Link>
+                  </Button>
                   {isSelected(module.id) && (
                     <Badge variant="secondary">Selected</Badge>
                   )}
