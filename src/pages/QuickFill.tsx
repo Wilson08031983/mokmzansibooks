@@ -720,7 +720,14 @@ const QuickFill = () => {
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         PDF, DOCX, PNG or JPG (MAX. 10MB)
                       </p>
-                      <Button variant="upload" className="mt-4">
+                      <Button 
+                        variant="upload" 
+                        className="mt-4" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleUploadButtonClick();
+                        }}
+                      >
                         <Upload className="mr-2 h-4 w-4" /> Select Files
                       </Button>
                     </div>
