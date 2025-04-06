@@ -63,7 +63,6 @@ export const downloadDocumentAsPdf = async (
       backgroundColor: "#ffffff",
       allowTaint: false,
       removeContainer: true,
-      // Removed letterRendering as it's not supported in the Options type
       foreignObjectRendering: false
     });
 
@@ -133,7 +132,6 @@ export const downloadQuoteAsPdf = async (
       logging: false,
       backgroundColor: "#ffffff",
       allowTaint: true,
-      // Removed letterRendering as it's not supported in the Options type
       windowWidth: 980, // Fixed width to ensure consistency
       windowHeight: 1400 // Fixed height
     });
@@ -165,5 +163,106 @@ export const downloadQuoteAsPdf = async (
     console.error("Error generating quote PDF:", error);
     // If the enhanced method fails, fall back to the generic method
     return downloadDocumentAsPdf(quoteElement, fileName);
+  }
+};
+
+// Function to generate a preview of a document in a new window
+export const previewDocument = (element: HTMLElement, title: string = "Document Preview") => {
+  try {
+    // Create a new window
+    const previewWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+    
+    if (!previewWindow) {
+      throw new Error('Could not open preview window. Please check your popup blocker settings.');
+    }
+    
+    // Clone the element to avoid modifying the original
+    const elementClone = element.cloneNode(true) as HTMLElement;
+    
+    // Create the preview HTML
+    previewWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${title}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+          }
+          .preview-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+            padding-bottom: 10px;
+          }
+          .preview-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+          }
+          .preview-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #eaeaea;
+          }
+          .print-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+          }
+          .close-button {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 14px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="preview-container">
+          <div class="preview-header">
+            <div class="preview-title">${title}</div>
+            <div>${new Date().toLocaleDateString()}</div>
+          </div>
+          <div class="preview-content">
+            ${elementClone.outerHTML}
+          </div>
+          <div class="preview-actions">
+            <button class="print-button" onclick="window.print()">Print</button>
+            <button class="close-button" onclick="window.close()">Close</button>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    
+    previewWindow.document.close();
+    return true;
+  } catch (error) {
+    console.error("Error generating preview:", error);
+    return false;
   }
 };
