@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Card, 
@@ -8,14 +7,13 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Filter, Download, Check, X } from "lucide-react";
+import { Calendar, Filter, Download, Check, X, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import UpcomingLeaves from "@/components/hr/UpcomingLeaves";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { changeStatusAction } from "@/utils/actionUtils";
 
-// Sample data for pending leave requests
 const pendingLeaveRequests = [
   {
     id: 5,
@@ -80,7 +78,7 @@ const Leaves = () => {
     
     await changeStatusAction(
       id.toString(),
-      "leave",
+      "invoice",
       "Approved",
       {
         onSuccess: () => {
@@ -113,7 +111,7 @@ const Leaves = () => {
     
     await changeStatusAction(
       id.toString(),
-      "leave",
+      "invoice",
       "Rejected",
       {
         onSuccess: () => {
@@ -149,7 +147,6 @@ const Leaves = () => {
     });
   };
 
-  // Filter out requests that have been processed from Pending tab
   const pendingRequests = requests.filter(req => req.status === "Pending");
 
   return (
@@ -232,6 +229,13 @@ const Leaves = () => {
                         <p className="text-sm text-muted-foreground mt-1">
                           Reason: {request.reason}
                         </p>
+                        
+                        {request.type === "Sick Leave" && (
+                          <div className="flex items-center mt-1 text-blue-600">
+                            <FileText className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Documentation attached</span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex justify-end space-x-2 mt-3">
                         <Button 
