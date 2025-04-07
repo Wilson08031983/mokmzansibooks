@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Card, 
@@ -14,7 +15,8 @@ import {
   Settings, 
   FileText,
   Download,
-  Plus
+  Plus,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +24,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { addBenefitPlanAction } from "@/utils/actionUtils";
 
 // Sample benefit plans data
 const benefitPlans = [
@@ -72,6 +75,7 @@ const Benefits = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("plans");
   const [isExporting, setIsExporting] = useState(false);
+  const [isAddingPlan, setIsAddingPlan] = useState(false);
   
   const handleManagePlan = (name: string) => {
     toast({
@@ -82,13 +86,33 @@ const Benefits = () => {
     navigate(`/hr/benefits/${name.toLowerCase()}`);
   };
   
-  const handleAddNewPlan = () => {
-    toast({
-      title: "Add New Benefit Plan",
-      description: "Setting up a new employee benefit plan",
-    });
+  const handleAddNewPlan = async () => {
+    setIsAddingPlan(true);
     
-    navigate("/hr/benefits/new");
+    // Call the action to add a new benefit plan
+    await addBenefitPlanAction(
+      { name: "New Plan", provider: "New Provider" },
+      {
+        onSuccess: () => {
+          toast({
+            title: "New Benefit Plan",
+            description: "Setting up a new employee benefit plan",
+            variant: "success"
+          });
+          
+          // Navigate to the new benefit plan page
+          navigate("/hr/benefits/new");
+        },
+        onError: () => {
+          toast({
+            title: "Error",
+            description: "Failed to set up new benefit plan. Please try again.",
+            variant: "destructive"
+          });
+          setIsAddingPlan(false);
+        }
+      }
+    );
   };
   
   const handleExportReport = async () => {
@@ -175,9 +199,18 @@ const Benefits = () => {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex space-x-2">
-          <Button onClick={handleAddNewPlan}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Plan
+          <Button onClick={handleAddNewPlan} disabled={isAddingPlan}>
+            {isAddingPlan ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Plan
+              </>
+            )}
           </Button>
           <Button 
             variant="outline" 
@@ -242,12 +275,27 @@ const Benefits = () => {
                 </Card>
               ))}
               
-              <Card className="flex flex-col justify-center items-center p-6 h-full border-dashed cursor-pointer hover:bg-accent/50 transition-colors" onClick={handleAddNewPlan}>
-                <Plus className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">Add New Benefit Plan</p>
-                <p className="text-sm text-muted-foreground text-center mt-1">
-                  Set up additional benefits for your employees
-                </p>
+              <Card 
+                className="flex flex-col justify-center items-center p-6 h-full border-dashed cursor-pointer hover:bg-accent/50 transition-colors" 
+                onClick={handleAddNewPlan}
+              >
+                {isAddingPlan ? (
+                  <>
+                    <Loader2 className="h-12 w-12 text-muted-foreground mb-4 animate-spin" />
+                    <p className="text-lg font-medium">Setting Up New Plan...</p>
+                    <p className="text-sm text-muted-foreground text-center mt-1">
+                      Please wait while we prepare the form
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium">Add New Benefit Plan</p>
+                    <p className="text-sm text-muted-foreground text-center mt-1">
+                      Set up additional benefits for your employees
+                    </p>
+                  </>
+                )}
               </Card>
             </div>
             
