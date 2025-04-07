@@ -188,6 +188,66 @@ const HR = () => {
             </Card>
           </div>
         </TabsContent>
+        
+        <TabsContent value="leaves">
+          <Card>
+            <CardHeader>
+              <CardTitle>Leave Management</CardTitle>
+              <CardDescription>View and manage employee leave requests</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <Button onClick={() => navigate("/hr/leaves/new")}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  New Leave Request
+                </Button>
+              </div>
+              <UpcomingLeaves />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="benefits">
+          <Card>
+            <CardHeader>
+              <CardTitle>Employee Benefits</CardTitle>
+              <CardDescription>Manage healthcare, retirement, and other benefit plans</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {["Healthcare", "Dental", "Vision", "Retirement"].map((benefit) => (
+                    <Card key={benefit}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">{benefit} Plan</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between">
+                          <div className="text-2xl font-bold">
+                            {benefit === "Retirement" ? "401(k)" : "Standard"}
+                          </div>
+                          <Heart className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {benefit === "Retirement" ? "6% employer match" : "Coverage for all employees"}
+                        </p>
+                        <Button variant="outline" size="sm" className="w-full mt-4" onClick={() => navigate(`/hr/benefits/${benefit.toLowerCase()}`)}>
+                          Manage Plan
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => navigate("/hr/benefits/settings")}>
+                    Benefit Settings
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
