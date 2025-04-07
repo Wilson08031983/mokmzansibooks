@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import UpcomingLeaves from "@/components/hr/UpcomingLeaves";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { changeStatusAction } from "@/utils/actionUtils";
 
 // Sample data for pending leave requests
 const pendingLeaveRequests = [
@@ -67,31 +68,89 @@ const Leaves = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [requests, setRequests] = useState(pendingLeaveRequests);
+  const [processingIds, setProcessingIds] = useState<number[]>([]);
   
   const handleNewLeaveRequest = () => {
     navigate("/hr/leaves/new");
   };
   
-  const handleApproveRequest = (id: number) => {
-    toast({
-      title: "Leave Request Approved",
-      description: `Request #${id} has been approved`,
-    });
+  const handleApproveRequest = async (id: number) => {
+    setProcessingIds(prev => [...prev, id]);
+    
+    await changeStatusAction(
+      id.toString(),
+      "leave",
+      "Approved",
+      {
+        onSuccess: () => {
+          setRequests(prev => 
+            prev.map(req => 
+              req.id === id ? { ...req, status: "Approved" } : req
+            )
+          );
+          toast({
+            title: "Leave Request Approved",
+            description: `Request #${id} has been approved successfully`,
+            variant: "success",
+          });
+        },
+        onError: () => {
+          toast({
+            title: "Operation Failed",
+            description: "Could not approve the request. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    );
+    
+    setProcessingIds(prev => prev.filter(reqId => reqId !== id));
   };
   
-  const handleRejectRequest = (id: number) => {
-    toast({
-      title: "Leave Request Rejected",
-      description: `Request #${id} has been rejected`,
-    });
+  const handleRejectRequest = async (id: number) => {
+    setProcessingIds(prev => [...prev, id]);
+    
+    await changeStatusAction(
+      id.toString(),
+      "leave",
+      "Rejected",
+      {
+        onSuccess: () => {
+          setRequests(prev => 
+            prev.map(req => 
+              req.id === id ? { ...req, status: "Rejected" } : req
+            )
+          );
+          toast({
+            title: "Leave Request Rejected",
+            description: `Request #${id} has been rejected`,
+            variant: "info",
+          });
+        },
+        onError: () => {
+          toast({
+            title: "Operation Failed",
+            description: "Could not reject the request. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    );
+    
+    setProcessingIds(prev => prev.filter(reqId => reqId !== id));
   };
   
   const handleExportLeaveReport = () => {
     toast({
       title: "Report Downloaded",
       description: "Leave report has been exported as CSV",
+      variant: "download",
     });
   };
+
+  // Filter out requests that have been processed from Pending tab
+  const pendingRequests = requests.filter(req => req.status === "Pending");
 
   return (
     <div className="space-y-6">
@@ -145,7 +204,7 @@ const Leaves = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {pendingLeaveRequests.map((request) => (
+                {pendingRequests.map((request) => (
                   <div 
                     key={request.id}
                     className="flex items-start p-3 rounded-lg border hover:bg-accent transition-colors"
@@ -180,24 +239,38 @@ const Leaves = () => {
                           size="sm" 
                           className="text-red-500" 
                           onClick={() => handleRejectRequest(request.id)}
+                          disabled={processingIds.includes(request.id)}
                         >
-                          <X className="h-3.5 w-3.5 mr-1" />
-                          Reject
+                          {processingIds.includes(request.id) ? (
+                            <span className="animate-pulse">Processing...</span>
+                          ) : (
+                            <>
+                              <X className="h-3.5 w-3.5 mr-1" />
+                              Reject
+                            </>
+                          )}
                         </Button>
                         <Button 
                           variant="success" 
                           size="sm" 
                           onClick={() => handleApproveRequest(request.id)}
+                          disabled={processingIds.includes(request.id)}
                         >
-                          <Check className="h-3.5 w-3.5 mr-1" />
-                          Approve
+                          {processingIds.includes(request.id) ? (
+                            <span className="animate-pulse">Processing...</span>
+                          ) : (
+                            <>
+                              <Check className="h-3.5 w-3.5 mr-1" />
+                              Approve
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
                   </div>
                 ))}
                 
-                {pendingLeaveRequests.length === 0 && (
+                {pendingRequests.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-6 text-center">
                     <Calendar className="h-8 w-8 text-muted-foreground mb-2" />
                     <p className="text-muted-foreground">No pending leave requests</p>
