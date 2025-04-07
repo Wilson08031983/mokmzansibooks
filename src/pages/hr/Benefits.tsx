@@ -85,34 +85,27 @@ const Benefits = () => {
   };
   
   const handleAddNewPlan = async () => {
+    if (isAddingPlan) return;
+    
     setIsAddingPlan(true);
     
     try {
-      const success = await addBenefitPlanAction(
+      await addBenefitPlanAction(
         { name: "New Plan", provider: "New Provider" },
         {
           onSuccess: () => {
-            toast({
-              title: "New Benefit Plan",
-              description: "Setting up a new employee benefit plan",
-              variant: "success"
-            });
-            
             navigate("/hr/benefits/new");
           },
           onError: () => {
-            toast({
-              title: "Error",
-              description: "Failed to set up new benefit plan. Please try again.",
-              variant: "destructive"
-            });
+            setIsAddingPlan(false);
           }
         }
       );
       
-      if (!success) {
+      setTimeout(() => {
         setIsAddingPlan(false);
-      }
+      }, 3000);
+      
     } catch (error) {
       console.error("Error adding new plan:", error);
       toast({

@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 
 interface ActionCallbacks {
@@ -106,13 +107,24 @@ export const addBenefitPlanAction = async (
       }
       return true;
     } else {
-      throw new Error("Random failure for testing purposes");
+      // Instead of throwing, we'll handle the error directly
+      console.error("Simulated API failure for testing");
+      toast({
+        title: "Failed to add benefit plan",
+        description: "There was an error adding the new benefit plan. Please try again.",
+        variant: "destructive"
+      });
+      
+      if (callbacks?.onError) {
+        callbacks.onError();
+      }
+      return false;
     }
   } catch (error) {
     console.error("Error adding benefit plan:", error);
     toast({
       title: "Failed to add benefit plan",
-      description: "There was an error adding the new benefit plan.",
+      description: "There was an error adding the new benefit plan. Please try again.",
       variant: "destructive"
     });
     
