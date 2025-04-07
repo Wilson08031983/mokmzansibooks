@@ -19,6 +19,10 @@ export const changeStatusAction = async (
   try {
     // Simulate successful API call (95% success rate)
     if (Math.random() > 0.05) {
+      toast({
+        title: `${type.charAt(0).toUpperCase() + type.slice(1)} status updated`,
+        description: `The ${type} has been updated to ${status}.`
+      });
       if (callbacks?.onSuccess) {
         callbacks.onSuccess();
       }
@@ -28,6 +32,11 @@ export const changeStatusAction = async (
     }
   } catch (error) {
     console.error(`Error changing ${type} status:`, error);
+    toast({
+      title: `Failed to update ${type} status`,
+      description: `There was an error updating the ${type} to ${status}.`,
+      variant: "destructive"
+    });
     if (callbacks?.onError) {
       callbacks.onError();
     }
@@ -103,9 +112,129 @@ export const addBenefitPlanAction = async (
   }
 };
 
-// Export missing action functions referenced in Invoices and Quotes
-export const downloadAction = async (): Promise<boolean> => true;
-export const emailAction = async (): Promise<boolean> => true;
-export const deleteAction = async (): Promise<boolean> => true;
-export const convertAction = async (): Promise<boolean> => true;
-export const handleAction = async (): Promise<boolean> => true;
+// Updated action functions for Invoices and Quotes with proper parameters
+export const downloadAction = async (
+  id: string, 
+  type: "invoice" | "quote"
+): Promise<boolean> => {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  try {
+    console.log(`Downloading ${type} ${id}`);
+    toast({
+      title: `${type.charAt(0).toUpperCase() + type.slice(1)} downloaded`,
+      description: `${type.charAt(0).toUpperCase() + type.slice(1)} ${id} has been downloaded.`
+    });
+    return true;
+  } catch (error) {
+    console.error(`Error downloading ${type}:`, error);
+    toast({
+      title: `Download failed`,
+      description: `Failed to download ${type} ${id}.`,
+      variant: "destructive"
+    });
+    return false;
+  }
+};
+
+export const emailAction = async (
+  id: string, 
+  type: "invoice" | "quote"
+): Promise<boolean> => {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  try {
+    console.log(`Emailing ${type} ${id}`);
+    toast({
+      title: `${type.charAt(0).toUpperCase() + type.slice(1)} emailed`,
+      description: `${type.charAt(0).toUpperCase() + type.slice(1)} ${id} has been sent via email.`
+    });
+    return true;
+  } catch (error) {
+    console.error(`Error emailing ${type}:`, error);
+    toast({
+      title: `Email failed`,
+      description: `Failed to email ${type} ${id}.`,
+      variant: "destructive"
+    });
+    return false;
+  }
+};
+
+export const deleteAction = async (
+  id: string, 
+  type: "invoice" | "quote"
+): Promise<boolean> => {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 600));
+  
+  try {
+    console.log(`Deleting ${type} ${id}`);
+    toast({
+      title: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted`,
+      description: `${type.charAt(0).toUpperCase() + type.slice(1)} ${id} has been deleted.`
+    });
+    return true;
+  } catch (error) {
+    console.error(`Error deleting ${type}:`, error);
+    toast({
+      title: `Delete failed`,
+      description: `Failed to delete ${type} ${id}.`,
+      variant: "destructive"
+    });
+    return false;
+  }
+};
+
+export const convertAction = async (
+  id: string, 
+  fromType: "quote",
+  toType: "invoice",
+  callbacks?: ActionCallbacks
+): Promise<boolean> => {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1200));
+  
+  try {
+    console.log(`Converting ${fromType} ${id} to ${toType}`);
+    toast({
+      title: `${fromType.charAt(0).toUpperCase() + fromType.slice(1)} converted`,
+      description: `${fromType.charAt(0).toUpperCase() + fromType.slice(1)} ${id} has been converted to ${toType}.`
+    });
+    if (callbacks?.onSuccess) {
+      callbacks.onSuccess();
+    }
+    return true;
+  } catch (error) {
+    console.error(`Error converting ${fromType} to ${toType}:`, error);
+    toast({
+      title: `Conversion failed`,
+      description: `Failed to convert ${fromType} ${id} to ${toType}.`,
+      variant: "destructive"
+    });
+    if (callbacks?.onError) {
+      callbacks.onError();
+    }
+    return false;
+  }
+};
+
+export const handleAction = async (
+  actionName: string,
+  actionFn: () => Promise<void>
+): Promise<boolean> => {
+  try {
+    await actionFn();
+    return true;
+  } catch (error) {
+    console.error(`Error handling ${actionName} action:`, error);
+    toast({
+      title: `Action failed`,
+      description: `Failed to ${actionName.toLowerCase()}.`,
+      variant: "destructive"
+    });
+    return false;
+  }
+};
