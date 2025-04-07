@@ -50,6 +50,10 @@ import HR from "./pages/HR";
 import Employees from "./pages/hr/Employees";
 import Payroll from "./pages/hr/Payroll";
 import Attendance from "./pages/hr/Attendance";
+import Leaves from "./pages/hr/Leaves";
+import NewLeaveRequest from "./pages/hr/NewLeaveRequest";
+import Benefits from "./pages/hr/Benefits";
+import BenefitSettings from "./pages/hr/BenefitSettings";
 
 // Layout components
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -105,6 +109,10 @@ const App = () => {
                         <Route path="/hr/employees" element={<Employees />} />
                         <Route path="/hr/payroll" element={<Payroll />} />
                         <Route path="/hr/attendance" element={<Attendance />} />
+                        <Route path="/hr/leaves" element={<Leaves />} />
+                        <Route path="/hr/leaves/new" element={<NewLeaveRequest />} />
+                        <Route path="/hr/benefits" element={<Benefits />} />
+                        <Route path="/hr/benefits/settings" element={<BenefitSettings />} />
                         
                         <Route path="/tax" element={<Tax />} />
                         <Route path="/tax/vat-returns" element={<VatReturns />} />
