@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 
 interface ActionCallbacks {
@@ -96,6 +95,12 @@ export const addBenefitPlanAction = async (
     
     // Simulate successful API call (95% success rate)
     if (Math.random() > 0.05) {
+      toast({
+        title: "Benefit plan added",
+        description: `${benefitData.name} plan has been successfully added.`,
+        variant: "success"
+      });
+      
       if (callbacks?.onSuccess) {
         callbacks.onSuccess();
       }
@@ -105,6 +110,12 @@ export const addBenefitPlanAction = async (
     }
   } catch (error) {
     console.error("Error adding benefit plan:", error);
+    toast({
+      title: "Failed to add benefit plan",
+      description: "There was an error adding the new benefit plan.",
+      variant: "destructive"
+    });
+    
     if (callbacks?.onError) {
       callbacks.onError();
     }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Card, 
@@ -26,7 +25,6 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { addBenefitPlanAction } from "@/utils/actionUtils";
 
-// Sample benefit plans data
 const benefitPlans = [
   {
     id: 1,
@@ -89,48 +87,56 @@ const Benefits = () => {
   const handleAddNewPlan = async () => {
     setIsAddingPlan(true);
     
-    // Call the action to add a new benefit plan
-    await addBenefitPlanAction(
-      { name: "New Plan", provider: "New Provider" },
-      {
-        onSuccess: () => {
-          toast({
-            title: "New Benefit Plan",
-            description: "Setting up a new employee benefit plan",
-            variant: "success"
-          });
-          
-          // Navigate to the new benefit plan page
-          navigate("/hr/benefits/new");
-        },
-        onError: () => {
-          toast({
-            title: "Error",
-            description: "Failed to set up new benefit plan. Please try again.",
-            variant: "destructive"
-          });
-          setIsAddingPlan(false);
+    try {
+      const success = await addBenefitPlanAction(
+        { name: "New Plan", provider: "New Provider" },
+        {
+          onSuccess: () => {
+            toast({
+              title: "New Benefit Plan",
+              description: "Setting up a new employee benefit plan",
+              variant: "success"
+            });
+            
+            navigate("/hr/benefits/new");
+          },
+          onError: () => {
+            toast({
+              title: "Error",
+              description: "Failed to set up new benefit plan. Please try again.",
+              variant: "destructive"
+            });
+          }
         }
+      );
+      
+      if (!success) {
+        setIsAddingPlan(false);
       }
-    );
+    } catch (error) {
+      console.error("Error adding new plan:", error);
+      toast({
+        title: "Error",
+        description: "Failed to set up new benefit plan. Please try again.",
+        variant: "destructive"
+      });
+      setIsAddingPlan(false);
+    }
   };
   
   const handleExportReport = async () => {
     setIsExporting(true);
     
     try {
-      // Create a date string for the filename
       const date = new Date().toISOString().split('T')[0];
       const filename = `benefits-report-${date}.pdf`;
       
-      // Create reference to the content we want to export
       const content = document.getElementById('benefits-content');
       
       if (!content) {
         throw new Error("Content not found");
       }
       
-      // Use html2canvas to capture the content as an image
       const canvas = await html2canvas(content, { 
         scale: 2, 
         logging: false,
@@ -138,24 +144,20 @@ const Benefits = () => {
         backgroundColor: '#ffffff'
       });
       
-      // Initialize PDF document
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
       
-      // Add title to PDF
       pdf.setFontSize(18);
       pdf.text("Employee Benefits Report", 20, 20);
       pdf.setFontSize(12);
       pdf.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 30);
       
-      // Calculate image dimensions to fit in PDF
       const imgWidth = 170;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      // Add the canvas image to PDF
       pdf.addImage(
         canvas.toDataURL('image/png'),
         'PNG', 
@@ -165,7 +167,6 @@ const Benefits = () => {
         imgHeight
       );
       
-      // Save the PDF
       pdf.save(filename);
       
       toast({
