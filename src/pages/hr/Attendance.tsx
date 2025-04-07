@@ -1,7 +1,7 @@
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, Users, Clock, UserCheck, UserMinus } from "lucide-react";
+import { format, subDays } from "date-fns";
+import { Calendar as CalendarIcon, Users, Clock, UserCheck, UserMinus, Download } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 // Sample data
 const attendanceData = [
@@ -74,6 +75,17 @@ const attendanceData = [
   },
 ];
 
+// Weekly attendance data
+const weeklyAttendanceData = [
+  { date: "2025-04-01", present: 23, late: 1, absent: 0, leave: 1 },
+  { date: "2025-04-02", present: 22, late: 2, absent: 1, leave: 0 },
+  { date: "2025-04-03", present: 21, late: 3, absent: 0, leave: 1 },
+  { date: "2025-04-04", present: 24, late: 0, absent: 1, leave: 0 },
+  { date: "2025-04-05", present: 20, late: 2, absent: 2, leave: 1 },
+  { date: "2025-04-06", present: 3, late: 1, absent: 0, leave: 1 },
+  { date: "2025-04-07", present: 4, late: 0, absent: 0, leave: 1 },
+];
+
 const summaryData = {
   present: 3,
   late: 1,
@@ -87,6 +99,8 @@ const summaryData = {
 const Attendance = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState("");
+  const [view, setView] = useState<"daily" | "weekly">("daily");
+  const { toast } = useToast();
 
   const filteredAttendance = attendanceData.filter(
     (record) =>
@@ -117,6 +131,110 @@ const Attendance = () => {
     return format(new Date(timeString), "hh:mm a");
   };
 
+  const handleGenerateReport = () => {
+    toast({
+      title: "Report Generated",
+      description: `Attendance report for ${format(date, "MMMM d, yyyy")} has been generated.`,
+    });
+  };
+
+  const handleDownloadReport = () => {
+    toast({
+      title: "Report Downloaded",
+      description: `Attendance report has been downloaded.`,
+    });
+  };
+
+  const renderDailyView = () => (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[250px]">Employee</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Clock In</TableHead>
+            <TableHead>Clock Out</TableHead>
+            <TableHead>Duration</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredAttendance.map((record) => {
+            // Calculate duration if both clock in and clock out exist
+            let duration = "—";
+            if (record.clockIn && record.clockOut) {
+              const clockInTime = new Date(record.clockIn);
+              const clockOutTime = new Date(record.clockOut);
+              const diff = Math.abs(clockOutTime.getTime() - clockInTime.getTime());
+              const hours = Math.floor(diff / (1000 * 60 * 60));
+              const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+              duration = `${hours}h ${minutes}m`;
+            } else if (record.clockIn && record.status === "Working") {
+              duration = "In progress";
+            }
+
+            return (
+              <TableRow key={record.id}>
+                <TableCell className="font-medium">
+                  <div>
+                    <div>{record.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {record.position}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={getStatusColor(record.status)}
+                  >
+                    {record.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>{formatTime(record.clockIn)}</TableCell>
+                <TableCell>{formatTime(record.clockOut)}</TableCell>
+                <TableCell>{duration}</TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
+  const renderWeeklyView = () => (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Present</TableHead>
+            <TableHead>Late</TableHead>
+            <TableHead>Absent</TableHead>
+            <TableHead>On Leave</TableHead>
+            <TableHead>Attendance Rate</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {weeklyAttendanceData.map((day) => {
+            const total = day.present + day.late + day.absent + day.leave;
+            const rate = Math.round(((day.present + day.late) / total) * 100);
+            
+            return (
+              <TableRow key={day.date}>
+                <TableCell>{format(new Date(day.date), "EEE, MMM d")}</TableCell>
+                <TableCell>{day.present}</TableCell>
+                <TableCell>{day.late}</TableCell>
+                <TableCell>{day.absent}</TableCell>
+                <TableCell>{day.leave}</TableCell>
+                <TableCell>{rate}%</TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
@@ -146,7 +264,7 @@ const Attendance = () => {
               />
             </PopoverContent>
           </Popover>
-          <Button>Generate Report</Button>
+          <Button onClick={handleGenerateReport}>Generate Report</Button>
         </div>
       </div>
 
@@ -211,7 +329,7 @@ const Attendance = () => {
 
       <Card>
         <CardHeader>
-          <Tabs defaultValue="daily">
+          <Tabs defaultValue="daily" value={view} onValueChange={(v) => setView(v as "daily" | "weekly")}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
               <div>
                 <CardTitle>Attendance Log</CardTitle>
@@ -238,65 +356,16 @@ const Attendance = () => {
             </div>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[250px]">Employee</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Clock In</TableHead>
-                  <TableHead>Clock Out</TableHead>
-                  <TableHead>Duration</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAttendance.map((record) => {
-                  // Calculate duration if both clock in and clock out exist
-                  let duration = "—";
-                  if (record.clockIn && record.clockOut) {
-                    const clockInTime = new Date(record.clockIn);
-                    const clockOutTime = new Date(record.clockOut);
-                    const diff = Math.abs(clockOutTime.getTime() - clockInTime.getTime());
-                    const hours = Math.floor(diff / (1000 * 60 * 60));
-                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    duration = `${hours}h ${minutes}m`;
-                  } else if (record.clockIn && record.status === "Working") {
-                    duration = "In progress";
-                  }
-
-                  return (
-                    <TableRow key={record.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div>{record.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {record.position}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={getStatusColor(record.status)}
-                        >
-                          {record.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatTime(record.clockIn)}</TableCell>
-                      <TableCell>{formatTime(record.clockOut)}</TableCell>
-                      <TableCell>{duration}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          {view === "daily" ? renderDailyView() : renderWeeklyView()}
         </CardContent>
         <CardFooter className="flex justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {filteredAttendance.length} of {attendanceData.length} records
+            Showing {view === "daily" ? filteredAttendance.length : weeklyAttendanceData.length} records
           </div>
-          <Button variant="outline" size="sm">Download Report</Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadReport}>
+            <Download className="h-4 w-4 mr-2" />
+            Download Report
+          </Button>
         </CardFooter>
       </Card>
     </div>

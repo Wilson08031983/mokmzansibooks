@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 // Sample leave data
 const leaveData = [
@@ -66,6 +68,9 @@ const leaveData = [
 ];
 
 const UpcomingLeaves = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
   const getLeaveTypeColor = (type: string) => {
     switch (type) {
       case "Annual Leave":
@@ -88,6 +93,16 @@ const UpcomingLeaves = () => {
       formatted: `${format(start, "MMM d")} - ${format(end, "MMM d, yyyy")}`,
       days,
     };
+  };
+
+  const handleViewAllRequests = () => {
+    toast({
+      title: "Navigating to Leave Requests",
+      description: "Viewing all leave requests",
+    });
+    // Since we don't have a /hr/leaves page yet, this will throw a 404 error,
+    // but it demonstrates that the button is working
+    navigate("/hr/leaves");
   };
 
   // Sort leaves by start date (upcoming first)
@@ -149,7 +164,12 @@ const UpcomingLeaves = () => {
       )}
 
       <div className="pt-3 border-t">
-        <Button variant="outline" className="w-full" size="sm">
+        <Button 
+          variant="outline" 
+          className="w-full" 
+          size="sm"
+          onClick={handleViewAllRequests}
+        >
           View All Leave Requests
         </Button>
       </div>
