@@ -20,23 +20,31 @@ interface Employee {
   no_bonus_applicable: boolean;
 }
 
+interface Attendance {
+  id: string;
+  employee_id: string;
+  date: string;
+  hours_worked: number;
+  is_public_holiday: boolean;
+}
+
 const RunPayroll = () => {
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [monthlyBaseSalary, setMonthlyBaseSalary] = useState("");
-  const [workDays, setWorkDays] = useState<WorkDay[]>([
-    {
-      date: new Date(),
-      hoursWorked: 8,
-      isPublicHoliday: false
-    }
-  ]);
+  const [workDays, setWorkDays] = useState<WorkDay[]>([]);
   const [calculation, setCalculation] = useState<any>(null);
 
   useEffect(() => {
     fetchEmployees();
   }, []);
+
+  useEffect(() => {
+    if (selectedEmployee) {
+      fetchAttendance();
+    }
+  }, [selectedEmployee]);
 
   const fetchEmployees = async () => {
     const { data, error } = await supabase
@@ -54,6 +62,40 @@ const RunPayroll = () => {
 
     if (data) {
       setEmployees(data);
+    }
+  };
+
+  const fetchAttendance = async () => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    const { data, error } = await supabase
+      .from('attendance')
+      .select('*')
+      .eq('employee_id', selectedEmployee)
+      .gte('date', `${currentMonth}-01`)
+      .lte('date', `${currentMonth}-31`);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch attendance records",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const attendanceWorkDays: WorkDay[] = data.map(record => ({
+        date: new Date(record.date),
+        hoursWorked: record.hours_worked,
+        isPublicHoliday: record.is_public_holiday
+      }));
+      setWorkDays(attendanceWorkDays);
+    } else {
+      toast({
+        title: "No Attendance",
+        description: "No attendance records found for this employee this month",
+        variant: "warning"
+      });
     }
   };
 
@@ -92,28 +134,6 @@ const RunPayroll = () => {
     });
   };
 
-  const addWorkDay = () => {
-    setWorkDays([...workDays, {
-      date: new Date(),
-      hoursWorked: 8,
-      isPublicHoliday: false
-    }]);
-  };
-
-  const removeWorkDay = (index: number) => {
-    if (workDays.length > 1) {
-      const newWorkDays = [...workDays];
-      newWorkDays.splice(index, 1);
-      setWorkDays(newWorkDays);
-    }
-  };
-
-  const updateWorkDay = (index: number, field: keyof WorkDay, value: any) => {
-    const newWorkDays = [...workDays];
-    newWorkDays[index] = { ...newWorkDays[index], [field]: value };
-    setWorkDays(newWorkDays);
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -144,66 +164,26 @@ const RunPayroll = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="salary">Monthly Base Salary (ZAR)</Label>
-              <Input
-                id="salary"
-                type="number"
-                value={monthlyBaseSalary}
-                onChange={(e) => setMonthlyBaseSalary(e.target.value)}
-                placeholder="Enter monthly salary"
-                readOnly
-              />
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Work Days</Label>
-                <Button variant="outline" size="sm" onClick={addWorkDay}>
-                  Add Day
-                </Button>
-              </div>
-              
+              <Label>Work Days (from Attendance)</Label>
               {workDays.map((day, index) => (
-                <div key={index} className="grid gap-3 p-3 border rounded-md">
-                  <div className="grid grid-cols-1 gap-2">
-                    <Label htmlFor={`date-${index}`}>Date</Label>
-                    <Input
-                      id={`date-${index}`}
-                      type="date"
-                      value={format(day.date, "yyyy-MM-dd")}
-                      onChange={(e) => updateWorkDay(index, "date", new Date(e.target.value))}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    <Label htmlFor={`hours-${index}`}>Hours Worked</Label>
-                    <Input
-                      id={`hours-${index}`}
-                      type="number"
-                      placeholder="Hours worked"
-                      value={day.hoursWorked}
-                      onChange={(e) => updateWorkDay(index, "hoursWorked", Number(e.target.value))}
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2 mt-2">
+                <div key={index} className="grid grid-cols-3 gap-2">
+                  <Input 
+                    type="date" 
+                    value={format(day.date, "yyyy-MM-dd")} 
+                    readOnly 
+                  />
+                  <Input 
+                    type="number" 
+                    value={day.hoursWorked} 
+                    readOnly 
+                  />
+                  <div className="flex items-center space-x-2">
                     <Checkbox 
-                      id={`holiday-${index}`}
                       checked={day.isPublicHoliday}
-                      onCheckedChange={(checked) => 
-                        updateWorkDay(index, "isPublicHoliday", checked === true)
-                      }
+                      disabled
                     />
-                    <Label htmlFor={`holiday-${index}`}>Public Holiday</Label>
+                    <Label>Public Holiday</Label>
                   </div>
-                  {workDays.length > 1 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => removeWorkDay(index)}
-                    >
-                      Remove Day
-                    </Button>
-                  )}
                 </div>
               ))}
             </div>
