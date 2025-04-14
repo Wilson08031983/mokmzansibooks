@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/formatters";
 
 const initialData = [
   { name: "Salaries", value: 25000, color: "#8884d8" },
@@ -59,7 +60,7 @@ const PayrollSummary = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="text-sm text-muted-foreground">
-          Total Monthly Payroll: <span className="font-semibold">${total.toLocaleString()}</span>
+          Total Monthly Payroll: <span className="font-semibold">{formatCurrency(total)}</span>
         </div>
         <div className="flex space-x-2">
           <Button 
@@ -98,7 +99,7 @@ const PayrollSummary = () => {
               ))}
             </Pie>
             <Tooltip 
-              formatter={(value: number) => [`$${value.toLocaleString()}`, undefined]} 
+              formatter={(value: number) => [formatCurrency(value), undefined]} 
             />
             <Legend />
           </PieChart>
@@ -116,7 +117,7 @@ const PayrollSummary = () => {
               <span>{item.name}</span>
             </div>
             <div className="text-sm font-medium">
-              ${item.value.toLocaleString()}
+              {formatCurrency(item.value)}
               <span className="text-muted-foreground ml-1">
                 ({Math.round((item.value / total) * 100)}%)
               </span>
@@ -129,3 +130,4 @@ const PayrollSummary = () => {
 };
 
 export default PayrollSummary;
+
