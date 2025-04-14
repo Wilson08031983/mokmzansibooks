@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { format, subDays } from "date-fns";
-import { Calendar as CalendarIcon, Users, Clock, UserCheck, UserMinus, Download } from "lucide-react";
+import { Calendar as CalendarIcon, Users, Clock, UserCheck, UserMinus, Download, FileText } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
@@ -31,7 +30,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
-// Sample data
 const attendanceData = [
   {
     id: 1,
@@ -75,7 +73,6 @@ const attendanceData = [
   },
 ];
 
-// Weekly attendance data
 const weeklyAttendanceData = [
   { date: "2025-04-01", present: 23, late: 1, absent: 0, leave: 1 },
   { date: "2025-04-02", present: 22, late: 2, absent: 1, leave: 0 },
@@ -131,17 +128,60 @@ const Attendance = () => {
     return format(new Date(timeString), "hh:mm a");
   };
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
+    const reportData = {
+      date: format(date, "MMMM d, yyyy"),
+      summaryData: {
+        present: summaryData.present,
+        late: summaryData.late,
+        absent: summaryData.absent,
+        leave: summaryData.leave,
+        total: summaryData.total,
+        attendanceRate: summaryData.attendanceRate
+      },
+      weeklyData: weeklyAttendanceData,
+      employees: attendanceData
+    };
+
+    const reportText = `
+Attendance Report - ${reportData.date}
+
+Summary:
+- Total Employees: ${reportData.summaryData.total}
+- Present: ${reportData.summaryData.present}
+- Late: ${reportData.summaryData.late}
+- Absent: ${reportData.summaryData.absent}
+- On Leave: ${reportData.summaryData.leave}
+- Attendance Rate: ${reportData.summaryData.attendanceRate}%
+
+Weekly Breakdown:
+${reportData.weeklyData.map(day => `${format(new Date(day.date), "EEE, MMM d")}:
+- Present: ${day.present}
+- Late: ${day.late}
+- Absent: ${day.absent}
+- On Leave: ${day.leave}
+`).join('\n')}
+
+Employee Details:
+${reportData.employees.map(emp => `${emp.name} - ${emp.status}
+Clock In: ${emp.clockIn ? format(new Date(emp.clockIn), "hh:mm a") : "N/A"}
+Clock Out: ${emp.clockOut ? format(new Date(emp.clockOut), "hh:mm a") : "N/A"}
+`).join('\n')}
+`;
+
+    const blob = new Blob([reportText], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `attendance-report-${format(date, "yyyy-MM-dd")}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
     toast({
       title: "Report Generated",
-      description: `Attendance report for ${format(date, "MMMM d, yyyy")} has been generated.`,
-    });
-  };
-
-  const handleDownloadReport = () => {
-    toast({
-      title: "Report Downloaded",
-      description: `Attendance report has been downloaded.`,
+      description: "Your attendance report has been downloaded",
     });
   };
 
@@ -159,7 +199,6 @@ const Attendance = () => {
         </TableHeader>
         <TableBody>
           {filteredAttendance.map((record) => {
-            // Calculate duration if both clock in and clock out exist
             let duration = "—";
             if (record.clockIn && record.clockOut) {
               const clockInTime = new Date(record.clockIn);
@@ -264,7 +303,13 @@ const Attendance = () => {
               />
             </PopoverContent>
           </Popover>
-          <Button onClick={handleGenerateReport}>Generate Report</Button>
+          <Button 
+            onClick={handleGenerateReport}
+            className="flex items-center gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            Generate Report
+          </Button>
         </div>
       </div>
 
