@@ -48,6 +48,7 @@ import NotFound from "./pages/NotFound";
 // HR & Payroll Pages
 import HR from "./pages/HR";
 import Employees from "./pages/hr/Employees";
+import NewEmployee from "./pages/hr/NewEmployee";
 import Payroll from "./pages/hr/Payroll";
 import Attendance from "./pages/hr/Attendance";
 import Leaves from "./pages/hr/Leaves";
@@ -108,6 +109,7 @@ const App = () => {
                         {/* HR & Payroll Routes */}
                         <Route path="/hr" element={<HR />} />
                         <Route path="/hr/employees" element={<Employees />} />
+                        <Route path="/hr/employees/new" element={<NewEmployee />} />
                         <Route path="/hr/payroll" element={<Payroll />} />
                         <Route path="/hr/payroll/run" element={<RunPayroll />} />
                         <Route path="/hr/attendance" element={<Attendance />} />
