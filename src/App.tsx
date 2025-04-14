@@ -55,6 +55,7 @@ import Leaves from "./pages/hr/Leaves";
 import NewLeaveRequest from "./pages/hr/NewLeaveRequest";
 import Benefits from "./pages/hr/Benefits";
 import BenefitSettings from "./pages/hr/BenefitSettings";
+import BenefitPlanDetail from "./pages/hr/BenefitPlanDetail";
 import RunPayroll from "./pages/hr/RunPayroll";
 
 // Layout components
@@ -117,6 +118,7 @@ const App = () => {
                         <Route path="/hr/leaves/new" element={<NewLeaveRequest />} />
                         <Route path="/hr/benefits" element={<Benefits />} />
                         <Route path="/hr/benefits/settings" element={<BenefitSettings />} />
+                        <Route path="/hr/benefits/:planId" element={<BenefitPlanDetail />} />
                         
                         <Route path="/tax" element={<Tax />} />
                         <Route path="/tax/vat-returns" element={<VatReturns />} />
