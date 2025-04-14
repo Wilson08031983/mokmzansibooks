@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +13,11 @@ import {
   GraduationCap, 
   Heart
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import EmployeeTable from "@/components/hr/EmployeeTable";
 import PayrollSummary from "@/components/hr/PayrollSummary";
 import AttendanceOverview from "@/components/hr/AttendanceOverview";
 import UpcomingLeaves from "@/components/hr/UpcomingLeaves";
-import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@/utils/formatters";
 
 const HR = () => {
@@ -30,6 +31,10 @@ const HR = () => {
     }
   };
 
+  const handleAddEmployee = () => {
+    navigate("/hr/employees/new");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -40,7 +45,7 @@ const HR = () => {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex space-x-2">
-          <Button onClick={() => navigate("/hr/employees/new")}>
+          <Button onClick={handleAddEmployee}>
             <UserPlus className="mr-2 h-4 w-4" />
             Add Employee
           </Button>
