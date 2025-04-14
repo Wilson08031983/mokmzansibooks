@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, Download, Upload, Tag, Camera, Image, FileUp, User, Link as LinkIcon } from "lucide-react";
@@ -533,7 +534,7 @@ const AccountingTransactions = () => {
                     <SelectValue placeholder="Select client (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Client</SelectItem>
+                    <SelectItem value="none">No Client</SelectItem>
                     {CLIENTS.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}
@@ -818,7 +819,7 @@ const AccountingTransactions = () => {
                   <SelectValue placeholder="Choose a client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Client (Unlink)</SelectItem>
+                  <SelectItem value="no-client">No Client (Unlink)</SelectItem>
                   {CLIENTS.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name} ({client.email})
