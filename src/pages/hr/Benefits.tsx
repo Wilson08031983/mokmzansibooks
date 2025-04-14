@@ -76,14 +76,21 @@ const Benefits = () => {
   const [activeTab, setActiveTab] = useState("plans");
   const [isExporting, setIsExporting] = useState(false);
   const [isAddingPlan, setIsAddingPlan] = useState(false);
+  const [managingPlan, setManagingPlan] = useState<string | null>(null);
   
   const handleManagePlan = (name: string) => {
+    setManagingPlan(name);
+    
     toast({
       title: `Managing ${name} Plan`,
       description: `Opening ${name.toLowerCase()} plan configuration`,
+      variant: "success",
     });
     
-    navigate(`/hr/benefits/${name.toLowerCase()}`);
+    setTimeout(() => {
+      navigate(`/hr/benefits/${name.toLowerCase()}`);
+      setManagingPlan(null);
+    }, 500);
   };
   
   const handleAddNewPlan = async () => {
@@ -234,7 +241,15 @@ const Benefits = () => {
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-lg font-medium">{plan.name} Plan</CardTitle>
-                      <Heart className="h-5 w-5 text-muted-foreground" />
+                      {plan.name === "Healthcare" ? (
+                        <Heart className="h-5 w-5 text-red-500" />
+                      ) : plan.name === "Motor Vehicle Allowance" ? (
+                        <Car className="h-5 w-5 text-blue-500" />
+                      ) : plan.name === "House Allowance" ? (
+                        <Home className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <Heart className="h-5 w-5 text-muted-foreground" />
+                      )}
                     </div>
                     <CardDescription>{plan.provider}</CardDescription>
                   </CardHeader>
@@ -259,12 +274,20 @@ const Benefits = () => {
                       <p className="text-sm">{plan.details}</p>
                       
                       <Button 
-                        variant="outline" 
+                        variant={managingPlan === plan.name ? "success" : "outline"}
                         size="sm" 
-                        className="w-full mt-2" 
+                        className="w-full mt-2"
                         onClick={() => handleManagePlan(plan.name)}
+                        disabled={managingPlan === plan.name}
                       >
-                        Manage Plan
+                        {managingPlan === plan.name ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Opening...
+                          </>
+                        ) : (
+                          "Manage Plan"
+                        )}
                       </Button>
                     </div>
                   </CardContent>
