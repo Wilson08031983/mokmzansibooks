@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +17,7 @@ import PayrollSummary from "@/components/hr/PayrollSummary";
 import AttendanceOverview from "@/components/hr/AttendanceOverview";
 import UpcomingLeaves from "@/components/hr/UpcomingLeaves";
 import { useNavigate } from "react-router-dom";
+import { formatCurrency } from "@/utils/formatters";
 
 const HR = () => {
   const navigate = useNavigate();
@@ -93,7 +93,7 @@ const HR = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">$32,540</div>
+                  <div className="text-2xl font-bold">{formatCurrency(32540)}</div>
                   <DollarSign className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">Due on April 30, 2025</p>
