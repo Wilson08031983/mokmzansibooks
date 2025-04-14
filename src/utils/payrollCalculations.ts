@@ -1,4 +1,3 @@
-
 import { addHours, isWeekend, isWithinInterval } from 'date-fns';
 
 export interface WorkDay {
@@ -21,6 +20,8 @@ export interface PayslipCalculation {
     sunday: number;
     publicHoliday: number;
   };
+  thirteenthCheque: number;
+  isBonusMonth: boolean;
   totalPay: number;
 }
 
@@ -53,7 +54,9 @@ export const isPublicHoliday = (date: Date): boolean => {
 
 export const calculatePayslip = (
   workDays: WorkDay[],
-  monthlyBaseSalary: number
+  monthlyBaseSalary: number,
+  bonusDate?: string | null,
+  noBonusApplicable?: boolean
 ): PayslipCalculation => {
   const hourlyRate = HOURLY_RATE(monthlyBaseSalary);
   
@@ -91,7 +94,27 @@ export const calculatePayslip = (
     publicHoliday: publicHolidayOT * hourlyRate * 2.0
   };
 
-  const totalPay = basicSalary + overtimePay.saturday + overtimePay.sunday + overtimePay.publicHoliday;
+  // Calculate 13th cheque bonus
+  let thirteenthCheque = 0;
+  let isBonusMonth = false;
+
+  if (!noBonusApplicable && bonusDate) {
+    const bonusMonth = new Date(bonusDate).getMonth();
+    const bonusYear = new Date(bonusDate).getFullYear();
+    const currentMonth = new Date(workDays[0].date).getMonth();
+    const currentYear = new Date(workDays[0].date).getFullYear();
+    
+    if (bonusMonth === currentMonth && bonusYear === currentYear) {
+      thirteenthCheque = monthlyBaseSalary;
+      isBonusMonth = true;
+    }
+  }
+
+  const totalPay = basicSalary + 
+    overtimePay.saturday + 
+    overtimePay.sunday + 
+    overtimePay.publicHoliday + 
+    thirteenthCheque;
 
   return {
     regularHours,
@@ -103,6 +126,8 @@ export const calculatePayslip = (
     totalDays,
     basicSalary,
     overtimePay,
+    thirteenthCheque,
+    isBonusMonth,
     totalPay
   };
 };

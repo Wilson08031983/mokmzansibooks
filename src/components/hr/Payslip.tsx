@@ -50,12 +50,34 @@ const Payslip = ({ calculation, employeeName, period }: PayslipProps) => {
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>Basic Salary</div>
                 <div className="text-right">{formatCurrency(calculation.basicSalary)}</div>
-                <div>Saturday Overtime</div>
-                <div className="text-right">{formatCurrency(calculation.overtimePay.saturday)}</div>
-                <div>Sunday Overtime</div>
-                <div className="text-right">{formatCurrency(calculation.overtimePay.sunday)}</div>
-                <div>Public Holiday</div>
-                <div className="text-right">{formatCurrency(calculation.overtimePay.publicHoliday)}</div>
+                
+                {calculation.overtimePay.saturday > 0 && (
+                  <>
+                    <div>Saturday Overtime</div>
+                    <div className="text-right">{formatCurrency(calculation.overtimePay.saturday)}</div>
+                  </>
+                )}
+                
+                {calculation.overtimePay.sunday > 0 && (
+                  <>
+                    <div>Sunday Overtime</div>
+                    <div className="text-right">{formatCurrency(calculation.overtimePay.sunday)}</div>
+                  </>
+                )}
+                
+                {calculation.overtimePay.publicHoliday > 0 && (
+                  <>
+                    <div>Public Holiday</div>
+                    <div className="text-right">{formatCurrency(calculation.overtimePay.publicHoliday)}</div>
+                  </>
+                )}
+
+                {calculation.thirteenthCheque > 0 && (
+                  <>
+                    <div>13th Cheque Bonus</div>
+                    <div className="text-right">{formatCurrency(calculation.thirteenthCheque)}</div>
+                  </>
+                )}
               </div>
             </section>
 

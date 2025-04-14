@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +32,17 @@ const RunPayroll = () => {
       return;
     }
 
-    const payslipData = calculatePayslip(workDays, Number(monthlyBaseSalary));
+    const mockEmployeeData = {
+      bonusDate: "2025-12-01",
+      noBonusApplicable: false
+    };
+
+    const payslipData = calculatePayslip(
+      workDays, 
+      Number(monthlyBaseSalary),
+      mockEmployeeData.bonusDate,
+      mockEmployeeData.noBonusApplicable
+    );
     setCalculation(payslipData);
 
     toast({
