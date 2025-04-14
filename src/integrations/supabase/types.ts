@@ -9,6 +9,66 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      employees: {
+        Row: {
+          address: string | null
+          bonus_date: string | null
+          created_at: string | null
+          date_of_birth: string
+          department: string | null
+          email: string
+          employment_type: string
+          first_name: string
+          id: string
+          last_name: string
+          monthly_salary: number
+          no_bonus_applicable: boolean | null
+          phone: string | null
+          position: string
+          site: string | null
+          start_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          bonus_date?: string | null
+          created_at?: string | null
+          date_of_birth: string
+          department?: string | null
+          email: string
+          employment_type?: string
+          first_name: string
+          id?: string
+          last_name: string
+          monthly_salary: number
+          no_bonus_applicable?: boolean | null
+          phone?: string | null
+          position: string
+          site?: string | null
+          start_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          bonus_date?: string | null
+          created_at?: string | null
+          date_of_birth?: string
+          department?: string | null
+          email?: string
+          employment_type?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          monthly_salary?: number
+          no_bonus_applicable?: boolean | null
+          phone?: string | null
+          position?: string
+          site?: string | null
+          start_date?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       instruments: {
         Row: {
           id: number

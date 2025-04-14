@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,28 +9,20 @@ import Payslip from "@/components/hr/Payslip";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock employee data (in a real app, this would come from your backend)
-const employees = [
-  {
-    id: "1",
-    name: "John Doe",
-    monthlySalary: "45000",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    monthlySalary: "52000",
-  },
-  {
-    id: "3",
-    name: "Robert Johnson",
-    monthlySalary: "48000",
-  }
-];
+interface Employee {
+  id: string;
+  first_name: string;
+  last_name: string;
+  monthly_salary: number;
+  bonus_date: string | null;
+  no_bonus_applicable: boolean;
+}
 
 const RunPayroll = () => {
   const { toast } = useToast();
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [monthlyBaseSalary, setMonthlyBaseSalary] = useState("");
   const [workDays, setWorkDays] = useState<WorkDay[]>([
@@ -43,11 +34,34 @@ const RunPayroll = () => {
   ]);
   const [calculation, setCalculation] = useState<any>(null);
 
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const fetchEmployees = async () => {
+    const { data, error } = await supabase
+      .from('employees')
+      .select('id, first_name, last_name, monthly_salary, bonus_date, no_bonus_applicable');
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch employees",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (data) {
+      setEmployees(data);
+    }
+  };
+
   const handleEmployeeChange = (employeeId: string) => {
     setSelectedEmployee(employeeId);
     const employee = employees.find(emp => emp.id === employeeId);
     if (employee) {
-      setMonthlyBaseSalary(employee.monthlySalary);
+      setMonthlyBaseSalary(employee.monthly_salary.toString());
     }
   };
 
@@ -61,16 +75,14 @@ const RunPayroll = () => {
       return;
     }
 
-    const mockEmployeeData = {
-      bonusDate: "2025-12-01",
-      noBonusApplicable: false
-    };
+    const employee = employees.find(emp => emp.id === selectedEmployee);
+    if (!employee) return;
 
     const payslipData = calculatePayslip(
-      workDays, 
+      workDays,
       Number(monthlyBaseSalary),
-      mockEmployeeData.bonusDate,
-      mockEmployeeData.noBonusApplicable
+      employee.bonus_date,
+      employee.no_bonus_applicable
     );
     setCalculation(payslipData);
 
@@ -124,7 +136,7 @@ const RunPayroll = () => {
                 <SelectContent>
                   {employees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name}
+                      {employee.first_name} {employee.last_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -205,7 +217,7 @@ const RunPayroll = () => {
         {calculation && (
           <Payslip
             calculation={calculation}
-            employeeName={employees.find(emp => emp.id === selectedEmployee)?.name || ""}
+            employeeName={employees.find(emp => emp.id === selectedEmployee)?.first_name + ' ' + employees.find(emp => emp.id === selectedEmployee)?.last_name || ""}
             period={format(new Date(), "MMMM yyyy")}
           />
         )}

@@ -10,12 +10,32 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, UserPlus, Building, MapPin, Calendar, Upload, DollarSign, Image } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+
+interface EmployeeFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  department: string;
+  position: string;
+  employmentType: string;
+  startDate: string;
+  salary: string;
+  site: string;
+  address: string;
+  dateOfBirth: string;
+  bonusDate: string;
+  noBonusApplicable: boolean;
+  profileImage: File | null;
+  notes: string;
+}
 
 const NewEmployee = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<EmployeeFormData>({
     firstName: "",
     lastName: "",
     email: "",
@@ -61,8 +81,38 @@ const NewEmployee = () => {
     }
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const employeeData = {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      department: formData.department,
+      position: formData.position,
+      employment_type: formData.employmentType,
+      start_date: formData.startDate,
+      monthly_salary: Number(formData.salary),
+      site: formData.site,
+      address: formData.address,
+      date_of_birth: formData.dateOfBirth,
+      bonus_date: formData.noBonusApplicable ? null : formData.bonusDate,
+      no_bonus_applicable: formData.noBonusApplicable
+    };
+
+    const { error } = await supabase
+      .from('employees')
+      .insert([employeeData]);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
     
     toast({
       title: "Employee Added",
