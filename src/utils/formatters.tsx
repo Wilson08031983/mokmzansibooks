@@ -28,6 +28,7 @@ export const formatCurrency = (amount: number | string, currency: string = "ZAR"
     style: "currency",
     currency: code,
     minimumFractionDigits: 2,
+    currencyDisplay: "symbol"
   }).format(num);
 };
 
