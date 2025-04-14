@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Card, 
@@ -15,7 +16,9 @@ import {
   FileText,
   Download,
   Plus,
-  Loader2
+  Loader2,
+  Car,
+  Home
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -38,23 +41,23 @@ const benefitPlans = [
   },
   {
     id: 2,
-    name: "Dental",
-    provider: "DentalCare Plus",
+    name: "Motor Vehicle Allowance",
+    provider: "Company Transport Policy",
     plan: "Standard",
-    coverage: "Basic + Orthodontics",
+    coverage: "Monthly Allowance",
     eligibility: "Full-time employees",
     enrollmentDate: "January 1, 2025",
-    details: "Regular checkups, cleanings, and basic procedures."
+    details: "Monthly allowance for vehicle-related expenses."
   },
   {
     id: 3,
-    name: "Vision",
-    provider: "VisionGuard",
+    name: "House Allowance",
+    provider: "Company Housing Policy",
     plan: "Standard",
-    coverage: "Basic",
+    coverage: "Monthly Stipend",
     eligibility: "Full-time employees",
     enrollmentDate: "January 1, 2025",
-    details: "Annual eye exams, frames, and contact lenses allowance."
+    details: "Monthly housing allowance to support employee accommodation."
   },
   {
     id: 4,
