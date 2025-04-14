@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, Download, Upload, Tag, Camera, Image, FileUp, User, Link as LinkIcon } from "lucide-react";
@@ -40,7 +39,6 @@ const CATEGORIES = [
   { id: "utilities", name: "Utilities", color: "#10B981" },
 ];
 
-// Mock clients data
 const CLIENTS = [
   { id: "client1", name: "Acme Corporation", email: "billing@acme.com" },
   { id: "client2", name: "Stark Industries", email: "accounts@stark.com" },
@@ -49,7 +47,6 @@ const CLIENTS = [
   { id: "client5", name: "Oscorp Industries", email: "treasury@oscorp.com" },
 ];
 
-// Extended transaction interface with client information
 interface Transaction {
   id: number;
   date: string;
@@ -60,7 +57,6 @@ interface Transaction {
   clientId?: string;
 }
 
-// Generate sample transactions
 const generateTransactions = (): Transaction[] => {
   return [...Array(8)].map((_, index) => {
     const isIncome = index % 3 === 0;
@@ -71,7 +67,6 @@ const generateTransactions = (): Transaction[] => {
       categoryId = expenseCategories[index % expenseCategories.length];
     }
 
-    // Randomly assign clients to some transactions
     const hasClient = isIncome && Math.random() > 0.4;
     const clientId = hasClient ? CLIENTS[Math.floor(Math.random() * CLIENTS.length)].id : undefined;
 
@@ -119,7 +114,6 @@ const AccountingTransactions = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Clean up camera resources when component unmounts
   useEffect(() => {
     return () => {
       if (cameraStream) {
@@ -128,7 +122,6 @@ const AccountingTransactions = () => {
     };
   }, [cameraStream]);
 
-  // Clean up camera when dialog closes
   useEffect(() => {
     if (!importDialogOpen && cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());
@@ -146,10 +139,23 @@ const AccountingTransactions = () => {
   };
 
   const handleSubmitTransaction = () => {
+    const newTransactionObj: Transaction = {
+      id: Math.floor(1000 + Math.random() * 9000),
+      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      amount: parseFloat(newTransaction.amount) || 0,
+      type: newTransaction.type,
+      categoryId: newTransaction.categoryId,
+      description: newTransaction.description || (newTransaction.type === "income" ? "Client Payment" : "Business Expense"),
+      clientId: newTransaction.type === "income" ? newTransaction.clientId : undefined,
+    };
+
+    setTransactions([newTransactionObj, ...transactions]);
+
     toast({
       title: "Transaction Added",
       description: `${newTransaction.type === "income" ? "Income" : "Expense"} of ${formatCurrency(parseFloat(newTransaction.amount) || 0, "ZAR")} added successfully.`,
     });
+
     setNewTransactionOpen(false);
     setNewTransaction({
       amount: "",
@@ -226,32 +232,26 @@ const AccountingTransactions = () => {
 
   const startCamera = async () => {
     try {
-      // Stop any existing stream before starting a new one
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
         setCameraStream(null);
       }
       
       console.log("Starting camera...");
-      setCameraError(""); // Clear any previous errors
+      setCameraError("");
       
-      // Request camera access
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: "environment" } 
       });
       
-      // Store the stream in state
       setCameraStream(stream);
       
-      // Set up the video element with the stream - but only after a short delay
-      // to ensure the DOM has updated and the video element is available
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           setShowCameraPreview(true);
           console.log("Camera started successfully");
         } else {
-          // If the video element is still not available, clean up and show error
           stream.getTracks().forEach(track => track.stop());
           setCameraError("Camera element not ready. Please try again.");
           console.error("Video ref is still not available after delay");
@@ -328,7 +328,6 @@ const AccountingTransactions = () => {
     setAttachmentDialogOpen(false);
     setClientLinkDialogOpen(true);
     
-    // Find the transaction to prefill the client if already set
     const transaction = transactions.find(t => t.id === selectedTransactionId);
     if (transaction?.clientId) {
       setSelectedClientId(transaction.clientId);
