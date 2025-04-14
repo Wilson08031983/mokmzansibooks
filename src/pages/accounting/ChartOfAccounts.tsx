@@ -454,7 +454,7 @@ const ChartOfAccounts = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No Parent (Top Level)</SelectItem>
+                        <SelectItem value="no-parent">No Parent (Top Level)</SelectItem>
                         {getAllAccountPaths().map(({ id, path }) => (
                           <SelectItem key={id} value={id}>{path}</SelectItem>
                         ))}
