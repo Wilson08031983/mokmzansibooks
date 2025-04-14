@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, UserPlus, Building } from "lucide-react";
+import { ArrowLeft, Save, UserPlus, Building, MapPin, Calendar, Upload, DollarSign, Image } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const NewEmployee = () => {
   const navigate = useNavigate();
@@ -24,6 +26,11 @@ const NewEmployee = () => {
     startDate: "",
     salary: "",
     site: "",
+    address: "",
+    dateOfBirth: "",
+    bonusDate: "",
+    noBonusApplicable: false,
+    profileImage: null as File | null,
     notes: ""
   });
   
@@ -34,6 +41,24 @@ const NewEmployee = () => {
   
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      noBonusApplicable: checked,
+      bonusDate: checked ? "" : prev.bonusDate
+    }));
+  };
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        profileImage: file
+      }));
+    }
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -193,6 +218,94 @@ const NewEmployee = () => {
                     <SelectItem value="remote">Remote</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="address">Address *</Label>
+                <Textarea 
+                  id="address"
+                  name="address" 
+                  value={formData.address} 
+                  onChange={handleChange} 
+                  required 
+                  placeholder="Enter complete address"
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    id="dateOfBirth"
+                    name="dateOfBirth" 
+                    type="date" 
+                    value={formData.dateOfBirth} 
+                    onChange={handleChange} 
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Profile Image</Label>
+                <div className="flex items-start space-x-4">
+                  <Avatar className="h-20 w-20">
+                    {formData.profileImage ? (
+                      <AvatarImage src={URL.createObjectURL(formData.profileImage)} />
+                    ) : (
+                      <AvatarFallback>
+                        <Image className="h-8 w-8 text-muted-foreground" />
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="space-y-2">
+                    <Input
+                      id="profileImage"
+                      name="profileImage"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="w-full"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Upload a profile picture (optional)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>13th Cheque Bonus</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="noBonusApplicable"
+                      checked={formData.noBonusApplicable}
+                      onCheckedChange={handleCheckboxChange}
+                    />
+                    <label
+                      htmlFor="noBonusApplicable"
+                      className="text-sm text-muted-foreground"
+                    >
+                      Not Applicable
+                    </label>
+                  </div>
+                  {!formData.noBonusApplicable && (
+                    <div className="flex items-center space-x-2">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="bonusDate"
+                        name="bonusDate"
+                        type="date"
+                        value={formData.bonusDate}
+                        onChange={handleChange}
+                        disabled={formData.noBonusApplicable}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-2">
