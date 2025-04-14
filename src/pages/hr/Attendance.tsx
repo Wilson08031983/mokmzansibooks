@@ -407,7 +407,7 @@ Clock Out: ${emp.clockOut ? format(new Date(emp.clockOut), "hh:mm a") : "N/A"}
           <div className="text-sm text-muted-foreground">
             Showing {view === "daily" ? filteredAttendance.length : weeklyAttendanceData.length} records
           </div>
-          <Button variant="outline" size="sm" onClick={handleDownloadReport}>
+          <Button variant="outline" size="sm" onClick={handleGenerateReport}>
             <Download className="h-4 w-4 mr-2" />
             Download Report
           </Button>
