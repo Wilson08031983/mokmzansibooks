@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/utils/formatters";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -74,7 +73,7 @@ const Payslip = ({ calculation, employeeName, period }: PayslipProps) => {
 
                 {calculation.thirteenthCheque > 0 && (
                   <>
-                    <div>13th Cheque Bonus</div>
+                    <div>13th Cheque Bonus (Monthly Salary)</div>
                     <div className="text-right">{formatCurrency(calculation.thirteenthCheque)}</div>
                   </>
                 )}
