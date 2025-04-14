@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +9,30 @@ import { calculatePayslip, WorkDay } from "@/utils/payrollCalculations";
 import Payslip from "@/components/hr/Payslip";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Mock employee data (in a real app, this would come from your backend)
+const employees = [
+  {
+    id: "1",
+    name: "John Doe",
+    monthlySalary: "45000",
+  },
+  {
+    id: "2",
+    name: "Jane Smith",
+    monthlySalary: "52000",
+  },
+  {
+    id: "3",
+    name: "Robert Johnson",
+    monthlySalary: "48000",
+  }
+];
 
 const RunPayroll = () => {
   const { toast } = useToast();
-  const [employeeName, setEmployeeName] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState("");
   const [monthlyBaseSalary, setMonthlyBaseSalary] = useState("");
   const [workDays, setWorkDays] = useState<WorkDay[]>([
     {
@@ -22,11 +43,19 @@ const RunPayroll = () => {
   ]);
   const [calculation, setCalculation] = useState<any>(null);
 
+  const handleEmployeeChange = (employeeId: string) => {
+    setSelectedEmployee(employeeId);
+    const employee = employees.find(emp => emp.id === employeeId);
+    if (employee) {
+      setMonthlyBaseSalary(employee.monthlySalary);
+    }
+  };
+
   const handleGeneratePayslip = () => {
-    if (!employeeName || !monthlyBaseSalary) {
+    if (!selectedEmployee || !monthlyBaseSalary) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields",
+        description: "Please select an employee",
         variant: "destructive"
       });
       return;
@@ -87,13 +116,19 @@ const RunPayroll = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Employee Name</Label>
-              <Input
-                id="name"
-                value={employeeName}
-                onChange={(e) => setEmployeeName(e.target.value)}
-                placeholder="Enter employee name"
-              />
+              <Label htmlFor="employee">Select Employee</Label>
+              <Select value={selectedEmployee} onValueChange={handleEmployeeChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="space-y-2">
@@ -104,6 +139,7 @@ const RunPayroll = () => {
                 value={monthlyBaseSalary}
                 onChange={(e) => setMonthlyBaseSalary(e.target.value)}
                 placeholder="Enter monthly salary"
+                readOnly
               />
             </div>
 
@@ -169,7 +205,7 @@ const RunPayroll = () => {
         {calculation && (
           <Payslip
             calculation={calculation}
-            employeeName={employeeName}
+            employeeName={employees.find(emp => emp.id === selectedEmployee)?.name || ""}
             period={format(new Date(), "MMMM yyyy")}
           />
         )}
