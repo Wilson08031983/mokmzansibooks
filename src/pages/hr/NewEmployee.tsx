@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, UserPlus } from "lucide-react";
+import { ArrowLeft, Save, UserPlus, Building } from "lucide-react";
 
 const NewEmployee = () => {
   const navigate = useNavigate();
@@ -24,6 +23,7 @@ const NewEmployee = () => {
     employmentType: "full-time",
     startDate: "",
     salary: "",
+    site: "",
     notes: ""
   });
   
@@ -39,15 +39,11 @@ const NewEmployee = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Here you would typically save the employee data to your backend
-    // For demo purposes, we'll just show a success message
-    
     toast({
       title: "Employee Added",
       description: `${formData.firstName} ${formData.lastName} has been added to the system.`,
     });
     
-    // Navigate back to the employees page
     navigate("/hr/employees");
   };
   
@@ -179,6 +175,24 @@ const NewEmployee = () => {
                   onChange={handleChange} 
                   required 
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="site">Site Location *</Label>
+                <Select 
+                  value={formData.site} 
+                  onValueChange={(value) => handleSelectChange("site", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select site location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="headquarters">Headquarters</SelectItem>
+                    <SelectItem value="branch-1">Branch Office 1</SelectItem>
+                    <SelectItem value="branch-2">Branch Office 2</SelectItem>
+                    <SelectItem value="remote">Remote</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
