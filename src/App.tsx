@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { FinancialDataProvider } from "./contexts/FinancialDataContext";
+import { FinancialDataProvider } from "./contexts/FinancialDataProvider";
 import { NotificationsProvider } from "./contexts/NotificationsContext";
 import { useState } from "react";
 
@@ -33,13 +33,6 @@ import JournalEntries from "./pages/accounting/JournalEntries";
 import BankReconciliation from "./pages/accounting/BankReconciliation";
 import Receivables from "./pages/accounting/Receivables";
 import Payables from "./pages/accounting/Payables";
-import Tax from "./pages/Tax";
-import VatReturns from "./pages/tax/VatReturns";
-import IncomeTax from "./pages/tax/IncomeTax";
-import Paye from "./pages/tax/Paye";
-import TaxCalendar from "./pages/tax/TaxCalendar";
-import TaxDocuments from "./pages/tax/TaxDocuments";
-import TaxSettings from "./pages/tax/TaxSettings";
 import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
@@ -120,13 +113,6 @@ const App = () => {
                         <Route path="/hr/benefits/settings" element={<BenefitSettings />} />
                         <Route path="/hr/benefits/:planId" element={<BenefitPlanDetail />} />
                         
-                        <Route path="/tax" element={<Tax />} />
-                        <Route path="/tax/vat-returns" element={<VatReturns />} />
-                        <Route path="/tax/income-tax" element={<IncomeTax />} />
-                        <Route path="/tax/paye" element={<Paye />} />
-                        <Route path="/tax/calendar" element={<TaxCalendar />} />
-                        <Route path="/tax/documents" element={<TaxDocuments />} />
-                        <Route path="/tax/settings" element={<TaxSettings />} />
                         <Route path="/inventory" element={<Inventory />} />
                         <Route path="/reports" element={<Reports />} />
                         <Route path="/settings" element={<Settings />} />
