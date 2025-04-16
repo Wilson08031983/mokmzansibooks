@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, FileText, Download } from "lucide-react";
+import { CalendarIcon, FileText, Download, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 
 const IncomeTax = () => {
   const { toast } = useToast();
   const taxTableRef = useRef<HTMLDivElement>(null);
+  const [isPreparingTax, setIsPreparingTax] = useState(false);
   const [taxForms] = useState([
     {
       id: "ITR14-2024",
@@ -40,10 +41,17 @@ const IncomeTax = () => {
   ]);
 
   const handlePrepare = () => {
+    setIsPreparingTax(true);
+    
     toast({
       title: "Prepare Income Tax",
       description: "Starting income tax preparation workflow",
     });
+    
+    // Simulate processing time
+    setTimeout(() => {
+      setIsPreparingTax(false);
+    }, 2000);
   };
 
   const handleDownload = async (id: string) => {
@@ -172,7 +180,20 @@ const IncomeTax = () => {
           <p className="text-gray-500">Manage your company income tax submissions</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handlePrepare}>Prepare Income Tax</Button>
+          <Button 
+            onClick={handlePrepare}
+            disabled={isPreparingTax}
+            variant={isPreparingTax ? "success" : "default"}
+          >
+            {isPreparingTax ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Prepare Income Tax"
+            )}
+          </Button>
           <Button variant="outline" onClick={handleDownloadAllForms} className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Download All
