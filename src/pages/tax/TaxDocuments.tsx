@@ -14,6 +14,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { ExternalLink } from 'lucide-react';
 
 interface ExtractedFormData {
   id: string;
@@ -739,6 +740,33 @@ const TaxDocuments = () => {
           Export Document Index
         </Button>
       </div>
+
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ExternalLink className="h-6 w-6 text-blue-600" />
+            Official SARS Website
+          </CardTitle>
+          <CardDescription>
+            For official tax documents, certifications, and submissions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-700">
+              All official tax documents must be obtained directly from the South African Revenue Service.
+            </p>
+            <Button 
+              variant="outline" 
+              className="border-blue-500 text-blue-600 hover:bg-blue-100"
+              onClick={() => window.open('https://www.sars.gov.za', '_blank')}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Visit SARS Website
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="upload" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
