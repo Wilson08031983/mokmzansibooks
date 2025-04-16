@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useFinancialData } from "@/contexts/FinancialDataContext";
-import { CalendarIcon, FileText, Download } from "lucide-react";
+import { CalendarIcon, FileText, Download, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 
@@ -11,8 +11,11 @@ const Paye = () => {
   const { toast } = useToast();
   const { payeReturns, addPayeReturn } = useFinancialData();
   const payeTableRef = useRef<HTMLDivElement>(null);
+  const [isCreatingPaye, setIsCreatingPaye] = useState(false);
 
   const handleNewPaye = () => {
+    setIsCreatingPaye(true);
+    
     const newPayeReturn = {
       id: `PAYE-2025-04`,
       period: "April 2025",
@@ -21,12 +24,17 @@ const Paye = () => {
       amount: 45875.25,
     };
     
-    addPayeReturn(newPayeReturn);
-    
-    toast({
-      title: "New PAYE Return",
-      description: "A new PAYE return has been created successfully.",
-    });
+    // Simulate processing time
+    setTimeout(() => {
+      addPayeReturn(newPayeReturn);
+      
+      toast({
+        title: "New PAYE Return",
+        description: "A new PAYE return has been created successfully.",
+      });
+      
+      setIsCreatingPaye(false);
+    }, 2000);
   };
 
   const handleDownload = async (id: string) => {
@@ -184,7 +192,20 @@ const Paye = () => {
           <p className="text-gray-500">Manage your Pay As You Earn tax submissions</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleNewPaye}>New PAYE Return</Button>
+          <Button 
+            onClick={handleNewPaye}
+            disabled={isCreatingPaye}
+            variant={isCreatingPaye ? "success" : "default"}
+          >
+            {isCreatingPaye ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "New PAYE Return"
+            )}
+          </Button>
           <Button variant="outline" onClick={handleDownloadAllReturns} className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Download All
