@@ -1,15 +1,15 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, FileText, Download } from "lucide-react";
+import { CalendarIcon, FileText, Download, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 
 const VatReturns = () => {
   const { toast } = useToast();
   const vatTableRef = useRef<HTMLDivElement>(null);
+  const [isCreatingReturn, setIsCreatingReturn] = useState(false);
   const [vatReturns] = useState([
     {
       id: "VAT-2025-Q1",
@@ -37,10 +37,17 @@ const VatReturns = () => {
   ]);
 
   const handleNewVatReturn = () => {
+    setIsCreatingReturn(true);
+    
     toast({
       title: "New VAT return",
       description: "Creating a new VAT return submission",
     });
+    
+    // Simulate processing time
+    setTimeout(() => {
+      setIsCreatingReturn(false);
+    }, 2000);
   };
 
   const handleDownload = async (id: string) => {
@@ -205,7 +212,20 @@ const VatReturns = () => {
           <p className="text-gray-500">Manage your Value-Added Tax returns</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleNewVatReturn}>New VAT Return</Button>
+          <Button 
+            onClick={handleNewVatReturn}
+            disabled={isCreatingReturn}
+            variant={isCreatingReturn ? "success" : "default"}
+          >
+            {isCreatingReturn ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "New VAT Return"
+            )}
+          </Button>
           <Button variant="outline" onClick={handleDownloadAllReturns} className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Download All
