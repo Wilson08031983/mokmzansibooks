@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useFinancialData } from "@/contexts/FinancialDataContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
-import { FileText, Download, Calendar, Bell, Upload, FileSearch, FilePlus2, Save, Eye, X } from "lucide-react";
+import { FileText, Download, Calendar, Bell, Upload, FileSearch, FilePlus2, Save, Eye, X, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,6 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ExternalLink } from 'lucide-react';
 
 interface ExtractedFormData {
   id: string;
