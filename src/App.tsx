@@ -16,7 +16,6 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Payment from "./pages/Payment";
 import Onboarding from "./pages/Onboarding";
-import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import Invoices from "./pages/Invoices";
 import Quotes from "./pages/invoices/Quotes";
@@ -82,7 +81,8 @@ const App = () => {
                     <Route element={<ProtectedRoute />}>
                       <Route path="/onboarding" element={<Onboarding />} />
                       <Route element={<DashboardLayout />}>
-                        <Route path="/dashboard" element={<Dashboard />} />
+                        {/* Redirect from dashboard to clients as default protected route */}
+                        <Route path="/dashboard" element={<Clients />} />
                         <Route path="/clients" element={<Clients />} />
                         <Route path="/invoices" element={<Invoices />} />
                         <Route path="/invoices/new" element={<NewInvoice />} />
