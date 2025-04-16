@@ -13,13 +13,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ConsolidatedReportGenerator from "@/components/reports/ConsolidatedReportGenerator";
 
 const Reports = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const { financialReports, taxDocuments, vatReturns, payeReturns, incomeTaxForms, getTotalTaxLiability } = useFinancialData();
   const reportsRef = useRef<HTMLDivElement>(null);
-  const [selectedReport, setSelectedReport] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("consolidated");
 
   // Modified to always allow access to all features
   const handleFeatureClick = () => {
@@ -151,152 +153,165 @@ const Reports = () => {
         </DropdownMenu>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6" ref={reportsRef}>
-        <Card className="card-report cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle>Financial Reports</CardTitle>
-            <PieChart className="h-6 w-6 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-gray-500">
-              {financialReports
-                .filter(report => report.type === "Revenue" || report.type === "Expense")
-                .map((report, index) => (
-                  <li key={index} className="flex items-center justify-between">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="consolidated">Consolidated Reports</TabsTrigger>
+          <TabsTrigger value="summary">Summary Reports</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="consolidated">
+          <ConsolidatedReportGenerator />
+        </TabsContent>
+        
+        <TabsContent value="summary">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6" ref={reportsRef}>
+            <Card className="card-report cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
+              <CardHeader className="flex items-center justify-between">
+                <CardTitle>Financial Reports</CardTitle>
+                <PieChart className="h-6 w-6 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-gray-500">
+                  {financialReports
+                    .filter(report => report.type === "Revenue" || report.type === "Expense")
+                    .map((report, index) => (
+                      <li key={index} className="flex items-center justify-between">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                          {report.title}
+                        </span>
+                        <span className="text-gray-700 font-medium">
+                          {formatCurrency(report.items.reduce((sum, item) => sum + item.value, 0))}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </CardContent>
+            </Card>
+            
+            <Card className="card-report cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
+              <CardHeader className="flex items-center justify-between">
+                <CardTitle>Sales Reports</CardTitle>
+                <BarChart className="h-6 w-6 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-gray-500">
+                  <li className="flex items-center justify-between">
                     <span className="flex items-center">
                       <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                      {report.title}
+                      Total Sales (2024)
+                    </span>
+                    <span className="text-gray-700 font-medium">{formatCurrency(1600000)}</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Average Monthly Sales
+                    </span>
+                    <span className="text-gray-700 font-medium">{formatCurrency(133333.33)}</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Highest Sales Month
+                    </span>
+                    <span className="text-gray-700 font-medium">December</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Year-over-Year Growth
+                    </span>
+                    <span className="text-gray-700 font-medium">+15.2%</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+            
+            <Card className="card-report cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
+              <CardHeader className="flex items-center justify-between">
+                <CardTitle>Tax Reports</CardTitle>
+                <FileText className="h-6 w-6 text-orange-500" />
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center text-gray-500">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Total Tax Liability
+                    </span>
+                    <span className="text-gray-700 font-medium">{formatCurrency(getTotalTaxLiability())}</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center text-gray-500">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                      VAT Due
                     </span>
                     <span className="text-gray-700 font-medium">
-                      {formatCurrency(report.items.reduce((sum, item) => sum + item.value, 0))}
+                      {formatCurrency(vatReturns.filter(item => item.status === "Due").reduce((sum, item) => sum + item.amount, 0))}
                     </span>
                   </li>
-                ))}
-            </ul>
-          </CardContent>
-        </Card>
-        
-        <Card className="card-report cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle>Sales Reports</CardTitle>
-            <BarChart className="h-6 w-6 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-gray-500">
-              <li className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Total Sales (2024)
-                </span>
-                <span className="text-gray-700 font-medium">{formatCurrency(1600000)}</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Average Monthly Sales
-                </span>
-                <span className="text-gray-700 font-medium">{formatCurrency(133333.33)}</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Highest Sales Month
-                </span>
-                <span className="text-gray-700 font-medium">December</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Year-over-Year Growth
-                </span>
-                <span className="text-gray-700 font-medium">+15.2%</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-        
-        <Card className="card-report cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle>Tax Reports</CardTitle>
-            <FileText className="h-6 w-6 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              <li className="flex items-center justify-between">
-                <span className="flex items-center text-gray-500">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Total Tax Liability
-                </span>
-                <span className="text-gray-700 font-medium">{formatCurrency(getTotalTaxLiability())}</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center text-gray-500">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                  VAT Due
-                </span>
-                <span className="text-gray-700 font-medium">
-                  {formatCurrency(vatReturns.filter(item => item.status === "Due").reduce((sum, item) => sum + item.amount, 0))}
-                </span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center text-gray-500">
-                  <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-                  PAYE Due
-                </span>
-                <span className="text-gray-700 font-medium">
-                  {formatCurrency(payeReturns.filter(item => item.status === "Due").reduce((sum, item) => sum + item.amount, 0))}
-                </span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center text-gray-500">
-                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                  Tax Documents
-                </span>
-                <span className="text-gray-700 font-medium">{taxDocuments.length} Files</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-        
-        <Card className="card-report cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle>Client Reports</CardTitle>
-            <LineChart className="h-6 w-6 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-gray-500">
-              <li className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Active Clients
-                </span>
-                <span className="text-gray-700 font-medium">24</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Average Client Value
-                </span>
-                <span className="text-gray-700 font-medium">{formatCurrency(66666.67)}</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Client Retention Rate
-                </span>
-                <span className="text-gray-700 font-medium">92%</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  New Clients (2024)
-                </span>
-                <span className="text-gray-700 font-medium">8</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center text-gray-500">
+                      <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                      PAYE Due
+                    </span>
+                    <span className="text-gray-700 font-medium">
+                      {formatCurrency(payeReturns.filter(item => item.status === "Due").reduce((sum, item) => sum + item.amount, 0))}
+                    </span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center text-gray-500">
+                      <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                      Tax Documents
+                    </span>
+                    <span className="text-gray-700 font-medium">{taxDocuments.length} Files</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+            
+            <Card className="card-report cursor-pointer hover:shadow-md transition-shadow" onClick={handleFeatureClick}>
+              <CardHeader className="flex items-center justify-between">
+                <CardTitle>Client Reports</CardTitle>
+                <LineChart className="h-6 w-6 text-purple-500" />
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-gray-500">
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Active Clients
+                    </span>
+                    <span className="text-gray-700 font-medium">24</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Average Client Value
+                    </span>
+                    <span className="text-gray-700 font-medium">{formatCurrency(66666.67)}</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Client Retention Rate
+                    </span>
+                    <span className="text-gray-700 font-medium">92%</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      New Clients (2024)
+                    </span>
+                    <span className="text-gray-700 font-medium">8</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
