@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-// Define a type for accounting modules
 interface AccountingModule {
   id: string;
   title: string;
@@ -23,7 +21,6 @@ const Accounting = () => {
   const navigate = useNavigate();
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
-  // Define all accounting modules with keywords for better similarity matching
   const modules: AccountingModule[] = [
     {
       id: "chart-of-accounts",
@@ -68,13 +65,6 @@ const Accounting = () => {
       keywords: ["accounts", "payable", "bills", "payments", "suppliers"]
     },
     {
-      id: "integrations",
-      title: "Banking Integrations",
-      description: "Connect to your bank accounts and accounting software",
-      path: "/accounting/integrations",
-      keywords: ["banking", "integrations", "connect", "accounts", "software"]
-    },
-    {
       id: "transactions",
       title: "Transactions",
       description: "View and categorize all your financial transactions",
@@ -85,11 +75,9 @@ const Accounting = () => {
 
   const toggleSelection = (moduleId: string) => {
     setSelectedModules(prev => {
-      // If already selected, remove it
       if (prev.includes(moduleId)) {
         return prev.filter(id => id !== moduleId);
       }
-      // Otherwise add it
       return [...prev, moduleId];
     });
   };
@@ -109,14 +97,12 @@ const Accounting = () => {
       return;
     }
 
-    // Get keywords from selected modules
     const selectedKeywords = selectedModules.flatMap(id => {
       const module = modules.find(m => m.id === id);
       if (!module) return [];
       return module.keywords || [];
     });
 
-    // Find modules with similar keywords
     const similarModuleIds = modules
       .filter(module => !selectedModules.includes(module.id))
       .map(module => {
