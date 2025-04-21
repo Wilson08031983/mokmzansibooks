@@ -73,17 +73,18 @@ const DashboardLayout = () => {
       } else if (currentPath.includes("/hr/benefits")) {
         defaultValue = "benefits";
       }
+      
       return (
         <Tabs defaultValue={defaultValue} className="mb-4" onValueChange={value => {
           navigate(`/hr${value !== 'overview' ? '/' + value : ''}`);
         }}>
-          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="employees">Employees</TabsTrigger>
-            <TabsTrigger value="payroll">Payroll</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="leaves">Leaves</TabsTrigger>
-            <TabsTrigger value="benefits">Benefits</TabsTrigger>
+          <TabsList className="inline-flex h-12 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto">
+            <TabsTrigger value="overview" className="px-4">Overview</TabsTrigger>
+            <TabsTrigger value="employees" className="px-4">Employees</TabsTrigger>
+            <TabsTrigger value="payroll" className="px-4">Payroll</TabsTrigger>
+            <TabsTrigger value="attendance" className="px-4">Attendance</TabsTrigger>
+            <TabsTrigger value="leaves" className="px-4">Leaves</TabsTrigger>
+            <TabsTrigger value="benefits" className="px-4">Benefits</TabsTrigger>
           </TabsList>
         </Tabs>
       );
