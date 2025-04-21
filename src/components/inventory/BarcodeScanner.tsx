@@ -28,11 +28,10 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   
   useEffect(() => {
-    // Initialize the code reader with detailed logging
-    codeReaderRef.current = new BrowserMultiFormatReader(
-      undefined, 
-      console.log // Add logging for debugging
-    );
+    // Initialize the code reader with console debugging enabled
+    codeReaderRef.current = new BrowserMultiFormatReader();
+    // Enable logging for debugging purposes
+    console.log("Barcode scanner initialized");
     
     return () => {
       // Clean up when component unmounts
@@ -135,7 +134,7 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
         codeReaderRef.current.reset();
       }
     };
-  }, [open, toast, onScan, onOpenChange]);
+  }, [open, toast, onScan, onOpenChange, cameraError]);
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,4 +185,3 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
 };
 
 export default BarcodeScanner;
-
