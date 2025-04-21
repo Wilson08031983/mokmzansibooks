@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { BrowserMultiFormatReader, Result, Exception } from '@zxing/library';
 
 interface BarcodeScannerProps {
@@ -24,11 +24,15 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   
   useEffect(() => {
-    // Initialize the code reader
-    codeReaderRef.current = new BrowserMultiFormatReader();
+    // Initialize the code reader with detailed logging
+    codeReaderRef.current = new BrowserMultiFormatReader(
+      undefined, 
+      console.log // Add logging for debugging
+    );
     
     return () => {
       // Clean up when component unmounts
@@ -46,9 +50,19 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
       
       try {
         setScanning(true);
+        setCameraError(null);
+        
+        // Check for camera support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Camera access not supported in this browser');
+        }
         
         // Get available video devices
         const videoInputDevices = await codeReaderRef.current.listVideoInputDevices();
+        
+        if (videoInputDevices.length === 0) {
+          throw new Error('No camera devices found');
+        }
         
         // Use the environment-facing camera if available (usually back camera on mobile devices)
         const device = videoInputDevices.find(device => 
@@ -56,9 +70,7 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
           device.label.toLowerCase().includes('environment')
         ) || videoInputDevices[0];
         
-        if (!device) {
-          throw new Error('No camera found');
-        }
+        console.log('Selected camera device:', device);
         
         // Start continuous scanning with selected device
         await codeReaderRef.current.decodeFromVideoDevice(
@@ -71,28 +83,37 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
               const scannedCode = result.getText();
               if (scannedCode) {
                 // Handle successful scan
-                handleScanComplete(scannedCode);
+                console.log('Scanned barcode:', scannedCode);
+                onScan(scannedCode);
                 
                 toast({
                   title: "Barcode Scanned",
-                  description: `Scanned barcode: ${scannedCode}`,
+                  description: `Successfully scanned: ${scannedCode}`,
+                  variant: "success"
                 });
+                
+                onOpenChange(false);
               }
             }
             
-            if (error && !(error instanceof Exception)) {
-              console.error("Scanning error:", error);
+            if (error) {
+              // Only log non-typical scanning errors
+              if (!(error instanceof Exception)) {
+                console.error("Scanning error:", error);
+              }
             }
           }
         );
         
         setHasPermission(true);
       } catch (err) {
-        console.error("Error accessing camera:", err);
+        console.error("Camera initialization error:", err);
         setHasPermission(false);
+        setCameraError(err instanceof Error ? err.message : 'Unknown camera error');
+        
         toast({
           title: "Camera Error",
-          description: "Unable to access camera. Please check permissions.",
+          description: `Unable to access camera: ${cameraError || 'Unknown error'}`,
           variant: "destructive"
         });
       }
@@ -114,12 +135,7 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
         codeReaderRef.current.reset();
       }
     };
-  }, [open, toast]);
-  
-  const handleScanComplete = (barcode: string) => {
-    onScan(barcode);
-    onOpenChange(false);
-  };
+  }, [open, toast, onScan, onOpenChange]);
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -134,7 +150,8 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
         <div className="flex flex-col items-center space-y-4">
           {hasPermission === false && (
             <div className="text-center p-4 bg-red-50 text-red-500 rounded-md">
-              Camera access denied. Please check your browser permissions.
+              Camera access denied. Please check browser permissions:
+              <p className="mt-2 text-sm">{cameraError}</p>
             </div>
           )}
           
@@ -169,3 +186,4 @@ const BarcodeScanner = ({ onScan, open, onOpenChange }: BarcodeScannerProps) => 
 };
 
 export default BarcodeScanner;
+
