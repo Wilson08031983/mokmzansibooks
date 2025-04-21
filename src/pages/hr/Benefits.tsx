@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Card, 
@@ -20,7 +21,7 @@ import {
   Home,
   UserPlus
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +84,7 @@ const benefitPlans = [
 
 const Benefits = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("plans");
   const [isExporting, setIsExporting] = useState(false);
@@ -147,6 +149,8 @@ const Benefits = () => {
   };
   
   const handleAddEmployee = () => {
+    if (isAddingEmployee) return;
+    
     setIsAddingEmployee(true);
     
     toast({
@@ -155,10 +159,11 @@ const Benefits = () => {
       variant: "success"
     });
     
-    setTimeout(() => {
-      navigate("/hr/employees/new");
-      setIsAddingEmployee(false);
-    }, 500);
+    // Use a more immediate redirect for better user experience
+    navigate("/hr/employees/new");
+    
+    // Reset state after navigation (this might not execute if we navigate away)
+    setIsAddingEmployee(false);
   };
   
   const handleExportReport = async () => {
@@ -230,6 +235,55 @@ const Benefits = () => {
   const handleEmployeeClick = () => {
     navigate("/hr/benefits/employee");
   };
+
+  const handleBackToBenefits = () => {
+    navigate("/hr/benefits");
+  };
+
+  // Check if we're on a specific benefit page
+  const isOnSpecificBenefitPage = location.pathname !== "/hr/benefits" && location.pathname.startsWith("/hr/benefits/");
+
+  // If we're on a specific benefit page, show a different UI
+  if (isOnSpecificBenefitPage && location.pathname !== "/hr/benefits/employee") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={handleBackToBenefits}>
+            <Heart className="mr-2 h-4 w-4 text-red-500" />
+            Back to Benefits
+          </Button>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Benefit Plan Details</CardTitle>
+            <CardDescription>
+              Configure and manage this benefit plan
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Benefit plan details and configuration will be displayed here.</p>
+            
+            <div className="flex justify-end mt-6 gap-2">
+              <Button onClick={handleAddEmployee} disabled={isAddingEmployee}>
+                {isAddingEmployee ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Employee
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
