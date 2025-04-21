@@ -88,7 +88,11 @@ const Benefits = () => {
     });
     
     setTimeout(() => {
-      navigate(`/hr/benefits/${name.toLowerCase()}`);
+      if (name === "Employee") {
+        navigate("/hr/benefits/employee");
+      } else {
+        navigate(`/hr/benefits/${name.toLowerCase()}`);
+      }
       setManagingPlan(null);
     }, 500);
   };

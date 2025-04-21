@@ -48,6 +48,7 @@ import Benefits from "./pages/hr/Benefits";
 import BenefitSettings from "./pages/hr/BenefitSettings";
 import BenefitPlanDetail from "./pages/hr/BenefitPlanDetail";
 import NewBenefitPlan from "./pages/hr/NewBenefitPlan";
+import EmployeeBenefits from "./pages/hr/EmployeeBenefits";
 import RunPayroll from "./pages/hr/RunPayroll";
 
 // Layout components
@@ -112,6 +113,7 @@ const App = () => {
                         <Route path="/hr/benefits/settings" element={<BenefitSettings />} />
                         <Route path="/hr/benefits/new" element={<NewBenefitPlan />} />
                         <Route path="/hr/benefits/:planId" element={<BenefitPlanDetail />} />
+                        <Route path="/hr/benefits/employee" element={<EmployeeBenefits />} />
                         
                         <Route path="/inventory" element={<Inventory />} />
                         <Route path="/reports" element={<Reports />} />
