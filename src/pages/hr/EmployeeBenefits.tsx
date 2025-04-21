@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Card, 
@@ -21,7 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
 
-// Sample employee benefits data
+// Update sample employee benefits data
 const employeeBenefits = [
   {
     id: 1,
@@ -62,6 +61,14 @@ const employeeBenefits = [
     startDate: "N/A",
     coverage: "Monthly Allowance",
     contribution: 0
+  },
+  {
+    id: 6,
+    name: "UIF",
+    status: "Enrolled",
+    startDate: "January 1, 2025",
+    coverage: "1% of monthly salary",
+    contribution: 250
   }
 ];
 

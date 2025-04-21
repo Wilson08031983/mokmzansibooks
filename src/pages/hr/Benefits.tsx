@@ -67,6 +67,16 @@ const benefitPlans = [
     eligibility: "All employees after 90 days",
     enrollmentDate: "Anytime",
     details: "Pre-tax contributions with employer matching up to 6%."
+  },
+  {
+    id: 5,
+    name: "UIF",
+    provider: "Department of Labour",
+    plan: "Standard",
+    coverage: "1% of salary contribution",
+    eligibility: "All employees (mandatory)",
+    enrollmentDate: "Upon employment",
+    details: "Unemployment Insurance Fund - Both employer and employee contribute 1% of salary (2% total)."
   }
 ];
 
