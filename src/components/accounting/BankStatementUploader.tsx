@@ -41,17 +41,39 @@ export const BankStatementUploader = () => {
 
       if (dbError) throw dbError;
 
-      // Upload file to storage
+      // Upload file to storage - manually track progress since onUploadProgress isn't supported
       const filePath = `${statementRecord.id}/${file.name}`;
-      const { error: uploadError, data } = await supabase.storage
-        .from('bank-statements')
-        .upload(filePath, file, {
-          onUploadProgress: (progress) => {
-            const percent = (progress.loaded / progress.total) * 100;
-            setUploadProgress(percent);
-          },
-        });
+      
+      // Create a custom upload with progress tracking
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percent = (event.loaded / event.total) * 100;
+          setUploadProgress(percent);
+        }
+      });
 
+      // Create a promise to handle the XHR request
+      const uploadPromise = new Promise<void>((resolve, reject) => {
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200 || xhr.status === 201) {
+              resolve();
+            } else {
+              reject(new Error('Upload failed'));
+            }
+          }
+        };
+      });
+
+      // Get the appropriate URL and headers from Supabase
+      const { data, error: uploadError } = await supabase.storage
+        .from('bank-statements')
+        .upload(filePath, file);
+        
       if (uploadError) throw uploadError;
 
       // Update status to processing
@@ -65,7 +87,7 @@ export const BankStatementUploader = () => {
         description: "Your bank statement is being processed. You'll be notified once it's complete.",
       });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Upload error:', err);
       setError(err.message || 'Failed to upload bank statement');
       toast({
