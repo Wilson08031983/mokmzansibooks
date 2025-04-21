@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Card, 
@@ -149,21 +148,13 @@ const Benefits = () => {
   };
   
   const handleAddEmployee = () => {
-    if (isAddingEmployee) return;
-    
-    setIsAddingEmployee(true);
+    navigate("/hr/employees/new");
     
     toast({
       title: "Adding New Employee",
       description: "Navigating to new employee form...",
       variant: "success"
     });
-    
-    // Use a more immediate redirect for better user experience
-    navigate("/hr/employees/new");
-    
-    // Reset state after navigation (this might not execute if we navigate away)
-    setIsAddingEmployee(false);
   };
   
   const handleExportReport = async () => {
@@ -240,10 +231,8 @@ const Benefits = () => {
     navigate("/hr/benefits");
   };
 
-  // Check if we're on a specific benefit page
   const isOnSpecificBenefitPage = location.pathname !== "/hr/benefits" && location.pathname.startsWith("/hr/benefits/");
 
-  // If we're on a specific benefit page, show a different UI
   if (isOnSpecificBenefitPage && location.pathname !== "/hr/benefits/employee") {
     return (
       <div className="space-y-6">
@@ -265,18 +254,12 @@ const Benefits = () => {
             <p>Benefit plan details and configuration will be displayed here.</p>
             
             <div className="flex justify-end mt-6 gap-2">
-              <Button onClick={handleAddEmployee} disabled={isAddingEmployee}>
-                {isAddingEmployee ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add Employee
-                  </>
-                )}
+              <Button 
+                onClick={handleAddEmployee}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Employee
               </Button>
             </div>
           </CardContent>
@@ -299,18 +282,9 @@ const Benefits = () => {
             <Users className="mr-2 h-4 w-4" />
             View Employee Benefits
           </Button>
-          <Button onClick={handleAddEmployee} disabled={isAddingEmployee}>
-            {isAddingEmployee ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Adding...
-              </>
-            ) : (
-              <>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add Employee
-              </>
-            )}
+          <Button onClick={handleAddEmployee}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Add Employee
           </Button>
           <Button onClick={handleAddNewPlan} disabled={isAddingPlan}>
             {isAddingPlan ? (
