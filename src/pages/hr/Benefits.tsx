@@ -206,6 +206,10 @@ const Benefits = () => {
     navigate("/hr/benefits/settings");
   };
 
+  const handleEmployeeClick = () => {
+    navigate("/hr/benefits/employee");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -216,6 +220,10 @@ const Benefits = () => {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex space-x-2">
+          <Button onClick={handleEmployeeClick} variant="outline">
+            <Users className="mr-2 h-4 w-4" />
+            View Employee Benefits
+          </Button>
           <Button onClick={handleAddNewPlan} disabled={isAddingPlan}>
             {isAddingPlan ? (
               <>
