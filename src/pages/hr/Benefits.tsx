@@ -17,7 +17,8 @@ import {
   Plus,
   Loader2,
   Car,
-  Home
+  Home,
+  UserPlus
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -86,6 +87,7 @@ const Benefits = () => {
   const [activeTab, setActiveTab] = useState("plans");
   const [isExporting, setIsExporting] = useState(false);
   const [isAddingPlan, setIsAddingPlan] = useState(false);
+  const [isAddingEmployee, setIsAddingEmployee] = useState(false);
   const [managingPlan, setManagingPlan] = useState<string | null>(null);
   
   const handleManagePlan = (name: string) => {
@@ -142,6 +144,21 @@ const Benefits = () => {
       });
       setIsAddingPlan(false);
     }
+  };
+  
+  const handleAddEmployee = () => {
+    setIsAddingEmployee(true);
+    
+    toast({
+      title: "Adding New Employee",
+      description: "Navigating to new employee form...",
+      variant: "success"
+    });
+    
+    setTimeout(() => {
+      navigate("/hr/employees/new");
+      setIsAddingEmployee(false);
+    }, 500);
   };
   
   const handleExportReport = async () => {
@@ -223,10 +240,23 @@ const Benefits = () => {
             Manage healthcare, retirement, and other benefit plans for employees
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 flex space-x-2">
+        <div className="mt-4 sm:mt-0 flex flex-wrap gap-2">
           <Button onClick={handleEmployeeClick} variant="outline">
             <Users className="mr-2 h-4 w-4" />
             View Employee Benefits
+          </Button>
+          <Button onClick={handleAddEmployee} disabled={isAddingEmployee}>
+            {isAddingEmployee ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Employee
+              </>
+            )}
           </Button>
           <Button onClick={handleAddNewPlan} disabled={isAddingPlan}>
             {isAddingPlan ? (
