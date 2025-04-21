@@ -47,6 +47,45 @@ export type Database = {
           },
         ]
       }
+      bank_statements: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_name: string
+          id: string
+          matched_transactions: number | null
+          processed_date: string | null
+          status: string
+          total_transactions: number | null
+          updated_at: string
+          upload_date: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_name: string
+          id?: string
+          matched_transactions?: number | null
+          processed_date?: string | null
+          status?: string
+          total_transactions?: number | null
+          updated_at?: string
+          upload_date?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_name?: string
+          id?: string
+          matched_transactions?: number | null
+          processed_date?: string | null
+          status?: string
+          total_transactions?: number | null
+          updated_at?: string
+          upload_date?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           address: string | null
@@ -121,6 +160,56 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      statement_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          matched_transaction_id: string | null
+          matching_confidence: number | null
+          reference_number: string | null
+          statement_id: string
+          status: string
+          transaction_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          matched_transaction_id?: string | null
+          matching_confidence?: number | null
+          reference_number?: string | null
+          statement_id: string
+          status?: string
+          transaction_date: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          matched_transaction_id?: string | null
+          matching_confidence?: number | null
+          reference_number?: string | null
+          statement_id?: string
+          status?: string
+          transaction_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statement_transactions_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "bank_statements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

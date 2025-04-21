@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { BankStatementUploader } from "@/components/accounting/BankStatementUploader";
 
 interface AccountingModule {
   id: string;
@@ -144,57 +145,48 @@ const Accounting = () => {
         <p className="text-gray-500">Manage your company's financial transactions</p>
       </div>
 
-      {selectedModules.length > 0 && (
-        <div className="flex justify-between items-center bg-gray-50 p-4 rounded-md">
-          <span className="text-sm font-medium">
-            {selectedModules.length} module{selectedModules.length > 1 ? 's' : ''} selected
-          </span>
-          <div className="space-x-2">
-            <Button variant="outline" size="sm" onClick={findSimilarModules}>
-              Find similar
-            </Button>
-            <Button variant="ghost" size="sm" onClick={clearSelection}>
-              Clear selection
-            </Button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {modules.map((module) => (
+              <div key={module.id} className="relative">
+                <div
+                  className={`absolute top-3 right-3 z-10 ${isSelected(module.id) ? 'block' : 'hidden'}`}
+                >
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                </div>
+                <Card 
+                  className={`h-full hover:shadow-md transition-shadow ${isSelected(module.id) ? 'bg-green-50 ring-2 ring-green-500 ring-offset-2' : ''}`}
+                  onClick={() => toggleSelection(module.id)}
+                >
+                  <CardHeader>
+                    <CardTitle>{module.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-500">
+                      {module.description}
+                    </p>
+                    <div className="mt-4 flex justify-between items-center">
+                      <Button 
+                        variant="link" 
+                        className="p-0 h-auto text-primary hover:underline text-sm"
+                        onClick={(e) => openModule(module.path, e)} 
+                      >
+                        Open {module.title}
+                      </Button>
+                      {isSelected(module.id) && (
+                        <Badge variant="secondary">Selected</Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
           </div>
         </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {modules.map((module) => (
-          <div key={module.id} className="relative">
-            <div
-              className={`absolute top-3 right-3 z-10 ${isSelected(module.id) ? 'block' : 'hidden'}`}
-            >
-              <CheckCircle className="h-5 w-5 text-green-500" />
-            </div>
-            <Card 
-              className={`h-full hover:shadow-md transition-shadow ${isSelected(module.id) ? 'bg-green-50 ring-2 ring-green-500 ring-offset-2' : ''}`}
-              onClick={() => toggleSelection(module.id)}
-            >
-              <CardHeader>
-                <CardTitle>{module.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500">
-                  {module.description}
-                </p>
-                <div className="mt-4 flex justify-between items-center">
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-primary hover:underline text-sm"
-                    onClick={(e) => openModule(module.path, e)} 
-                  >
-                    Open {module.title}
-                  </Button>
-                  {isSelected(module.id) && (
-                    <Badge variant="secondary">Selected</Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ))}
+        <div>
+          <BankStatementUploader />
+        </div>
       </div>
     </div>
   );
