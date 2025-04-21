@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -20,7 +19,8 @@ import {
   Download,
   Heart,
   Home,
-  Car
+  Car,
+  CheckCircle2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -37,7 +37,6 @@ const BenefitPlanDetail = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   
-  // Sample benefit plans data - in a real app you would fetch this from an API
   const planData = {
     "healthcare": {
       id: 1,
@@ -96,7 +95,6 @@ const BenefitPlanDetail = () => {
     }
   };
   
-  // Get the correct plan using the URL parameter (case insensitive)
   const plan = planData[planId.toLowerCase()] || planData["healthcare"];
   
   const [formData, setFormData] = useState({
@@ -128,7 +126,6 @@ const BenefitPlanDetail = () => {
   const handleSave = () => {
     setIsSaving(true);
     
-    // Simulate saving data
     setTimeout(() => {
       setIsSaving(false);
       setIsEditing(false);
@@ -144,6 +141,15 @@ const BenefitPlanDetail = () => {
   const handleAddEmployee = () => {
     console.log("Add Employee button clicked from BenefitPlanDetail");
     navigate("/hr/employees/new");
+  };
+  
+  const handleEnrollNow = () => {
+    toast({
+      title: "Enrollment Started",
+      description: "Starting the enrollment process for this benefit plan.",
+      variant: "success"
+    });
+    navigate(`/hr/benefits/${planId}/enroll`);
   };
   
   return (
