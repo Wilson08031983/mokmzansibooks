@@ -111,7 +111,11 @@ const Benefits = () => {
     if (isAddingPlan) return;
     
     setIsAddingPlan(true);
-    
+    toast({
+      title: "Creating New Plan",
+      description: "Setting up a new benefit plan...",
+    });
+
     try {
       await addBenefitPlanAction(
         { name: "New Plan", provider: "New Provider" },
@@ -121,14 +125,14 @@ const Benefits = () => {
           },
           onError: () => {
             setIsAddingPlan(false);
+            toast({
+              title: "Error",
+              description: "Failed to create new plan. Please try again.",
+              variant: "destructive",
+            });
           }
         }
       );
-      
-      setTimeout(() => {
-        setIsAddingPlan(false);
-      }, 3000);
-      
     } catch (error) {
       console.error("Error adding new plan:", error);
       toast({
