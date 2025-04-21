@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -46,6 +47,7 @@ import NewLeaveRequest from "./pages/hr/NewLeaveRequest";
 import Benefits from "./pages/hr/Benefits";
 import BenefitSettings from "./pages/hr/BenefitSettings";
 import BenefitPlanDetail from "./pages/hr/BenefitPlanDetail";
+import NewBenefitPlan from "./pages/hr/NewBenefitPlan";
 import RunPayroll from "./pages/hr/RunPayroll";
 
 // Layout components
@@ -108,6 +110,7 @@ const App = () => {
                         <Route path="/hr/leaves/new" element={<NewLeaveRequest />} />
                         <Route path="/hr/benefits" element={<Benefits />} />
                         <Route path="/hr/benefits/settings" element={<BenefitSettings />} />
+                        <Route path="/hr/benefits/new" element={<NewBenefitPlan />} />
                         <Route path="/hr/benefits/:planId" element={<BenefitPlanDetail />} />
                         
                         <Route path="/inventory" element={<Inventory />} />
