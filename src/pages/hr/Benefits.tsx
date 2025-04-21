@@ -88,7 +88,6 @@ const Benefits = () => {
   const [activeTab, setActiveTab] = useState("plans");
   const [isExporting, setIsExporting] = useState(false);
   const [isAddingPlan, setIsAddingPlan] = useState(false);
-  const [isAddingEmployee, setIsAddingEmployee] = useState(false);
   const [managingPlan, setManagingPlan] = useState<string | null>(null);
   
   const handleManagePlan = (name: string) => {
@@ -148,13 +147,9 @@ const Benefits = () => {
   };
   
   const handleAddEmployee = () => {
-    navigate("/hr/employees/new");
+    console.log("Add Employee button clicked, navigating to /hr/employees/new");
     
-    toast({
-      title: "Adding New Employee",
-      description: "Navigating to new employee form...",
-      variant: "success"
-    });
+    window.location.href = "/hr/employees/new";
   };
   
   const handleExportReport = async () => {
@@ -254,13 +249,10 @@ const Benefits = () => {
             <p>Benefit plan details and configuration will be displayed here.</p>
             
             <div className="flex justify-end mt-6 gap-2">
-              <Button 
-                onClick={handleAddEmployee}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
+              <a href="/hr/employees/new" className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add Employee
-              </Button>
+              </a>
             </div>
           </CardContent>
         </Card>
