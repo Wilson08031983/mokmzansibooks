@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,7 +25,6 @@ import SelectQuoteTemplate from "./pages/invoices/SelectQuoteTemplate";
 import Accounting from "./pages/Accounting";
 import AccountingTransactions from "./pages/accounting/Transactions";
 import AccountingReports from "./pages/accounting/Reports";
-import AccountingIntegrations from "./pages/accounting/Integrations";
 import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
 import JournalEntries from "./pages/accounting/JournalEntries";
 import BankReconciliation from "./pages/accounting/BankReconciliation";
@@ -97,7 +95,6 @@ const App = () => {
                         <Route path="/accounting/reports" element={<AccountingReports />} />
                         <Route path="/accounting/receivables" element={<Receivables />} />
                         <Route path="/accounting/payables" element={<Payables />} />
-                        <Route path="/accounting/integrations" element={<AccountingIntegrations />} />
                         <Route path="/accounting/transactions" element={<AccountingTransactions />} />
                         
                         {/* HR & Payroll Routes */}
