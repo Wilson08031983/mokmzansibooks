@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -635,7 +636,7 @@ const Clients = () => {
                 <CardHeader>
                   <CardTitle className="text-lg">Vendors ({clientCount.vendors})</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-6">
                   <div className="space-y-4">
                     {filteredClients("vendors").length > 0 ? (
                       filteredClients("vendors").map((client) => (
