@@ -11,24 +11,25 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
-  // Create dashboard-specific sub-navigation based on current section
   const getTabsForSection = () => {
     if (location.pathname.includes('/invoices')) {
-      return (
-        <Tabs
-          defaultValue={location.pathname === '/invoices/quotes' ? 'quotes' : 'invoices'}
-          className="mb-4"
-          onValueChange={value => {
-            if (value === 'quotes') navigate('/invoices/quotes');
-            else navigate('/invoices');
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="invoices">Invoices</TabsTrigger>
-            <TabsTrigger value="quotes">Quotes</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      );
+      if (location.pathname === '/invoices/quotes') {
+        return (
+          <Tabs
+            defaultValue="quotes"
+            className="mb-4"
+            onValueChange={value => {
+              if (value === 'quotes') navigate('/invoices/quotes');
+              else navigate('/invoices');
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="invoices">Invoices</TabsTrigger>
+              <TabsTrigger value="quotes">Quotes</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        );
+      }
     }
 
     if (location.pathname.includes('/accounting')) {
@@ -39,8 +40,6 @@ const DashboardLayout = () => {
         defaultValue = "transactions";
       } else if (currentPath.includes("/accounting/reports")) {
         defaultValue = "reports";
-      } else if (currentPath.includes("/accounting/integrations")) {
-        defaultValue = "integrations";
       }
       
       return (
@@ -55,7 +54,6 @@ const DashboardLayout = () => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
           </TabsList>
         </Tabs>
       );

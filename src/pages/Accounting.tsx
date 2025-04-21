@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -64,13 +63,6 @@ const Accounting = () => {
       description: "Manage bills and payments to your suppliers",
       path: "/accounting/payables",
       keywords: ["accounts", "payable", "bills", "payments", "suppliers"]
-    },
-    {
-      id: "integrations",
-      title: "Accounting Integrations",
-      description: "Connect to accounting software and sync data",
-      path: "/accounting/integrations",
-      keywords: ["accounting", "integrations", "connect", "software", "sync"]
     },
     {
       id: "transactions",
