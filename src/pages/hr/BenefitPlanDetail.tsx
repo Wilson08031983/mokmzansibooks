@@ -141,6 +141,11 @@ const BenefitPlanDetail = () => {
     }, 800);
   };
   
+  const handleAddEmployee = () => {
+    console.log("Add Employee button clicked from BenefitPlanDetail");
+    navigate("/hr/employees/new");
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -357,7 +362,10 @@ const BenefitPlanDetail = () => {
                     Employees enrolled in this benefit plan
                   </CardDescription>
                 </div>
-                <Button size="sm">
+                <Button 
+                  size="sm" 
+                  onClick={handleAddEmployee}
+                >
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add Employee
                 </Button>
