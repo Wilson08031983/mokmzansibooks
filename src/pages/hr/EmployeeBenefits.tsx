@@ -14,13 +14,14 @@ import {
   Heart,
   Download,
   CheckCircle2,
-  FileText
+  FileText,
+  Percent
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
 
-// Update sample employee benefits data
+// Update sample employee benefits data with contribution splits
 const employeeBenefits = [
   {
     id: 1,
@@ -28,7 +29,9 @@ const employeeBenefits = [
     status: "Enrolled",
     startDate: "January 1, 2025",
     coverage: "Comprehensive",
-    contribution: 1200
+    contribution: 1200,
+    companyContribution: 80, // company pays 80%
+    employeeContribution: 20  // employee pays 20%
   },
   {
     id: 2,
@@ -36,7 +39,9 @@ const employeeBenefits = [
     status: "Enrolled",
     startDate: "January 1, 2025",
     coverage: "Basic",
-    contribution: 300
+    contribution: 300,
+    companyContribution: 70,
+    employeeContribution: 30
   },
   {
     id: 3,
@@ -44,7 +49,9 @@ const employeeBenefits = [
     status: "Eligible",
     startDate: "Pending Enrollment",
     coverage: "Standard",
-    contribution: 150
+    contribution: 150,
+    companyContribution: 60,
+    employeeContribution: 40
   },
   {
     id: 4,
@@ -52,7 +59,9 @@ const employeeBenefits = [
     status: "Enrolled",
     startDate: "January 1, 2025",
     coverage: "6% employer match",
-    contribution: 2500
+    contribution: 2500,
+    companyContribution: 50,
+    employeeContribution: 50
   },
   {
     id: 5,
@@ -60,7 +69,9 @@ const employeeBenefits = [
     status: "Not Eligible",
     startDate: "N/A",
     coverage: "Monthly Allowance",
-    contribution: 0
+    contribution: 0,
+    companyContribution: 100,
+    employeeContribution: 0
   },
   {
     id: 6,
@@ -68,7 +79,9 @@ const employeeBenefits = [
     status: "Enrolled",
     startDate: "January 1, 2025",
     coverage: "1% of monthly salary",
-    contribution: 250
+    contribution: 250,
+    companyContribution: 50,
+    employeeContribution: 50
   }
 ];
 
@@ -104,6 +117,10 @@ const EmployeeBenefits = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+  
+  const calculateContribution = (total: number, percentage: number) => {
+    return (total * percentage) / 100;
   };
   
   return (
@@ -183,9 +200,17 @@ const EmployeeBenefits = () => {
                   
                   {benefit.status === "Enrolled" && (
                     <div className="mt-2 md:mt-0 flex items-center space-x-4">
-                      <div className="text-right">
+                      <div className="text-right space-y-1">
                         <div className="text-sm text-muted-foreground">Monthly Contribution</div>
                         <div className="font-medium">{formatCurrency(benefit.contribution)}</div>
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Percent className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-green-600">Company: {benefit.companyContribution}% ({formatCurrency(calculateContribution(benefit.contribution, benefit.companyContribution))})</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Percent className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-blue-600">Employee: {benefit.employeeContribution}% ({formatCurrency(calculateContribution(benefit.contribution, benefit.employeeContribution))})</span>
+                        </div>
                       </div>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <FileText className="h-4 w-4" />
@@ -210,9 +235,12 @@ const EmployeeBenefits = () => {
           <div className="text-sm text-muted-foreground">
             Last updated: April 21, 2025
           </div>
-          <div className="text-right">
+          <div className="text-right space-y-1">
             <div className="text-sm text-muted-foreground">Total Monthly Contribution</div>
             <div className="font-medium">{formatCurrency(4150)}</div>
+            <div className="text-sm text-muted-foreground">
+              Company: {formatCurrency(2697.50)} | Employee: {formatCurrency(1452.50)}
+            </div>
           </div>
         </CardFooter>
       </Card>
