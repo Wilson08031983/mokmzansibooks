@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
@@ -10,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,7 +39,7 @@ const Payment = () => {
         body: {
           amount: 44.90,
           email: currentUser.email,
-          plan: 'premium' // You can modify this based on your plan structure
+          plan: 'PLN_monthly_subscription' // Use your actual Paystack plan code here
         },
       });
 
@@ -90,7 +88,7 @@ const Payment = () => {
                       Processing...
                     </>
                   ) : (
-                    "Pay with Paystack"
+                    "Subscribe with Paystack"
                   )}
                 </Button>
                 <p className="text-xs text-center text-gray-500">

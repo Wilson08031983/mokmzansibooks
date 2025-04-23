@@ -16,7 +16,7 @@ serve(async (req) => {
   const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
 
   try {
-    // Initialize transaction with Paystack
+    // Initialize subscription transaction with Paystack
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
@@ -26,12 +26,13 @@ serve(async (req) => {
       body: JSON.stringify({
         email,
         amount: amount * 100, // Convert to kobo (Paystack uses the smallest currency unit)
-        plan,
+        plan, // This will use the plan code from Paystack
         callback_url: `${req.headers.get('origin')}/payment/verify`,
       }),
     });
 
     const data = await response.json();
+    console.log('Paystack initialization response:', data);
     
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
