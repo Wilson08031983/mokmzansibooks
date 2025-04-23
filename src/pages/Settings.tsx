@@ -33,6 +33,7 @@ import {
   Landmark,
   Sun,
   Moon,
+  Ban
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
+import { supabase } from "@/supabaseClient";
 
 const Settings = () => {
   const { currentUser } = useAuth();
@@ -80,6 +82,66 @@ const Settings = () => {
         description: t("languagePreference") + " " + t("savePreferences"),
       });
     }, 1000);
+  };
+
+  const handleUpdatePayment = async () => {
+    setSaveLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Could not access payment settings. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleViewHistory = async () => {
+    setSaveLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Could not access billing history. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    setSaveLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Could not cancel subscription. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   return (
@@ -552,13 +614,43 @@ const Settings = () => {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <Button variant="outline" className="sm:flex-1">
+                    <Button
+                      variant="outline"
+                      className="sm:flex-1"
+                      onClick={handleUpdatePayment}
+                      disabled={saveLoading}
+                    >
+                      {saveLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CreditCard className="mr-2 h-4 w-4" />
+                      )}
                       Update Payment Method
                     </Button>
-                    <Button variant="outline" className="sm:flex-1">
+                    <Button
+                      variant="outline"
+                      className="sm:flex-1"
+                      onClick={handleViewHistory}
+                      disabled={saveLoading}
+                    >
+                      {saveLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="mr-2 h-4 w-4" />
+                      )}
                       View Billing History
                     </Button>
-                    <Button variant="destructive" className="sm:flex-1">
+                    <Button
+                      variant="destructive"
+                      className="sm:flex-1"
+                      onClick={handleCancelSubscription}
+                      disabled={saveLoading}
+                    >
+                      {saveLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Ban className="mr-2 h-4 w-4" />
+                      )}
                       Cancel Subscription
                     </Button>
                   </div>
