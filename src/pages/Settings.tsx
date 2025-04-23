@@ -48,7 +48,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
-import { supabase } from "@/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const { currentUser } = useAuth();
