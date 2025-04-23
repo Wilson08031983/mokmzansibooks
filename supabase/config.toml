@@ -1,1 +1,5 @@
+
 project_id = "bazbbweawubxqfebliil"
+
+[functions.paystack]
+verify_jwt = true
