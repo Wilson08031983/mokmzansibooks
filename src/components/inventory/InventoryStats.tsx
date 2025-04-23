@@ -7,8 +7,11 @@ import {
 } from "@/components/ui/card";
 import { Package, ArrowUp, ArrowDown, DollarSign } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
+import { useI18n } from "@/contexts/I18nContext";
 
 const InventoryStats = () => {
+  const { currency } = useI18n();
+  
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
@@ -33,7 +36,7 @@ const InventoryStats = () => {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(24538.25, "ZAR")}</div>
+          <div className="text-2xl font-bold">{formatCurrency(24538.25)}</div>
           <div className="flex items-center text-xs text-green-500">
             <ArrowUp className="mr-1 h-3 w-3" />
             5.2% from last month

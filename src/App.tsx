@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +10,7 @@ import { FinancialDataProvider } from "./contexts/FinancialDataContext";
 import { NotificationsProvider } from "./contexts/NotificationsContext";
 import { I18nProvider, useI18n } from "./contexts/I18nContext";
 import { useEffect, useState } from "react";
-import { setGlobalCurrencyWatcher } from "./utils/formatters";
+import { setGlobalCurrency } from "./utils/formatters";
 
 // Pages
 import Index from "./pages/Index";
@@ -57,11 +58,15 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import PublicLayout from "./layouts/PublicLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const CurrencyUpdater = () => {
+// Component to update the global currency when the context currency changes
+const CurrencySynchronizer = () => {
   const { currency } = useI18n();
+  
   useEffect(() => {
-    setGlobalCurrencyWatcher(() => currency);
+    console.log("Currency changed to:", currency);
+    setGlobalCurrency(currency);
   }, [currency]);
+  
   return null;
 };
 
@@ -72,7 +77,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <I18nProvider>
-          <CurrencyUpdater />
+          <CurrencySynchronizer />
           <AuthProvider>
             <FinancialDataProvider>
               <NotificationsProvider>

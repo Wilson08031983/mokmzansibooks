@@ -4,12 +4,12 @@ import { format } from "date-fns";
 import Logo from "@/components/Logo";
 import { useI18n } from "@/contexts/I18nContext";
 
-// Use currency from the global context if not manually passed in
-let currentCurrency: string | undefined;
+// Store the active currency from context
+let globalCurrency: string = "ZAR";
 
-// Internal utility to force update when currency changes
-export function setGlobalCurrencyWatcher(getCurrency: () => string) {
-  currentCurrency = getCurrency();
+// Update the global currency when it changes in context
+export function setGlobalCurrency(currency: string) {
+  globalCurrency = currency;
 }
 
 export const formatDate = (dateString: string): string => {
@@ -24,16 +24,18 @@ export const formatDate = (dateString: string): string => {
 
 export const formatCurrency = (amount: number | string, currency?: string): string => {
   let num = typeof amount === "string" ? parseFloat(amount) : amount;
-
-  if (!currency && currentCurrency) {
-    currency = currentCurrency as string;
-  }
+  
+  // Use provided currency or fall back to global currency
+  const currencyCode = currency || globalCurrency;
+  
   const currencyMap: Record<string, { code: string; locale: string }> = {
     ZAR: { code: "ZAR", locale: "en-ZA" },
     USD: { code: "USD", locale: "en-US" },
     EUR: { code: "EUR", locale: "de-DE" },
   };
-  const { code, locale } = currencyMap[currency || "ZAR"] || currencyMap["ZAR"];
+  
+  const { code, locale } = currencyMap[currencyCode] || currencyMap["ZAR"];
+  
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: code,
@@ -52,6 +54,7 @@ export const renderCompanyLogo = (logo?: string) => {
     <Logo className="h-16" />
   );
 };
+
 export const renderCompanyStamp = (stamp?: string) => {
   return stamp ? (
     <img src={stamp} alt="Company Stamp" className="max-h-20 max-w-20" />
@@ -59,6 +62,7 @@ export const renderCompanyStamp = (stamp?: string) => {
     <span className="text-gray-400 text-xs text-center">Company Stamp</span>
   );
 };
+
 export const renderSignature = (signature?: string) => {
   return signature ? (
     <img src={signature} alt="Signature" className="h-full object-contain" />
