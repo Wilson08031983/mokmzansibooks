@@ -109,7 +109,6 @@ const Clients = () => {
     credit: 0,
   });
   
-  const { toast } = useToast();
   const { addNotification } = useNotifications();
 
   const clientCount = {
