@@ -13,9 +13,9 @@ const Logo = ({
   return <Link to="/" className={`flex items-center ${className}`}>
       <div className="relative mr-2">
         <img 
-          src="/lovable-uploads/826e09ad-45e8-44e4-b4ab-4594e18f803e.png" 
+          src="/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png" 
           alt="MOKMzansi Logo" 
-          className="h-16 w-16 rounded-lg object-cover" 
+          className="h-16 w-16 rounded-full object-cover" 
         />
       </div>
       {variant === "full" && <div className="font-bold text-xl">
