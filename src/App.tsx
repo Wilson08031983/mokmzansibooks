@@ -7,8 +7,9 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { FinancialDataProvider } from "./contexts/FinancialDataContext";
 import { NotificationsProvider } from "./contexts/NotificationsContext";
-import { I18nProvider } from "./contexts/I18nContext";
-import { useState } from "react";
+import { I18nProvider, useI18n } from "./contexts/I18nContext";
+import { useEffect, useState } from "react";
+import { setGlobalCurrencyWatcher } from "./utils/formatters";
 
 // Pages
 import Index from "./pages/Index";
@@ -56,15 +57,22 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import PublicLayout from "./layouts/PublicLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+const CurrencyUpdater = () => {
+  const { currency } = useI18n();
+  useEffect(() => {
+    setGlobalCurrencyWatcher(() => currency);
+  }, [currency]);
+  return null;
+};
+
 const App = () => {
-  // Move the QueryClient creation inside the component function
-  // and use useState to ensure it's stable across renders
   const [queryClient] = useState(() => new QueryClient());
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <I18nProvider>
+          <CurrencyUpdater />
           <AuthProvider>
             <FinancialDataProvider>
               <NotificationsProvider>

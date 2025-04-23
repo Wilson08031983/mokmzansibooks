@@ -53,10 +53,9 @@ const Settings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage, t } = useI18n();
+  const { language, setLanguage, t, currency, setCurrency } = useI18n();
   
   const [saveLoading, setSaveLoading] = useState(false);
-  const [currency, setCurrency] = useState<"ZAR" | "USD" | "EUR">("ZAR");
 
   useEffect(() => {
   }, []);
@@ -303,7 +302,9 @@ const Settings = () => {
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div 
-                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${currency === "ZAR" ? "bg-primary/5 border-primary" : ""}`}
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${
+                      currency === "ZAR" ? "bg-primary/5 border-primary" : ""
+                    }`}
                     onClick={() => setCurrency("ZAR")}
                   >
                     <div className="text-2xl font-semibold mb-1">R</div>
@@ -312,7 +313,9 @@ const Settings = () => {
                     {currency === "ZAR" && <Check className="h-5 w-5 text-green-500 mx-auto mt-2" />}
                   </div>
                   <div 
-                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${currency === "USD" ? "bg-primary/5 border-primary" : ""}`}
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${
+                      currency === "USD" ? "bg-primary/5 border-primary" : ""
+                    }`}
                     onClick={() => setCurrency("USD")}
                   >
                     <div className="text-2xl font-semibold mb-1">$</div>
@@ -321,7 +324,9 @@ const Settings = () => {
                     {currency === "USD" && <Check className="h-5 w-5 text-green-500 mx-auto mt-2" />}
                   </div>
                   <div 
-                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${currency === "EUR" ? "bg-primary/5 border-primary" : ""}`}
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${
+                      currency === "EUR" ? "bg-primary/5 border-primary" : ""
+                    }`}
                     onClick={() => setCurrency("EUR")}
                   >
                     <div className="text-2xl font-semibold mb-1">€</div>
@@ -342,7 +347,9 @@ const Settings = () => {
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div 
-                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${theme === "light" ? "bg-primary/5 border-primary" : ""}`}
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${
+                      theme === "light" ? "bg-primary/5 border-primary" : ""
+                    }`}
                     onClick={() => setTheme("light")}
                   >
                     <div className="text-2xl font-semibold mb-1">
@@ -353,7 +360,9 @@ const Settings = () => {
                     {theme === "light" && <Check className="h-5 w-5 text-green-500 mx-auto mt-2" />}
                   </div>
                   <div 
-                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${theme === "dark" ? "bg-primary/5 border-primary" : ""}`}
+                    className={`border rounded-md p-4 text-center cursor-pointer hover:border-primary ${
+                      theme === "dark" ? "bg-primary/5 border-primary" : ""
+                    }`}
                     onClick={() => setTheme("dark")}
                   >
                     <div className="text-2xl font-semibold mb-1">
