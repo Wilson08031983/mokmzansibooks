@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -53,6 +52,8 @@ import {
   changeStatusAction,
   handleAction
 } from "@/utils/actionUtils";
+import { formatCurrency } from "@/utils/formatters";
+import { useI18n } from "@/contexts/I18nContext";
 
 const mockInvoices = [
   {
@@ -185,6 +186,7 @@ const Invoices = () => {
   const pdfContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { currency } = useI18n();
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch =
@@ -201,11 +203,8 @@ const Invoices = () => {
     return new Date(dateString).toLocaleDateString("en-ZA");
   };
 
-  const formatCurrency = (amount: number) => {
-    return "R" + amount.toLocaleString("en-ZA", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+  const formatInvoiceCurrency = (amount: number) => {
+    return formatCurrency(amount, currency);
   };
 
   const getStatusBadge = (status: string) => {
@@ -346,7 +345,7 @@ const Invoices = () => {
                           <TableCell>{formatDate(invoice.date)}</TableCell>
                           <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(invoice.amount)}
+                            {formatInvoiceCurrency(invoice.amount)}
                           </TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                           <TableCell className="text-right">
@@ -471,7 +470,7 @@ const Invoices = () => {
                           <TableCell>{formatDate(invoice.date)}</TableCell>
                           <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(invoice.amount)}
+                            {formatInvoiceCurrency(invoice.amount)}
                           </TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                           <TableCell className="text-right">
@@ -596,7 +595,7 @@ const Invoices = () => {
                           <TableCell>{formatDate(invoice.date)}</TableCell>
                           <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(invoice.amount)}
+                            {formatInvoiceCurrency(invoice.amount)}
                           </TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                           <TableCell className="text-right">
@@ -721,7 +720,7 @@ const Invoices = () => {
                           <TableCell>{formatDate(invoice.date)}</TableCell>
                           <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(invoice.amount)}
+                            {formatInvoiceCurrency(invoice.amount)}
                           </TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                           <TableCell className="text-right">

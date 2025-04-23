@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface Receivable {
   id: string;
@@ -25,7 +25,6 @@ interface Receivable {
   description?: string;
 }
 
-// Sample customers for dropdown
 const CUSTOMERS = [
   "ABC Corporation",
   "XYZ Inc.",
@@ -39,7 +38,6 @@ const CUSTOMERS = [
   "Strategic Partners"
 ];
 
-// Form schema for new invoice
 const invoiceSchema = z.object({
   customer: z.string().min(1, "Customer is required"),
   invoiceNumber: z.string().min(1, "Invoice number is required"),
@@ -53,8 +51,8 @@ type InvoiceFormValues = z.infer<typeof invoiceSchema>;
 const Receivables = () => {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { currency } = useI18n();
   
-  // Sample accounts receivable data
   const [receivables, setReceivables] = useState<Receivable[]>([
     {
       id: "1",
@@ -106,7 +104,7 @@ const Receivables = () => {
       customer: "",
       invoiceNumber: "",
       amount: 0,
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       description: "",
     },
   });
@@ -119,7 +117,6 @@ const Receivables = () => {
   };
 
   const createInvoice = (data: InvoiceFormValues) => {
-    // Create an invoice number if not provided
     const invoiceNumber = data.invoiceNumber || `INV-${new Date().getFullYear()}-${String(receivables.length + 1).padStart(3, '0')}`;
     
     const newInvoice: Receivable = {
@@ -136,7 +133,7 @@ const Receivables = () => {
     
     toast({
       title: "Invoice Created",
-      description: `New invoice for ${formatCurrency(data.amount, "ZAR")} has been created.`,
+      description: `New invoice for ${formatCurrency(data.amount)} has been created.`,
     });
     
     setIsDialogOpen(false);
@@ -198,7 +195,7 @@ const Receivables = () => {
                     <div>{receivable.invoiceNumber}</div>
                     <div>{receivable.customer}</div>
                     <div>{receivable.dueDate}</div>
-                    <div>{formatCurrency(receivable.amount, "ZAR")}</div>
+                    <div>{formatCurrency(receivable.amount)}</div>
                     <div>
                       {getStatusBadge(receivable.status, receivable.daysOverdue)}
                     </div>
@@ -229,7 +226,7 @@ const Receivables = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm">Total Receivables</span>
                 <span className="font-medium">
-                  {formatCurrency(receivables.reduce((sum, r) => sum + r.amount, 0), "ZAR")}
+                  {formatCurrency(receivables.reduce((sum, r) => sum + r.amount, 0))}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -238,8 +235,7 @@ const Receivables = () => {
                   {formatCurrency(
                     receivables
                       .filter(r => r.status === 'overdue')
-                      .reduce((sum, r) => sum + r.amount, 0),
-                    "ZAR"
+                      .reduce((sum, r) => sum + r.amount, 0)
                   )}
                 </span>
               </div>
@@ -249,8 +245,7 @@ const Receivables = () => {
                   {formatCurrency(
                     receivables
                       .filter(r => r.status === 'pending')
-                      .reduce((sum, r) => sum + r.amount, 0),
-                    "ZAR"
+                      .reduce((sum, r) => sum + r.amount, 0)
                   )}
                 </span>
               </div>
@@ -260,8 +255,7 @@ const Receivables = () => {
                   {formatCurrency(
                     receivables
                       .filter(r => r.status === 'paid')
-                      .reduce((sum, r) => sum + r.amount, 0),
-                    "ZAR"
+                      .reduce((sum, r) => sum + r.amount, 0)
                   )}
                 </span>
               </div>
@@ -324,7 +318,7 @@ const Receivables = () => {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount (ZAR)</FormLabel>
+                      <FormLabel>Amount ({currency})</FormLabel>
                       <FormControl>
                         <Input {...field} type="number" min="0.01" step="0.01" />
                       </FormControl>
