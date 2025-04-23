@@ -58,6 +58,7 @@ const Settings = () => {
   const { language, setLanguage, t, currency, setCurrency } = useI18n();
   
   const [saveLoading, setSaveLoading] = useState(false);
+  const [isProcessingPortal, setIsProcessingPortal] = useState(false);
 
   useEffect(() => {
   }, []);
@@ -84,64 +85,43 @@ const Settings = () => {
     }, 1000);
   };
 
-  const handleUpdatePayment = async () => {
-    setSaveLoading(true);
+  const handleCustomerPortal = async (action: string) => {
+    setIsProcessingPortal(true);
     try {
       const { data, error } = await supabase.functions.invoke('customer-portal');
-      if (error) throw error;
+      
+      if (error) {
+        throw error;
+      }
+      
       if (data?.url) {
+        localStorage.setItem('paystack_portal_action', action);
         window.location.href = data.url;
+      } else {
+        throw new Error('No portal URL received');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error accessing customer portal:', error);
       toast({
         title: "Error",
-        description: "Could not access payment settings. Please try again later.",
+        description: `Could not access subscription settings. Please try again later.`,
         variant: "destructive",
       });
     } finally {
-      setSaveLoading(false);
+      setIsProcessingPortal(false);
     }
+  };
+
+  const handleUpdatePayment = async () => {
+    await handleCustomerPortal('update_payment');
   };
 
   const handleViewHistory = async () => {
-    setSaveLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "Could not access billing history. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaveLoading(false);
-    }
+    await handleCustomerPortal('view_history');
   };
 
   const handleCancelSubscription = async () => {
-    setSaveLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "Could not cancel subscription. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaveLoading(false);
-    }
+    await handleCustomerPortal('cancel');
   };
 
   return (
@@ -618,9 +598,9 @@ const Settings = () => {
                       variant="outline"
                       className="sm:flex-1"
                       onClick={handleUpdatePayment}
-                      disabled={saveLoading}
+                      disabled={isProcessingPortal}
                     >
-                      {saveLoading ? (
+                      {isProcessingPortal ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
                         <CreditCard className="mr-2 h-4 w-4" />
@@ -631,9 +611,9 @@ const Settings = () => {
                       variant="outline"
                       className="sm:flex-1"
                       onClick={handleViewHistory}
-                      disabled={saveLoading}
+                      disabled={isProcessingPortal}
                     >
-                      {saveLoading ? (
+                      {isProcessingPortal ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
                         <FileText className="mr-2 h-4 w-4" />
@@ -644,9 +624,9 @@ const Settings = () => {
                       variant="destructive"
                       className="sm:flex-1"
                       onClick={handleCancelSubscription}
-                      disabled={saveLoading}
+                      disabled={isProcessingPortal}
                     >
-                      {saveLoading ? (
+                      {isProcessingPortal ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
                         <Ban className="mr-2 h-4 w-4" />

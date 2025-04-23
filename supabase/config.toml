@@ -3,3 +3,9 @@ project_id = "bazbbweawubxqfebliil"
 
 [functions.paystack]
 verify_jwt = true
+
+[functions.customer-portal]
+verify_jwt = true
+
+[functions.paystack-verify]
+verify_jwt = true

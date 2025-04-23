@@ -23,6 +23,54 @@ const Payment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
+  // Check if the payment was successful
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const reference = urlParams.get('reference');
+    const trxref = urlParams.get('trxref');
+    
+    // If we have a reference, verify the payment
+    if (reference && trxref) {
+      setIsProcessing(true);
+      verifyPayment(reference);
+    }
+  }, [location]);
+
+  const verifyPayment = async (reference: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('paystack-verify', {
+        body: { reference },
+      });
+
+      if (error) throw error;
+
+      if (data?.status === 'success') {
+        setPaymentSuccess(true);
+        toast({
+          title: "Subscription Successful",
+          description: "Your premium subscription has been activated.",
+          variant: "success",
+        });
+
+        // Refresh the user session to get the updated subscription status
+        if (currentUser) {
+          await supabase.auth.refreshSession();
+        }
+      } else {
+        throw new Error('Payment verification failed');
+      }
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      toast({
+        title: "Verification Error",
+        description: "Could not verify your payment. Please contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handlePaystackPayment = async () => {
     if (!currentUser?.email) {
       toast({
