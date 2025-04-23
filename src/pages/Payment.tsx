@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
@@ -39,14 +40,13 @@ const Payment = () => {
         body: {
           amount: 44.90,
           email: currentUser.email,
-          plan: 'PLN_monthly_subscription' // Use your actual Paystack plan code here
+          plan: 'PLN_333mlci5462cxih' // Updated with the actual Paystack plan code
         },
       });
 
       if (error) throw error;
 
       if (data?.data?.authorization_url) {
-        // Redirect to Paystack checkout
         window.location.href = data.data.authorization_url;
       } else {
         throw new Error('No authorization URL received');
@@ -55,7 +55,7 @@ const Payment = () => {
       console.error('Payment initialization error:', error);
       toast({
         title: "Payment Error",
-        description: "Could not initialize payment. Please try again.",
+        description: "Could not initialize subscription. Please try again.",
         variant: "destructive",
       });
       setIsProcessing(false);
