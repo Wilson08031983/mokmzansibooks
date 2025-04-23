@@ -55,8 +55,14 @@ const SignIn = () => {
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
+      navigate("/dashboard");
     } catch (error) {
       console.error("Google sign in error:", error);
+      toast({
+        title: "Sign in failed",
+        description: "Could not sign in with Google. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsGoogleLoading(false);
     }
