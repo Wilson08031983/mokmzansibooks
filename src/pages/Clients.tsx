@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +22,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/contexts/NotificationsContext";
+import { useI18n } from "@/contexts/I18nContext";
+import { formatCurrency } from "@/utils/formatters";
 
-// Enhanced mockup data with credit info
 const mockClients = {
   companies: [
     {
@@ -86,12 +86,14 @@ const mockClients = {
 };
 
 const Clients = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("companies");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [creditAmount, setCreditAmount] = useState("");
+  const { currency } = useI18n();
   
   const [newClientData, setNewClientData] = useState({
     name: "",
@@ -149,10 +151,6 @@ const Clients = () => {
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-ZA");
-  };
-
-  const formatCurrency = (amount) => {
-    return "R" + amount.toLocaleString("en-ZA");
   };
 
   const getClientIcon = (type) => {
@@ -215,16 +213,14 @@ const Clients = () => {
       return;
     }
 
-    // Here you would update the client's credit in a real application
     toast({
       title: "Credit added",
-      description: `R${amount.toLocaleString('en-ZA')} credit has been added to ${selectedClient.name}.`,
+      description: `${formatCurrency(amount)} credit has been added to ${selectedClient.name}.`,
     });
 
-    // Add notification for the credit update
     addNotification({
       title: "Credit Added",
-      message: `R${amount.toLocaleString('en-ZA')} credit has been added to ${selectedClient.name}.`,
+      message: `${formatCurrency(amount)} credit has been added to ${selectedClient.name}.`,
       type: "success",
     });
 
@@ -233,7 +229,6 @@ const Clients = () => {
     setCreditAmount("");
   };
 
-  // Check if any clients have overdue payments and notify
   useState(() => {
     const overdueClients = [
       ...mockClients.companies,
@@ -712,7 +707,6 @@ const Clients = () => {
         </div>
       </div>
 
-      {/* Add Credit Dialog */}
       <Dialog open={isCreditDialogOpen} onOpenChange={setIsCreditDialogOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
@@ -724,7 +718,7 @@ const Clients = () => {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="creditAmount" className="text-right">
-                Amount (R)
+                Amount ({currency})
               </Label>
               <Input
                 id="creditAmount"
