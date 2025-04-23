@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -46,37 +46,39 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useI18n } from "@/contexts/I18nContext";
 
 const Settings = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useI18n();
   
   const [saveLoading, setSaveLoading] = useState(false);
-  const [language, setLanguage] = useState<"english" | "afrikaans">("english");
   const [currency, setCurrency] = useState<"ZAR" | "USD" | "EUR">("ZAR");
+
+  useEffect(() => {
+  }, []);
 
   const handleSaveProfile = () => {
     setSaveLoading(true);
-    // Simulate API call
     setTimeout(() => {
       setSaveLoading(false);
       toast({
-        title: "Settings saved",
-        description: "Your profile has been updated successfully.",
+        title: t("save"),
+        description: t("personalInformation") + " " + t("save"),
       });
     }, 1000);
   };
 
   const handleSavePreferences = () => {
     setSaveLoading(true);
-    // Simulate API call
     setTimeout(() => {
       setSaveLoading(false);
       toast({
-        title: "Preferences saved",
-        description: "Your language and currency preferences have been updated.",
+        title: t("savePreferences"),
+        description: t("languagePreference") + " " + t("savePreferences"),
       });
     }, 1000);
   };
@@ -84,52 +86,52 @@ const Settings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <h1 className="text-2xl font-bold">{t("settingsTitle")}</h1>
         <p className="text-gray-500">
-          Manage your account settings and preferences
+          {t("settingsDescription")}
         </p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-6">
           <TabsTrigger value="profile">
-            <User className="mr-2 h-4 w-4" /> Profile
+            <User className="mr-2 h-4 w-4" /> {t("profile")}
           </TabsTrigger>
           <TabsTrigger value="company">
-            <Building className="mr-2 h-4 w-4" /> Company
+            <Building className="mr-2 h-4 w-4" /> {t("company")}
           </TabsTrigger>
           <TabsTrigger value="preferences">
-            <Settings2 className="mr-2 h-4 w-4" /> Preferences
+            <Settings2 className="mr-2 h-4 w-4" /> {t("preferences")}
           </TabsTrigger>
           <TabsTrigger value="subscription">
-            <CreditCard className="mr-2 h-4 w-4" /> Subscription
+            <CreditCard className="mr-2 h-4 w-4" /> {t("subscription")}
           </TabsTrigger>
           <TabsTrigger value="security">
-            <Shield className="mr-2 h-4 w-4" /> Security
+            <Shield className="mr-2 h-4 w-4" /> {t("security")}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
           <Card>
             <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
+              <CardTitle>{t("personalInformation")}</CardTitle>
               <CardDescription>
-                Update your personal details and preferences
+                {t("updatePersonalDetails")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="fullName">{t("fullName")}</Label>
                   <Input 
                     id="fullName" 
                     type="text" 
-                    placeholder="Your full name" 
+                    placeholder={t("fullName")} 
                     defaultValue={currentUser?.name || ""}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">{t("emailAddress")}</Label>
                   <Input 
                     id="email" 
                     type="email" 
@@ -139,38 +141,38 @@ const Settings = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{t("phoneNumber")}</Label>
                   <Input id="phone" type="tel" placeholder="+27 00 000 0000" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="position">Position/Role</Label>
+                  <Label htmlFor="position">{t("positionRole")}</Label>
                   <Input id="position" placeholder="e.g. Manager, Owner, etc." />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="marketing-emails">Receive marketing emails</Label>
+                  <Label htmlFor="marketing-emails">{t("receiveMarketing")}</Label>
                   <Switch id="marketing-emails" defaultChecked={false} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="notification-emails">Receive notification emails</Label>
+                  <Label htmlFor="notification-emails">{t("receiveNotifications")}</Label>
                   <Switch id="notification-emails" defaultChecked={true} />
                 </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t("cancel")}</Button>
               <Button onClick={handleSaveProfile} disabled={saveLoading}>
                 {saveLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    {t("saving")}
                   </>
                 ) : (
                   <>
                     <Check className="mr-2 h-4 w-4" />
-                    Save Changes
+                    {t("save")}
                   </>
                 )}
               </Button>
@@ -181,66 +183,66 @@ const Settings = () => {
         <TabsContent value="company">
           <Card>
             <CardHeader>
-              <CardTitle>Company Information</CardTitle>
+              <CardTitle>{t("companyInformation")}</CardTitle>
               <CardDescription>
-                Update your company details and settings
+                {t("updateCompanyDetails")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="companyName">Company Name</Label>
+                  <Label htmlFor="companyName">{t("companyName")}</Label>
                   <Input 
                     id="companyName" 
                     defaultValue="Morwa Moabelo (Pty) Ltd"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="registrationNumber">Registration Number</Label>
+                  <Label htmlFor="registrationNumber">{t("registrationNumber")}</Label>
                   <Input 
                     id="registrationNumber"
                     defaultValue="2018/421571/07"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="vatNumber">VAT Number (if applicable)</Label>
+                  <Label htmlFor="vatNumber">{t("vatNumber")}</Label>
                   <Input id="vatNumber" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="industry">Industry</Label>
+                  <Label htmlFor="industry">{t("industry")}</Label>
                   <Input id="industry" />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Business Address</Label>
-                <Input id="address" placeholder="Street address" />
+                <Label htmlFor="address">{t("businessAddress")}</Label>
+                <Input id="address" placeholder={t("businessAddress")} />
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="city">{t("city")}</Label>
                   <Input id="city" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="province">Province</Label>
+                  <Label htmlFor="province">{t("province")}</Label>
                   <Input id="province" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="postalCode">Postal Code</Label>
+                  <Label htmlFor="postalCode">{t("postalCode")}</Label>
                   <Input id="postalCode" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
+                  <Label htmlFor="country">{t("country")}</Label>
                   <Input id="country" defaultValue="South Africa" />
                 </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t("cancel")}</Button>
               <Button>
                 <Check className="mr-2 h-4 w-4" />
-                Save Changes
+                {t("save")}
               </Button>
             </CardFooter>
           </Card>
@@ -249,19 +251,19 @@ const Settings = () => {
         <TabsContent value="preferences">
           <Card>
             <CardHeader>
-              <CardTitle>Language and Currency</CardTitle>
+              <CardTitle>{t("languageAndCurrency")}</CardTitle>
               <CardDescription>
-                Set your preferred language and currency for documents
+                {t("setPreferredLanguage")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <h3 className="text-lg font-medium mb-4 flex items-center">
                   <Globe className="h-5 w-5 mr-2 text-gray-500" /> 
-                  Language Preference
+                  {t("languagePreference")}
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Select your preferred language for quotes, invoices and other documents.
+                  {t("selectPreferredLanguage")}
                 </p>
                 <RadioGroup 
                   value={language} 
@@ -271,9 +273,9 @@ const Settings = () => {
                   <div className="flex items-center space-x-3 rounded-md border p-3">
                     <RadioGroupItem value="english" id="english" />
                     <Label htmlFor="english" className="flex-1 cursor-pointer">
-                      <div className="font-medium">English</div>
+                      <div className="font-medium">{t("english")}</div>
                       <div className="text-sm text-gray-500">
-                        Use English for all documents and interfaces
+                        {t("useEnglish")}
                       </div>
                     </Label>
                     {language === "english" && <Check className="h-5 w-5 text-green-500" />}
@@ -281,9 +283,9 @@ const Settings = () => {
                   <div className="flex items-center space-x-3 rounded-md border p-3">
                     <RadioGroupItem value="afrikaans" id="afrikaans" />
                     <Label htmlFor="afrikaans" className="flex-1 cursor-pointer">
-                      <div className="font-medium">Afrikaans</div>
+                      <div className="font-medium">{t("afrikaans")}</div>
                       <div className="text-sm text-gray-500">
-                        Use Afrikaans for all documents and interfaces
+                        {t("useAfrikaans")}
                       </div>
                     </Label>
                     {language === "afrikaans" && <Check className="h-5 w-5 text-green-500" />}
@@ -294,10 +296,10 @@ const Settings = () => {
               <div>
                 <h3 className="text-lg font-medium mb-4 flex items-center">
                   <Landmark className="h-5 w-5 mr-2 text-gray-500" /> 
-                  Currency Preference
+                  {t("currencyPreference")}
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Select your preferred currency for financial calculations and reporting.
+                  {t("selectPreferredCurrency")}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div 
@@ -333,10 +335,10 @@ const Settings = () => {
               <div>
                 <h3 className="text-lg font-medium mb-4 flex items-center">
                   <Sun className="h-5 w-5 mr-2 text-gray-500" /> 
-                  Theme Preference
+                  {t("themePreference")}
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Choose between light and dark themes for the application.
+                  {t("chooseTheme")}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div 
@@ -367,25 +369,25 @@ const Settings = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="apply-to-all" className="flex items-center">
-                    Apply to all existing documents
-                    <span className="ml-2 text-xs text-gray-500">(This will update all your existing quotes and invoices)</span>
+                    {t("applyToAll")}
+                    <span className="ml-2 text-xs text-gray-500">{t("updateExisting")}</span>
                   </Label>
                   <Switch id="apply-to-all" />
                 </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t("cancel")}</Button>
               <Button onClick={handleSavePreferences} disabled={saveLoading}>
                 {saveLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    {t("saving")}
                   </>
                 ) : (
                   <>
                     <Check className="mr-2 h-4 w-4" />
-                    Save Preferences
+                    {t("savePreferences")}
                   </>
                 )}
               </Button>
