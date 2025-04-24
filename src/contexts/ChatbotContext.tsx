@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-type ChatMessage = {
+export type ChatMessage = {
   role: 'user' | 'assistant' | 'system';
   content: string;
 };
