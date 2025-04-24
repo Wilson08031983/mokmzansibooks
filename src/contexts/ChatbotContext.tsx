@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,6 +13,7 @@ interface ChatbotContextType {
   setChatOpen: (open: boolean) => void;
   sendMessage: (message: string) => Promise<void>;
   clearChat: () => void;
+  cannotAnswerQuestion: (message: string) => boolean;
 }
 
 const ChatbotContext = createContext<ChatbotContextType | undefined>(undefined);
@@ -25,6 +25,23 @@ export const ChatbotProvider = ({ children }: { children: ReactNode }) => {
 
   const setChatOpen = (open: boolean) => {
     setIsChatOpen(open);
+  };
+
+  const cannotAnswerQuestion = (message: string) => {
+    const cantAnswerPhrases = [
+      "i don't know",
+      "i cannot",
+      "i can't",
+      "contact support",
+      "don't have information",
+      "unable to assist",
+      "can't help",
+      "cannot help",
+    ];
+    
+    return cantAnswerPhrases.some(phrase => 
+      message.toLowerCase().includes(phrase)
+    );
   };
 
   const sendMessage = async (message: string) => {
@@ -87,7 +104,8 @@ export const ChatbotProvider = ({ children }: { children: ReactNode }) => {
         isChatOpen, 
         setChatOpen, 
         sendMessage, 
-        clearChat 
+        clearChat,
+        cannotAnswerQuestion
       }}
     >
       {children}

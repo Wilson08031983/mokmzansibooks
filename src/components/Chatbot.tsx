@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useChatbot } from "@/contexts/ChatbotContext";
 import { Button } from "@/components/ui/button";
@@ -6,25 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Send, X, Loader2, Bot, ArrowRight, CornerDownLeft } from "lucide-react";
+import { MessageSquare, Send, X, Loader2, Bot, ArrowRight, CornerDownLeft, QrCode } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 const Chatbot = () => {
-  const { messages, isLoading, isChatOpen, setChatOpen, sendMessage } = useChatbot();
+  const { messages, isLoading, isChatOpen, setChatOpen, sendMessage, cannotAnswerQuestion } = useChatbot();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const whatsappLink = "https://wa.me/27645504029";
 
-  // Scroll to bottom when new messages come in
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // Focus input when chat opens
   useEffect(() => {
     if (isChatOpen && inputRef.current) {
       setTimeout(() => {
@@ -45,6 +43,28 @@ const Chatbot = () => {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const renderWhatsAppQR = (message: ChatMessage) => {
+    if (message.role === 'assistant' && cannotAnswerQuestion(message.content)) {
+      return (
+        <div className="mt-4 flex flex-col items-center gap-2 p-4 bg-muted/50 rounded-lg">
+          <p className="text-sm text-muted-foreground mb-2">
+            For more detailed assistance, contact us on WhatsApp:
+          </p>
+          <a 
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-primary hover:underline"
+          >
+            <QrCode className="h-5 w-5" />
+            <span>Open WhatsApp Chat</span>
+          </a>
+        </div>
+      );
+    }
+    return null;
   };
 
   if (!isChatOpen) {
@@ -107,33 +127,35 @@ const Chatbot = () => {
               </div>
             ) : (
               messages.filter(m => m.role !== "system").map((message, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "flex items-start gap-3 group",
-                    message.role === "user" ? "flex-row-reverse" : ""
-                  )}
-                >
-                  <Avatar className={cn(
-                    "h-8 w-8",
-                    message.role === "user" 
-                      ? "bg-primary/10 text-primary" 
-                      : "bg-muted text-foreground"
-                  )}>
-                    <div className="text-xs">
-                      {message.role === "user" ? "You" : "AI"}
-                    </div>
-                  </Avatar>
+                <div key={index}>
                   <div
                     className={cn(
-                      "rounded-lg px-3 py-2 max-w-[85%]",
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
+                      "flex items-start gap-3 group",
+                      message.role === "user" ? "flex-row-reverse" : ""
                     )}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <Avatar className={cn(
+                      "h-8 w-8",
+                      message.role === "user" 
+                        ? "bg-primary/10 text-primary" 
+                        : "bg-muted text-foreground"
+                    )}>
+                      <div className="text-xs">
+                        {message.role === "user" ? "You" : "AI"}
+                      </div>
+                    </Avatar>
+                    <div
+                      className={cn(
+                        "rounded-lg px-3 py-2 max-w-[85%]",
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-foreground"
+                      )}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
                   </div>
+                  {renderWhatsAppQR(message)}
                 </div>
               ))
             )}
