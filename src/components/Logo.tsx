@@ -1,31 +1,23 @@
-
 import { Link, useLocation } from "react-router-dom";
-
 interface LogoProps {
   className?: string;
   variant?: "full" | "icon";
   showOnlyOnLanding?: boolean;
 }
-
 const Logo = ({
   className = "",
   variant = "full",
   showOnlyOnLanding = false
 }: LogoProps) => {
   const location = useLocation();
-  
+
   // Hide logo when not on landing page and showOnlyOnLanding is true
   if (showOnlyOnLanding && location.pathname !== "/") {
     return null;
   }
-
   return <Link to="/" className={`flex items-center ${className}`}>
       <div className="relative mr-2">
-        <img 
-          src="/lovable-uploads/21bb22cc-35f7-4bdc-b74c-281c0412605d.png" 
-          alt="MOKMzansi Logo" 
-          className="h-16 w-16 rounded-full object-cover" 
-        />
+        
       </div>
       {variant === "full" && <div className="font-bold text-xl">
           <span className="gradient-text">MOKMzansi</span>
@@ -33,5 +25,4 @@ const Logo = ({
         </div>}
     </Link>;
 };
-
 export default Logo;
