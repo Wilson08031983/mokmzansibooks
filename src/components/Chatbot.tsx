@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useChatbot } from "@/contexts/ChatbotContext";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { MessageSquare, Send, X, Loader2, Bot, ArrowRight, CornerDownLeft, QrCod
 import { Avatar } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import type { ChatMessage } from "@/contexts/ChatbotContext"; // Import the type correctly
 
 const Chatbot = () => {
   const { messages, isLoading, isChatOpen, setChatOpen, sendMessage, cannotAnswerQuestion } = useChatbot();
