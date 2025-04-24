@@ -4,12 +4,18 @@ import { Link } from "react-router-dom";
 interface LogoProps {
   className?: string;
   variant?: "full" | "icon";
+  showOnlyOnLanding?: boolean;
 }
 
 const Logo = ({
   className = "",
-  variant = "full"
+  variant = "full",
+  showOnlyOnLanding = false
 }: LogoProps) => {
+  if (showOnlyOnLanding && window.location.pathname !== "/") {
+    return null;
+  }
+
   return <Link to="/" className={`flex items-center ${className}`}>
       <div className="relative mr-2">
         <img 

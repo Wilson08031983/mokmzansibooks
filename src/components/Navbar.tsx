@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -38,7 +37,6 @@ const Navbar = () => {
     { title: "Contact", href: "/#contact" },
   ];
 
-  // Dropdown menu items for services
   const serviceItems = [
     { title: "Accounting", href: "/accounting" },
     { title: "Tax Services", href: "/tax" },
@@ -47,25 +45,21 @@ const Navbar = () => {
     { title: "Reporting", href: "/reports" },
   ];
 
-  // Determine if a link is active
   const isActive = (href: string) => {
     const path = location.pathname + location.hash;
     return path === href || (path === "/" && href === "/#features");
   };
 
-  // Check if current route is in a specific section
   const isInSection = (section: string) => {
     return location.pathname.includes(section);
   };
 
-  // Scroll to section handler for smooth scrolling
   const scrollToSection = (event: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     if (location.pathname === '/') {
       event.preventDefault();
       const section = document.getElementById(sectionId);
       if (section) {
         section.scrollIntoView({ behavior: 'smooth' });
-        // Update URL without page reload
         window.history.pushState({}, '', `/#${sectionId}`);
       }
     }
@@ -81,9 +75,8 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between">
-          <Logo />
+          <Logo showOnlyOnLanding={true} />
           
-          {/* Desktop Navigation with NavigationMenu */}
           <div className="hidden md:flex items-center space-x-4">
             <NavigationMenu>
               <NavigationMenuList>
@@ -103,7 +96,6 @@ const Navbar = () => {
                   </NavigationMenuItem>
                 ))}
                 
-                {/* Services dropdown */}
                 <NavigationMenuItem>
                   <NavigationMenuTrigger 
                     className={isInSection("services") ? "bg-accent/70 text-primary font-medium" : ""}
@@ -155,7 +147,6 @@ const Navbar = () => {
             )}
           </div>
           
-          {/* Mobile menu button */}
           <Button
             variant="ghost"
             size="icon"
@@ -171,7 +162,6 @@ const Navbar = () => {
         </div>
       </div>
       
-      {/* Mobile Navigation */}
       {isMenuOpen && (
         <div className="md:hidden bg-white p-4 shadow-md">
           <nav className="flex flex-col space-y-3">
@@ -193,7 +183,6 @@ const Navbar = () => {
               </Link>
             ))}
             
-            {/* Mobile services section */}
             <div className="space-y-2">
               <p className="text-sm font-semibold px-2 pt-2">Services</p>
               {serviceItems.map((item) => (
