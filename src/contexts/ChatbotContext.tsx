@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Export the type to resolve the TypeScript error
 export type ChatMessage = {
   role: 'user' | 'assistant' | 'system';
   content: string;
