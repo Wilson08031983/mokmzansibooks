@@ -46,6 +46,20 @@ const Payment = () => {
 
       if (data?.status === 'success') {
         setPaymentSuccess(true);
+        
+        // Send confirmation email
+        try {
+          await supabase.functions.invoke('send-payment-confirmation', {
+            body: { 
+              email: data.data.email,
+              amount: data.data.amount
+            },
+          });
+        } catch (emailError) {
+          console.error('Error sending confirmation email:', emailError);
+          // Don't throw the error as payment was still successful
+        }
+
         toast({
           title: "Subscription Successful",
           description: "Your premium subscription has been activated.",
