@@ -7,9 +7,12 @@ import { Users, FileText, Calculator, UserRound, Package, PieChart, TrendingUp, 
 import PayrollSummary from "@/components/hr/PayrollSummary";
 import EmployeeTable from "@/components/hr/EmployeeTable";
 import UpcomingLeaves from "@/components/hr/UpcomingLeaves";
+import { useI18n } from "@/contexts/I18nContext";
+import { formatCurrency } from "@/utils/formatters";
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
+  const { currency } = useI18n();
   
   const statsCards = [
     {
@@ -28,7 +31,7 @@ const Dashboard = () => {
     },
     {
       title: "Monthly Revenue",
-      value: "$45,231",
+      value: formatCurrency(45231),
       trend: "+12.5% from last month",
       icon: TrendingUp,
       trendUp: true,
