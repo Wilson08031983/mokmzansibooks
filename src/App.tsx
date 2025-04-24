@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -41,6 +42,7 @@ import NotFound from "./pages/NotFound";
 // HR & Payroll Pages
 import HR from "./pages/HR";
 import Employees from "./pages/hr/Employees";
+import EmployeeDetail from "./pages/hr/EmployeeDetail"; // Add import for the new component
 import NewEmployee from "./pages/hr/NewEmployee";
 import Payroll from "./pages/hr/Payroll";
 import Attendance from "./pages/hr/Attendance";
@@ -117,6 +119,7 @@ const App = () => {
                           <Route path="/hr" element={<HR />} />
                           <Route path="/hr/employees" element={<Employees />} />
                           <Route path="/hr/employees/new" element={<NewEmployee />} />
+                          <Route path="/hr/employees/:employeeId" element={<EmployeeDetail />} /> {/* New route for employee details */}
                           <Route path="/hr/payroll" element={<Payroll />} />
                           <Route path="/hr/payroll/run" element={<RunPayroll />} />
                           <Route path="/hr/attendance" element={<Attendance />} />
