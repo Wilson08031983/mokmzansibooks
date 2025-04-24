@@ -1,6 +1,6 @@
 
 import { useRef, useEffect } from "react";
-import { Bot, ArrowRight, QrCode, Loader2 } from "lucide-react";
+import { Bot, ArrowRight, QrCode, Loader2, ThumbsUp, ThumbsDown, Lightbulb, HelpCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,12 +31,30 @@ export const ChatMessages = ({
     }
   }, [messages]);
 
+  const getMessageType = (content: string): {
+    icon: typeof ThumbsUp | typeof ThumbsDown | typeof Lightbulb | typeof HelpCircle;
+    label: string;
+    className: string;
+  } => {
+    const lowerContent = content.toLowerCase();
+    if (lowerContent.includes('thank') || lowerContent.includes('great') || lowerContent.includes('good')) {
+      return { icon: ThumbsUp, label: 'Compliment', className: 'text-green-500' };
+    }
+    if (lowerContent.includes('suggest') || lowerContent.includes('maybe') || lowerContent.includes('could')) {
+      return { icon: Lightbulb, label: 'Suggestion', className: 'text-amber-500' };
+    }
+    if (lowerContent.includes('not working') || lowerContent.includes('error') || lowerContent.includes('problem')) {
+      return { icon: ThumbsDown, label: 'Complaint', className: 'text-red-500' };
+    }
+    return { icon: HelpCircle, label: 'Assistance', className: 'text-blue-500' };
+  };
+
   const renderWhatsAppQR = (message: ChatMessage) => {
     if (message.role === 'assistant' && cannotAnswerQuestion(message.content)) {
       return (
         <div className="mt-4 flex flex-col items-center gap-2 p-4 bg-muted/50 rounded-lg">
           <p className="text-sm text-muted-foreground mb-2">
-            For more detailed assistance, contact us on WhatsApp:
+            For more detailed assistance, contact us directly on WhatsApp:
           </p>
           <a 
             href={whatsappLink}
@@ -45,12 +63,22 @@ export const ChatMessages = ({
             className="inline-flex items-center gap-2 text-primary hover:underline"
           >
             <QrCode className="h-5 w-5" />
-            <span>Open WhatsApp Chat</span>
+            <span>Chat on WhatsApp</span>
           </a>
         </div>
       );
     }
     return null;
+  };
+
+  const renderMessageType = (content: string) => {
+    const { icon: Icon, label, className } = getMessageType(content);
+    return (
+      <div className={cn("flex items-center gap-1 text-xs mt-2", className)}>
+        <Icon className="h-3 w-3" />
+        <span>{label}</span>
+      </div>
+    );
   };
 
   const renderEmptyState = () => (
@@ -100,15 +128,14 @@ export const ChatMessages = ({
                     {message.role === "user" ? "You" : "AI"}
                   </div>
                 </Avatar>
-                <div
-                  className={cn(
-                    "rounded-lg px-3 py-2 max-w-[85%]",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground"
-                  )}
-                >
+                <div className={cn(
+                  "rounded-lg px-3 py-2 max-w-[85%]",
+                  message.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground"
+                )}>
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  {message.role === "user" && renderMessageType(message.content)}
                 </div>
               </div>
               {renderWhatsAppQR(message)}
