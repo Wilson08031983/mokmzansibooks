@@ -4,6 +4,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 // Define website knowledge base - this helps the AI understand your site
 const websiteKnowledge = `
 MOKMzansi Books is a comprehensive business management platform with the following key features:
@@ -20,11 +25,6 @@ MOKMzansi Books is a comprehensive business management platform with the followi
 The platform supports multiple currencies and languages. Users can sign up for a free trial
 and access all features through the dashboard after signing in.
 `;
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -118,3 +118,4 @@ serve(async (req) => {
     );
   }
 });
+
