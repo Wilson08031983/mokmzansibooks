@@ -1,5 +1,5 @@
 
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 interface LogoProps {
   className?: string;
@@ -12,7 +12,10 @@ const Logo = ({
   variant = "full",
   showOnlyOnLanding = false
 }: LogoProps) => {
-  if (showOnlyOnLanding && window.location.pathname !== "/") {
+  const location = useLocation();
+  
+  // Hide logo when not on landing page and showOnlyOnLanding is true
+  if (showOnlyOnLanding && location.pathname !== "/") {
     return null;
   }
 
