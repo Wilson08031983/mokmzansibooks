@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
@@ -75,7 +75,7 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between">
-          <Logo showOnlyOnLanding={true} />
+          <Logo />
           
           <div className="hidden md:flex items-center space-x-4">
             <NavigationMenu>
