@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -63,11 +64,13 @@ export const ChatbotProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Error calling AI chatbot:', error);
+        const fallbackResponse = "I'm sorry, I'm having trouble connecting to the server right now. You can reach out to support on WhatsApp for immediate assistance.";
+        
         setMessages(prev => [
           ...prev, 
           { 
             role: 'assistant', 
-            content: 'Sorry, I encountered an error. Please try again later.' 
+            content: fallbackResponse
           }
         ]);
         return;
@@ -80,11 +83,13 @@ export const ChatbotProvider = ({ children }: { children: ReactNode }) => {
       ]);
     } catch (error) {
       console.error('Error in chat:', error);
+      const fallbackResponse = "I'm sorry, I'm having trouble connecting to the server right now. You can reach out to support on WhatsApp for immediate assistance.";
+      
       setMessages(prev => [
         ...prev, 
         { 
           role: 'assistant', 
-          content: 'Sorry, I encountered an error. Please try again later.' 
+          content: fallbackResponse 
         }
       ]);
     } finally {

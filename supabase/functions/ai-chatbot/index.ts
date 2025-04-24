@@ -33,6 +33,17 @@ serve(async (req) => {
   }
 
   try {
+    // Check if OpenAI API key is available
+    if (!openAIApiKey) {
+      console.error('OPENAI_API_KEY is not set in environment variables');
+      return new Response(
+        JSON.stringify({ 
+          response: "I'm sorry, the AI assistant is currently unavailable. Please contact support on WhatsApp for assistance."
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { message, chatHistory } = await req.json();
 
     if (!message) {
@@ -55,40 +66,54 @@ serve(async (req) => {
       { role: 'user', content: message }
     ];
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
-    });
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: messages,
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
 
-    const data = await response.json();
-    
-    if (data.error) {
-      console.error('OpenAI API Error:', data.error);
+      const data = await response.json();
+      
+      if (data.error) {
+        console.error('OpenAI API Error:', data.error);
+        return new Response(
+          JSON.stringify({ 
+            response: "I'm sorry, I'm having trouble thinking right now. Please try again later or contact support for assistance."
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const aiResponse = data.choices[0].message.content;
+
       return new Response(
-        JSON.stringify({ error: 'Failed to get AI response' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ response: aiResponse }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (error) {
+      console.error('OpenAI API fetch error:', error);
+      return new Response(
+        JSON.stringify({ 
+          response: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again later or contact support for assistance."
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const aiResponse = data.choices[0].message.content;
-
-    return new Response(
-      JSON.stringify({ response: aiResponse }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error('Error in AI chatbot function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        response: "I'm sorry, something went wrong with the AI assistant. Please try again later or contact support for assistance."
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
