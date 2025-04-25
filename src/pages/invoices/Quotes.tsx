@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -268,8 +267,16 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4">
                               {getStatusBadge(quote.status)}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(quote.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -399,8 +406,16 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4">
                               {getStatusBadge(quote.status)}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(quote.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -522,8 +537,16 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4">
                               {getStatusBadge(quote.status)}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(quote.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -645,8 +668,16 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4">
                               {getStatusBadge(quote.status)}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(quote.id)}
+                                className="h-8"
+                              >
+                                <Download className="h-4 w-4 mr-1" /> PDF
+                              </Button>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
