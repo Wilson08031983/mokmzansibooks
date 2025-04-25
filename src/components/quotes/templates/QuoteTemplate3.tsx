@@ -1,4 +1,3 @@
-
 import React from "react";
 import { TemplateProps } from "@/types/quote";
 import Header from "./QuoteTemplate3/Header";
@@ -64,7 +63,11 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
   const displayData = preview ? previewData : data;
   
   return (
-    <div className="w-full h-full bg-white p-8 shadow-lg mx-auto font-sans relative overflow-hidden" style={{ minHeight: '297mm' }}>
+    <div className="w-full bg-white p-8 shadow-lg mx-auto font-sans relative" style={{ 
+      minHeight: '297mm', 
+      maxWidth: preview ? 'none' : '210mm',
+      margin: preview ? '0' : '0 auto'
+    }}>
       {/* Background curve */}
       <div className="absolute right-0 top-0 h-full w-1/4 bg-indigo-600 z-0" 
         style={{ 
