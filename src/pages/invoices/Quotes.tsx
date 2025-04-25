@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -135,89 +136,17 @@ const Quotes = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "accepted":
-        return (
-          <div className="flex items-center space-x-2">
-            <Badge className="bg-green-500">Accepted</Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDownload(quote.id)}
-              className="h-8 ml-2"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        );
+        return <Badge className="bg-green-500">Accepted</Badge>;
       case "pending":
-        return (
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="text-amber-500 border-amber-500">Pending</Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDownload(quote.id)}
-              className="h-8 ml-2"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        );
+        return <Badge variant="outline" className="text-amber-500 border-amber-500">Pending</Badge>;
       case "expired":
-        return (
-          <div className="flex items-center space-x-2">
-            <Badge className="bg-gray-500">Expired</Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDownload(quote.id)}
-              className="h-8 ml-2"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        );
+        return <Badge className="bg-gray-500">Expired</Badge>;
       case "declined":
-        return (
-          <div className="flex items-center space-x-2">
-            <Badge className="bg-red-500">Declined</Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDownload(quote.id)}
-              className="h-8 ml-2"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        );
+        return <Badge className="bg-red-500">Declined</Badge>;
       case "draft":
-        return (
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="text-gray-500 border-gray-500">Draft</Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDownload(quote.id)}
-              className="h-8 ml-2"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        );
+        return <Badge variant="outline" className="text-gray-500 border-gray-500">Draft</Badge>;
       default:
-        return (
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline">{status}</Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDownload(quote.id)}
-              className="h-8 ml-2"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        );
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -321,7 +250,7 @@ const Quotes = () => {
                       <TableHead>Issue Date</TableHead>
                       <TableHead>Expiry Date</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="flex items-center">Status</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -339,16 +268,8 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-3">
                               {getStatusBadge(quote.status)}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDownload(quote.id)}
-                                className="h-8 ml-2"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -460,7 +381,7 @@ const Quotes = () => {
                       <TableHead>Issue Date</TableHead>
                       <TableHead>Expiry Date</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="flex items-center">Status</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -478,16 +399,8 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-3">
                               {getStatusBadge(quote.status)}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDownload(quote.id)}
-                                className="h-8 ml-2"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -591,7 +504,7 @@ const Quotes = () => {
                       <TableHead>Issue Date</TableHead>
                       <TableHead>Expiry Date</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="flex items-center">Status</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -609,16 +522,8 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-3">
                               {getStatusBadge(quote.status)}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDownload(quote.id)}
-                                className="h-8 ml-2"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -722,7 +627,7 @@ const Quotes = () => {
                       <TableHead>Issue Date</TableHead>
                       <TableHead>Expiry Date</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="flex items-center">Status</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -740,16 +645,8 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-3">
                               {getStatusBadge(quote.status)}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDownload(quote.id)}
-                                className="h-8 ml-2"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
