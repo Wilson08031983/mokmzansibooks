@@ -507,28 +507,27 @@ const NewInvoice = () => {
             <CardContent className="p-0">
               <ScrollArea className="w-full border rounded-md">
                 <div className="min-w-[1000px]">
-                  <div className="grid grid-cols-16 gap-2 font-medium text-sm p-4 border-b bg-muted/50">
-                    <div className="col-span-1 flex items-center justify-center">No</div>
-                    <div className="col-span-5 flex items-center">Description</div>
-                    <div className="col-span-2 flex items-center justify-center">Quantity</div>
-                    <div className="col-span-2 flex items-center justify-center">Rate (R)</div>
-                    <div className="col-span-2 flex items-center justify-center">Amount (R)</div>
-                    <div className="col-span-2 flex items-center justify-center">Discount (R)</div>
-                    <div className="col-span-1 flex items-center justify-center">Total (R)</div>
-                    <div className="col-span-1"></div>
+                  <div className="grid grid-cols-8 gap-4 p-4 border-b bg-muted/50">
+                    <div className="text-sm font-medium text-center">No</div>
+                    <div className="col-span-2 text-sm font-medium">Description</div>
+                    <div className="text-sm font-medium text-center">Quantity</div>
+                    <div className="text-sm font-medium text-center">Rate (R)</div>
+                    <div className="text-sm font-medium text-center">Amount (R)</div>
+                    <div className="text-sm font-medium text-center">Discount (R)</div>
+                    <div className="text-sm font-medium text-center">Total (R)</div>
                   </div>
 
                   <div className="p-4 space-y-2">
                     {items.map((item, index) => (
-                      <div key={index} className="grid grid-cols-16 gap-2 items-center">
-                        <div className="col-span-1">
+                      <div key={index} className="grid grid-cols-8 gap-4 items-center">
+                        <div>
                           <Input
                             value={item.itemNo}
                             readOnly
                             className="bg-gray-50 text-center"
                           />
                         </div>
-                        <div className="col-span-5">
+                        <div className="col-span-2">
                           <Input
                             placeholder="Item description"
                             value={item.description}
@@ -539,7 +538,7 @@ const NewInvoice = () => {
                             }}
                           />
                         </div>
-                        <div className="col-span-2">
+                        <div>
                           <Input
                             type="number"
                             min="1"
@@ -555,7 +554,7 @@ const NewInvoice = () => {
                             }}
                           />
                         </div>
-                        <div className="col-span-2">
+                        <div>
                           <Input
                             type="number"
                             min="0"
@@ -572,7 +571,7 @@ const NewInvoice = () => {
                             }}
                           />
                         </div>
-                        <div className="col-span-2">
+                        <div>
                           <Input
                             type="number"
                             readOnly
@@ -580,7 +579,7 @@ const NewInvoice = () => {
                             className="bg-gray-50 text-center"
                           />
                         </div>
-                        <div className="col-span-2">
+                        <div>
                           <Input
                             type="number"
                             min="0"
@@ -596,20 +595,18 @@ const NewInvoice = () => {
                             }}
                           />
                         </div>
-                        <div className="col-span-1">
+                        <div className="flex items-center gap-2">
                           <Input
                             type="number"
                             readOnly
                             value={item.total}
                             className="bg-gray-50 text-center"
                           />
-                        </div>
-                        <div className="col-span-1 flex justify-center">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => removeItem(index)}
-                            className="h-full"
+                            className="px-2"
                           >
                             ×
                           </Button>
