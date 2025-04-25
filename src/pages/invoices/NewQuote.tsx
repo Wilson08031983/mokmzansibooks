@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -29,8 +29,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, Plus, Trash2 } from "lucide-react";
 import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
 import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
-import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
-import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
+import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate4";
+import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate5";
 import { QuoteData } from "@/types/quote";
 import { downloadQuoteAsPdf } from "@/utils/pdfUtils";
 
@@ -694,8 +694,8 @@ const NewQuote = () => {
                       <TabsList className="w-full mb-4">
                         <TabsTrigger value="template1" className="flex-grow">Template 1</TabsTrigger>
                         <TabsTrigger value="template2" className="flex-grow">Template 2</TabsTrigger>
+                        <TabsTrigger value="template3" className="flex-grow">Template 3</TabsTrigger>
                         <TabsTrigger value="template4" className="flex-grow">Template 4</TabsTrigger>
-                        <TabsTrigger value="template5" className="flex-grow">Template 5</TabsTrigger>
                       </TabsList>
                       <div className="flex justify-center">
                         <TabsContent value="template1" className="w-[210mm] tabscontent-active">
@@ -704,11 +704,11 @@ const NewQuote = () => {
                         <TabsContent value="template2" className="w-[210mm] tabscontent-active">
                           <QuoteTemplate2 data={createPreviewData()} preview={true} />
                         </TabsContent>
+                        <TabsContent value="template3" className="w-[210mm] tabscontent-active">
+                          <QuoteTemplate3 data={createPreviewData()} preview={true} />
+                        </TabsContent>
                         <TabsContent value="template4" className="w-[210mm] tabscontent-active">
                           <QuoteTemplate4 data={createPreviewData()} preview={true} />
-                        </TabsContent>
-                        <TabsContent value="template5" className="w-[210mm] tabscontent-active">
-                          <QuoteTemplate5 data={createPreviewData()} preview={true} />
                         </TabsContent>
                       </div>
                     </Tabs>

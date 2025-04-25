@@ -6,8 +6,8 @@ import { ArrowLeft, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
 import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
-import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
-import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
+import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate4";
+import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate5";
 import { QuoteData } from "@/types/quote";
 import { format } from "date-fns";
 
@@ -75,7 +75,7 @@ const SelectQuoteTemplate = () => {
     expiryDate: formatCustomDate(previewData.expiryDate)
   };
 
-  const templates = [1, 2, 4, 5];
+  const templates = [1, 2, 3, 4];
 
   return (
     <div className="space-y-6">
@@ -121,8 +121,8 @@ const SelectQuoteTemplate = () => {
                   >
                     {templateId === 1 && <QuoteTemplate1 data={displayData} preview={true} />}
                     {templateId === 2 && <QuoteTemplate2 data={displayData} preview={true} />}
+                    {templateId === 3 && <QuoteTemplate3 data={displayData} preview={true} />}
                     {templateId === 4 && <QuoteTemplate4 data={displayData} preview={true} />}
-                    {templateId === 5 && <QuoteTemplate5 data={displayData} preview={true} />}
                   </div>
                 </div>
               </div>
