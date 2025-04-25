@@ -109,21 +109,25 @@ const SelectQuoteTemplate = () => {
               <div className="text-center font-medium mb-2">
                 Template {templateId}
               </div>
-              <div className="bg-gray-50 rounded-md overflow-hidden h-[300px] flex items-center justify-center">
-                <div 
-                  className="transform scale-[0.25] origin-center" 
-                  style={{ 
-                    height: '1200px', 
-                    width: '850px', 
-                    transform: 'scale(0.25)',
-                    transformOrigin: 'center top'
-                  }}
-                >
-                  {templateId === 1 && <QuoteTemplate1 data={displayData} preview={true} />}
-                  {templateId === 2 && <QuoteTemplate2 data={displayData} preview={true} />}
-                  {templateId === 3 && <QuoteTemplate3 data={displayData} preview={true} />}
-                  {templateId === 4 && <QuoteTemplate4 data={displayData} preview={true} />}
-                  {templateId === 5 && <QuoteTemplate5 data={displayData} preview={true} />}
+              <div className="bg-gray-50 rounded-md h-[300px] relative overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div 
+                    style={{
+                      transform: 'scale(0.18)',
+                      transformOrigin: 'center center',
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'flex-start'
+                    }}
+                  >
+                    {templateId === 1 && <QuoteTemplate1 data={displayData} preview={true} />}
+                    {templateId === 2 && <QuoteTemplate2 data={displayData} preview={true} />}
+                    {templateId === 3 && <QuoteTemplate3 data={displayData} preview={true} />}
+                    {templateId === 4 && <QuoteTemplate4 data={displayData} preview={true} />}
+                    {templateId === 5 && <QuoteTemplate5 data={displayData} preview={true} />}
+                  </div>
                 </div>
               </div>
             </CardContent>
