@@ -40,6 +40,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, FileText, Save, ChevronDown } from "lucide-react";
 import { InvoiceData } from "@/types/invoice";
 import { QuoteData } from "@/types/quote";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Import templates
 import Template1 from "@/components/invoices/templates/Template1";
@@ -503,117 +504,123 @@ const NewInvoice = () => {
             <CardHeader>
               <CardTitle>Invoice Items</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="grid grid-cols-16 gap-2 font-medium text-sm">
-                  <div className="col-span-1 flex items-center">No</div>
-                  <div className="col-span-5 flex items-center">Description</div>
-                  <div className="col-span-2 flex items-center">Quantity</div>
-                  <div className="col-span-2 flex items-center">Rate (R)</div>
-                  <div className="col-span-2 flex items-center">Amount (R)</div>
-                  <div className="col-span-2 flex items-center">Discount (R)</div>
-                  <div className="col-span-1 flex items-center">Total (R)</div>
-                  <div className="col-span-1 flex items-center"></div>
-                </div>
-
-                {items.map((item, index) => (
-                  <div key={index} className="grid grid-cols-16 gap-2 items-center">
-                    <div className="col-span-1">
-                      <Input
-                        value={item.itemNo}
-                        readOnly
-                        className="bg-gray-50 text-center"
-                      />
-                    </div>
-                    <div className="col-span-5">
-                      <Input
-                        placeholder="Item description"
-                        value={item.description}
-                        onChange={(e) => {
-                          const newItems = [...items];
-                          newItems[index].description = e.target.value;
-                          setItems(newItems);
-                        }}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        className="text-center"
-                        onChange={(e) => {
-                          const newItems = [...items];
-                          const quantity = parseInt(e.target.value);
-                          newItems[index].quantity = quantity;
-                          newItems[index].amount = calculateLineAmount(quantity, item.rate);
-                          newItems[index].total = calculateLineTotal(newItems[index].amount, item.discount);
-                          setItems(newItems);
-                        }}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.rate}
-                        className="text-center"
-                        onChange={(e) => {
-                          const newItems = [...items];
-                          const rate = parseFloat(e.target.value);
-                          newItems[index].rate = rate;
-                          newItems[index].amount = calculateLineAmount(item.quantity, rate);
-                          newItems[index].total = calculateLineTotal(newItems[index].amount, item.discount);
-                          setItems(newItems);
-                        }}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        readOnly
-                        value={item.amount}
-                        className="bg-gray-50 text-center"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.discount}
-                        className="text-center"
-                        onChange={(e) => {
-                          const newItems = [...items];
-                          const discount = parseFloat(e.target.value);
-                          newItems[index].discount = discount;
-                          newItems[index].total = calculateLineTotal(item.amount, discount);
-                          setItems(newItems);
-                        }}
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <Input
-                        type="number"
-                        readOnly
-                        value={item.total}
-                        className="bg-gray-50 text-center"
-                      />
-                    </div>
-                    <div className="col-span-1 flex justify-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeItem(index)}
-                        className="h-full"
-                      >
-                        ×
-                      </Button>
-                    </div>
+            <CardContent className="p-0">
+              <ScrollArea className="w-full border rounded-md">
+                <div className="min-w-[1000px]">
+                  <div className="grid grid-cols-16 gap-2 font-medium text-sm p-4 border-b bg-muted/50">
+                    <div className="col-span-1 flex items-center justify-center">No</div>
+                    <div className="col-span-5 flex items-center">Description</div>
+                    <div className="col-span-2 flex items-center justify-center">Quantity</div>
+                    <div className="col-span-2 flex items-center justify-center">Rate (R)</div>
+                    <div className="col-span-2 flex items-center justify-center">Amount (R)</div>
+                    <div className="col-span-2 flex items-center justify-center">Discount (R)</div>
+                    <div className="col-span-1 flex items-center justify-center">Total (R)</div>
+                    <div className="col-span-1"></div>
                   </div>
-                ))}
 
+                  <div className="p-4 space-y-2">
+                    {items.map((item, index) => (
+                      <div key={index} className="grid grid-cols-16 gap-2 items-center">
+                        <div className="col-span-1">
+                          <Input
+                            value={item.itemNo}
+                            readOnly
+                            className="bg-gray-50 text-center"
+                          />
+                        </div>
+                        <div className="col-span-5">
+                          <Input
+                            placeholder="Item description"
+                            value={item.description}
+                            onChange={(e) => {
+                              const newItems = [...items];
+                              newItems[index].description = e.target.value;
+                              setItems(newItems);
+                            }}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            className="text-center"
+                            onChange={(e) => {
+                              const newItems = [...items];
+                              const quantity = parseInt(e.target.value);
+                              newItems[index].quantity = quantity;
+                              newItems[index].amount = calculateLineAmount(quantity, item.rate);
+                              newItems[index].total = calculateLineTotal(newItems[index].amount, item.discount);
+                              setItems(newItems);
+                            }}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.rate}
+                            className="text-center"
+                            onChange={(e) => {
+                              const newItems = [...items];
+                              const rate = parseFloat(e.target.value);
+                              newItems[index].rate = rate;
+                              newItems[index].amount = calculateLineAmount(item.quantity, rate);
+                              newItems[index].total = calculateLineTotal(newItems[index].amount, item.discount);
+                              setItems(newItems);
+                            }}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            readOnly
+                            value={item.amount}
+                            className="bg-gray-50 text-center"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.discount}
+                            className="text-center"
+                            onChange={(e) => {
+                              const newItems = [...items];
+                              const discount = parseFloat(e.target.value);
+                              newItems[index].discount = discount;
+                              newItems[index].total = calculateLineTotal(item.amount, discount);
+                              setItems(newItems);
+                            }}
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <Input
+                            type="number"
+                            readOnly
+                            value={item.total}
+                            className="bg-gray-50 text-center"
+                          />
+                        </div>
+                        <div className="col-span-1 flex justify-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeItem(index)}
+                            className="h-full"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ScrollArea>
+              
+              <div className="p-4">
                 <Button variant="outline" onClick={addItem}>
                   Add Item
                 </Button>
