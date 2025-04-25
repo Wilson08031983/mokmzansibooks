@@ -397,7 +397,7 @@ const NewInvoice = () => {
             <CardHeader>
               <CardTitle>Invoice Details</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <form className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -503,7 +503,7 @@ const NewInvoice = () => {
             <CardHeader>
               <CardTitle>Invoice Items</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="grid grid-cols-16 gap-2 font-medium text-sm">
                   <div className="col-span-1">No</div>
@@ -622,7 +622,7 @@ const NewInvoice = () => {
             <CardHeader>
               <CardTitle>Notes & Terms</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="notes">Notes</Label>
