@@ -267,15 +267,15 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
                               {getStatusBadge(quote.status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownload(quote.id)}
-                                className="h-8"
+                                className="h-6 px-2 text-xs"
                               >
-                                <Download className="h-4 w-4 mr-1" /> PDF
+                                <Download className="h-3 w-3 mr-1" /> PDF
                               </Button>
                             </div>
                           </TableCell>
@@ -406,15 +406,15 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
                               {getStatusBadge(quote.status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownload(quote.id)}
-                                className="h-8"
+                                className="h-6 px-2 text-xs"
                               >
-                                <Download className="h-4 w-4 mr-1" /> PDF
+                                <Download className="h-3 w-3 mr-1" /> PDF
                               </Button>
                             </div>
                           </TableCell>
@@ -537,15 +537,15 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
                               {getStatusBadge(quote.status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownload(quote.id)}
-                                className="h-8"
+                                className="h-6 px-2 text-xs"
                               >
-                                <Download className="h-4 w-4 mr-1" /> PDF
+                                <Download className="h-3 w-3 mr-1" /> PDF
                               </Button>
                             </div>
                           </TableCell>
@@ -668,15 +668,15 @@ const Quotes = () => {
                             {formatCurrency(quote.amount)}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
                               {getStatusBadge(quote.status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownload(quote.id)}
-                                className="h-8"
+                                className="h-6 px-2 text-xs"
                               >
-                                <Download className="h-4 w-4 mr-1" /> PDF
+                                <Download className="h-3 w-3 mr-1" /> PDF
                               </Button>
                             </div>
                           </TableCell>
