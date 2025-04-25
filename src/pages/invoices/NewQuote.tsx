@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -135,6 +134,7 @@ const formSchema = z.object({
 interface Item {
   id: string;
   itemNo: string;
+  markupPercentage: number;
   description: string;
   quantity: number;
   unitPrice: number;
@@ -149,6 +149,7 @@ const NewQuote = () => {
     {
       id: "1",
       itemNo: "ITEM-001",
+      markupPercentage: 0,
       description: "Consultation Services",
       quantity: 10,
       unitPrice: 1500,
@@ -158,6 +159,7 @@ const NewQuote = () => {
     {
       id: "2",
       itemNo: "ITEM-002",
+      markupPercentage: 0,
       description: "Equipment Rental",
       quantity: 5,
       unitPrice: 2000,
@@ -203,6 +205,7 @@ const NewQuote = () => {
     const newItem: Item = {
       id: String(Date.now()),
       itemNo: `ITEM-${items.length + 1}`,
+      markupPercentage: 0,
       description: "",
       quantity: 1,
       unitPrice: 0,
@@ -564,7 +567,8 @@ const NewQuote = () => {
                   <table className="w-full min-w-[900px] table-fixed">
                     <thead className="sticky top-0 bg-white z-10">
                       <tr className="grid grid-cols-12 gap-4 mb-2 px-4 py-2 border-b">
-                        <th className="col-span-2 text-left text-sm font-medium text-gray-500">Item No.</th>
+                        <th className="col-span-1 text-left text-sm font-medium text-gray-500">Item No.</th>
+                        <th className="col-span-1 text-left text-sm font-medium text-gray-500">Mark Up %</th>
                         <th className="col-span-2 text-left text-sm font-medium text-gray-500">Description</th>
                         <th className="col-span-1 text-center text-sm font-medium text-gray-500">Qty</th>
                         <th className="col-span-2 text-center text-sm font-medium text-gray-500">Unit Price</th>
@@ -576,12 +580,23 @@ const NewQuote = () => {
                     <tbody className="px-4">
                       {items.map((item, index) => (
                         <tr key={item.id} className="grid grid-cols-12 gap-4 mb-6 items-center px-4 py-2">
-                          <td className="col-span-2">
+                          <td className="col-span-1">
                             <Input
                               type="text"
                               value={item.itemNo}
                               onChange={(e) => updateItem(item.id, "itemNo", e.target.value)}
                               className="w-full"
+                            />
+                          </td>
+                          <td className="col-span-1">
+                            <Input
+                              type="number"
+                              value={item.markupPercentage}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                updateItem(item.id, "markupPercentage", isNaN(value) ? 0 : value);
+                              }}
+                              className="w-full text-center"
                             />
                           </td>
                           <td className="col-span-2">
