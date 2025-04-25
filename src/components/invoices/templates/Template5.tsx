@@ -1,3 +1,4 @@
+
 import React from "react";
 import { TemplateProps } from "@/types/invoice";
 import { formatDate, formatCurrency, renderCompanyLogo, renderCompanyStamp, renderSignature } from "@/utils/formatters";
@@ -47,7 +48,7 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
   const displayData = preview ? previewData : data;
   
   return (
-    <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans" style={{ minHeight: '297mm' }}>
+    <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans relative overflow-hidden" style={{ minHeight: '297mm' }}>
       {/* Left sidebar */}
       <div className="flex h-full">
         <div className="w-1/3 bg-gray-800 text-white p-6 rounded-l-lg h-full">

@@ -30,7 +30,7 @@ import { Download, Plus, Trash2 } from "lucide-react";
 import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
 import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
 import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate4";
-import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
+import QuoteTemplate4 from "@/components/quotes/templates/Template5";
 import { QuoteData } from "@/types/quote";
 import { downloadQuoteAsPdf } from "@/utils/pdfUtils";
 
