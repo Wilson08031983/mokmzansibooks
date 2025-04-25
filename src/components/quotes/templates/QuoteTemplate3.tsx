@@ -62,13 +62,17 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
   
   return (
     <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans relative overflow-hidden" style={{ minHeight: '297mm' }}>
-      {/* Diagonal Background */}
-      <div className="absolute top-0 right-0 w-1/3 h-full bg-indigo-600 transform rotate-6 origin-top-left translate-x-20 -translate-y-20 z-0"></div>
+      {/* Background curve */}
+      <div className="absolute right-0 top-0 h-full w-1/4 bg-indigo-600 z-0" 
+        style={{ 
+          clipPath: 'polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%)'
+        }}>
+      </div>
       
       {/* Header */}
       <div className="relative z-10 flex justify-between items-start">
         <div className="space-y-1">
-          <div className="inline-block bg-indigo-600 text-white font-bold text-4xl py-2 px-4">
+          <div className="inline-block bg-indigo-600 text-white font-bold text-2xl py-2 px-4">
             QUOTATION
           </div>
           <p className="text-sm ml-1 mt-2">#{displayData.quoteNumber}</p>
@@ -79,7 +83,7 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
       </div>
 
       {/* Quote Info */}
-      <div className="relative z-10 mt-12 grid grid-cols-2 gap-8">
+      <div className="relative z-10 mt-8 grid grid-cols-2 gap-8">
         <div className="space-y-4">
           <div className="space-y-1">
             <h3 className="font-bold text-indigo-600">FROM</h3>
@@ -117,46 +121,46 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
       </div>
 
       {/* Items Table */}
-      <div className="relative z-10 mt-12">
-        <div className="bg-indigo-600 text-white py-3 px-4 font-bold">
+      <div className="relative z-10 mt-8">
+        <div className="bg-indigo-600 text-white py-2 px-4 font-bold">
           Quotation Details
         </div>
         <table className="w-full">
           <thead>
-            <tr className="bg-gray-100">
-              <th className="py-3 px-4 text-left">Item No.</th>
-              <th className="py-3 px-4 text-left">Description</th>
-              <th className="py-3 px-4 text-center">Qty</th>
-              <th className="py-3 px-4 text-right">Unit Price</th>
-              <th className="py-3 px-4 text-right">Discount</th>
-              <th className="py-3 px-4 text-right">Total</th>
+            <tr className="bg-gray-50">
+              <th className="py-2 px-3 text-left">Item No.</th>
+              <th className="py-2 px-3 text-left">Description</th>
+              <th className="py-2 px-3 text-center">Qty</th>
+              <th className="py-2 px-3 text-right">Unit Price</th>
+              <th className="py-2 px-3 text-right">Discount</th>
+              <th className="py-2 px-3 text-right">Total</th>
             </tr>
           </thead>
           <tbody>
             {displayData.items.map((item, i) => (
-              <tr key={i} className="border-b">
-                <td className="py-3 px-4">{item.itemNo || `ITEM-${i+1}`}</td>
-                <td className="py-3 px-4">{item.description}</td>
-                <td className="py-3 px-4 text-center">{item.quantity}</td>
-                <td className="py-3 px-4 text-right">{formatCurrency(item.unitPrice || item.rate)}</td>
-                <td className="py-3 px-4 text-right">{formatPercentage(item.discount || 0)}</td>
-                <td className="py-3 px-4 text-right">{formatCurrency(item.amount)}</td>
+              <tr key={i} className="border-b border-gray-100">
+                <td className="py-2 px-3">{item.itemNo || `ITEM-${i+1}`}</td>
+                <td className="py-2 px-3">{item.description}</td>
+                <td className="py-2 px-3 text-center">{item.quantity}</td>
+                <td className="py-2 px-3 text-right">{formatCurrency(item.unitPrice || item.rate)}</td>
+                <td className="py-2 px-3 text-right">{formatPercentage(item.discount || 0)}</td>
+                <td className="py-2 px-3 text-right">{formatCurrency(item.amount)}</td>
               </tr>
             ))}
           </tbody>
         </table>
         
         <div className="mt-4 flex justify-end">
-          <div className="w-1/3 space-y-2">
-            <div className="flex justify-between py-1">
+          <div className="w-1/3 space-y-1">
+            <div className="flex justify-between py-1 border-b border-gray-100">
               <span className="font-medium">Subtotal:</span>
               <span>{formatCurrency(displayData.subtotal)}</span>
             </div>
-            <div className="flex justify-between py-1">
+            <div className="flex justify-between py-1 border-b border-gray-100">
               <span className="font-medium">VAT ({displayData.vatRate || 0}%):</span>
               <span>{formatCurrency(displayData.tax)}</span>
             </div>
-            <div className="flex justify-between py-2 bg-indigo-600 text-white px-4">
+            <div className="flex justify-between py-2 bg-indigo-600 text-white px-3">
               <span className="font-bold">Total:</span>
               <span className="font-bold">{formatCurrency(displayData.total)}</span>
             </div>
@@ -166,21 +170,20 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
 
       {/* Bank Account Details */}
       {displayData.bankAccount && (
-        <div className="relative z-10 mt-8 bg-white border-l-4 border-indigo-600 p-4 shadow-sm">
+        <div className="relative z-10 mt-6 bg-white border-l-4 border-indigo-600 p-3 shadow-sm">
           <div className="flex items-center mb-2">
             <h3 className="font-bold text-indigo-600">Banking Details</h3>
-            <Badge variant="bank" className="ml-2">Payment</Badge>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-sm"><span className="font-medium">Bank Name:</span> {displayData.bankAccount.bankName}</p>
-              <p className="text-sm"><span className="font-medium">Account Name:</span> {displayData.bankAccount.accountName}</p>
+              <p><span className="font-medium">Bank Name:</span> {displayData.bankAccount.bankName}</p>
+              <p><span className="font-medium">Account Name:</span> {displayData.bankAccount.accountName}</p>
             </div>
             <div>
-              <p className="text-sm"><span className="font-medium">Account Number:</span> {displayData.bankAccount.accountNumber}</p>
-              <p className="text-sm"><span className="font-medium">Branch Code:</span> {displayData.bankAccount.branchCode}</p>
+              <p><span className="font-medium">Account Number:</span> {displayData.bankAccount.accountNumber}</p>
+              <p><span className="font-medium">Branch Code:</span> {displayData.bankAccount.branchCode}</p>
               {displayData.bankAccount.swiftCode && (
-                <p className="text-sm"><span className="font-medium">SWIFT Code:</span> {displayData.bankAccount.swiftCode}</p>
+                <p><span className="font-medium">SWIFT Code:</span> {displayData.bankAccount.swiftCode}</p>
               )}
             </div>
           </div>
@@ -188,21 +191,21 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
       )}
 
       {/* Notes and Terms */}
-      <div className="relative z-10 mt-8 grid grid-cols-2 gap-6">
+      <div className="relative z-10 mt-6 grid grid-cols-2 gap-6">
         <div>
-          <h3 className="font-bold text-indigo-600 border-b border-indigo-200 pb-1 mb-3">Notes</h3>
-          <p className="text-gray-600">{displayData.notes}</p>
+          <h3 className="font-bold text-indigo-600 border-b border-indigo-200 pb-1 mb-2">Notes</h3>
+          <p className="text-gray-600 text-sm">{displayData.notes}</p>
         </div>
         <div>
-          <h3 className="font-bold text-indigo-600 border-b border-indigo-200 pb-1 mb-3">Terms & Conditions</h3>
-          <p className="text-gray-600">{displayData.terms}</p>
+          <h3 className="font-bold text-indigo-600 border-b border-indigo-200 pb-1 mb-2">Terms & Conditions</h3>
+          <p className="text-gray-600 text-sm">{displayData.terms}</p>
         </div>
       </div>
 
       {/* Signature & Stamp */}
-      <div className="relative z-10 mt-12 grid grid-cols-2 gap-6">
+      <div className="relative z-10 mt-8 grid grid-cols-2 gap-6">
         <div>
-          <h3 className="font-medium text-indigo-600 mb-6">Authorized Signature:</h3>
+          <h3 className="font-medium text-indigo-600 mb-4">Authorized Signature:</h3>
           <div className="border-b-2 border-gray-300 w-48 h-10 mb-1">
             {renderSignature(displayData.signature)}
           </div>
