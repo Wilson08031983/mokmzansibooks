@@ -10,7 +10,7 @@ interface TemplateProps {
 
 const Template5 = ({ data, preview = false }: TemplateProps) => {
   // Sample data for preview mode
-  const previewData = {
+  const previewData: QuoteData = {
     quoteNumber: "QT-2025-0001",
     issueDate: "2025-04-03",
     expiryDate: "2025-04-17",
@@ -43,11 +43,19 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
       }
     ],
     subtotal: 25000,
+    vatRate: 15,
     tax: 3750,
     total: 28750,
     notes: "Thank you for your business!",
     terms: "Payment due within 14 days of invoice date.",
-    signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
+    signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png",
+    bankAccount: {
+      bankName: "First National Bank",
+      accountName: "MOKMzansi Holdings",
+      accountNumber: "62123456789",
+      branchCode: "250655",
+      swiftCode: "FIRNZAJJ"
+    }
   };
 
   const displayData = preview ? previewData : data;
@@ -98,7 +106,7 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
                 <span>{formatCurrency(displayData.subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">VAT ({displayData.vatRate || 15}%):</span>
+                <span className="text-gray-400">VAT ({displayData.vatRate}%):</span>
                 <span>{formatCurrency(displayData.tax)}</span>
               </div>
               <div className="flex justify-between text-xl font-bold mt-4">

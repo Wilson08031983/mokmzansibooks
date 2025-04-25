@@ -336,6 +336,13 @@ const NewInvoice = () => {
   const renderTemplate = () => {
     if (!previewData) return null;
 
+    const templateData = templateId === 5 ? {
+      ...previewData,
+      quoteNumber: previewData.invoiceNumber,
+      expiryDate: previewData.dueDate,
+      vatRate: 15,
+    } : previewData;
+
     switch (templateId) {
       case 1:
         return <Template1 data={previewData} />;
@@ -346,7 +353,7 @@ const NewInvoice = () => {
       case 4:
         return <Template4 data={previewData} />;
       case 5:
-        return <Template5 data={previewData} />;
+        return <Template5 data={templateData as any} />;
       default:
         return <Template1 data={previewData} />;
     }

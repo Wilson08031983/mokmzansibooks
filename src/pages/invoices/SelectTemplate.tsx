@@ -65,6 +65,35 @@ const SelectTemplate = () => {
     signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
   };
 
+  // Create quote data for Template5
+  const quoteDataForTemplate5 = {
+    quoteNumber: previewData.invoiceNumber,
+    issueDate: previewData.issueDate,
+    expiryDate: previewData.dueDate,
+    client: previewData.client,
+    company: previewData.company,
+    items: previewData.items.map(item => ({
+      description: item.description,
+      quantity: item.quantity,
+      rate: item.rate,
+      amount: item.amount
+    })),
+    subtotal: previewData.subtotal,
+    vatRate: 15,
+    tax: previewData.tax,
+    total: previewData.total,
+    notes: previewData.notes,
+    terms: previewData.terms,
+    signature: previewData.signature,
+    bankAccount: {
+      bankName: "First National Bank",
+      accountName: "MOKMzansi Holdings",
+      accountNumber: "62123456789",
+      branchCode: "250655",
+      swiftCode: "FIRNZAJJ"
+    }
+  };
+
   const handleContinue = () => {
     navigate("/invoices/new", { state: { templateId: selectedTemplate } });
   };
@@ -103,7 +132,7 @@ const SelectTemplate = () => {
                     {id === 2 && <Template2 data={previewData} preview />}
                     {id === 3 && <Template3 data={previewData} preview />}
                     {id === 4 && <Template4 data={previewData} preview />}
-                    {id === 5 && <Template5 data={previewData} preview />}
+                    {id === 5 && <Template5 data={quoteDataForTemplate5} preview />}
                   </div>
                 </div>
               </div>
