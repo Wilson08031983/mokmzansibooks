@@ -6,7 +6,6 @@ import { ArrowLeft, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
 import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
-import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate3";
 import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
 import QuoteTemplate5 from "@/components/quotes/templates/QuoteTemplate5";
 import { QuoteData } from "@/types/quote";
@@ -20,13 +19,11 @@ const SelectQuoteTemplate = () => {
     navigate("/invoices/quotes/new", { state: { templateId: selectedTemplate } });
   };
 
-  // Format dates in the specific format requested: 01 January 1900
   const formatCustomDate = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, "dd MMMM yyyy");
   };
 
-  // Sample data for template preview
   const previewData: QuoteData = {
     quoteNumber: "QT-2025-0001",
     issueDate: "2025-04-03",
@@ -72,12 +69,13 @@ const SelectQuoteTemplate = () => {
     signature: "/lovable-uploads/b2e5e094-40b1-4fb0-86a4-03b6a2d9d4fb.png"
   };
 
-  // Convert dates to the requested format for display
   const displayData = {
     ...previewData,
     issueDate: formatCustomDate(previewData.issueDate),
     expiryDate: formatCustomDate(previewData.expiryDate)
   };
+
+  const templates = [1, 2, 4, 5];
 
   return (
     <div className="space-y-6">
@@ -91,7 +89,7 @@ const SelectQuoteTemplate = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[1, 2, 3, 4, 5].map((templateId) => (
+        {templates.map((templateId) => (
           <Card
             key={templateId}
             className={`relative overflow-hidden cursor-pointer hover:shadow-lg transition-shadow ${
@@ -123,7 +121,6 @@ const SelectQuoteTemplate = () => {
                   >
                     {templateId === 1 && <QuoteTemplate1 data={displayData} preview={true} />}
                     {templateId === 2 && <QuoteTemplate2 data={displayData} preview={true} />}
-                    {templateId === 3 && <QuoteTemplate3 data={displayData} preview={true} />}
                     {templateId === 4 && <QuoteTemplate4 data={displayData} preview={true} />}
                     {templateId === 5 && <QuoteTemplate5 data={displayData} preview={true} />}
                   </div>
