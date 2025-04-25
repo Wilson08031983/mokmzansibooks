@@ -13,14 +13,14 @@ interface ItemsTableProps {
 const ItemsTable = ({ items, subtotal, vatRate, tax, total }: ItemsTableProps) => {
   return (
     <div className="w-full">
-      <table className="w-full">
+      <table className="w-full border-collapse">
         <thead>
-          <tr className="bg-indigo-50 text-indigo-700">
-            <th className="py-2 px-3 text-left rounded-tl-lg">Description</th>
-            <th className="py-2 px-3 text-center">Qty</th>
-            <th className="py-2 px-3 text-right">Unit Price</th>
-            <th className="py-2 px-3 text-right">Discount</th>
-            <th className="py-2 px-3 text-right rounded-tr-lg">Total</th>
+          <tr className="bg-indigo-50">
+            <th className="py-2 px-3 text-left text-indigo-700 font-semibold rounded-tl-lg">Description</th>
+            <th className="py-2 px-3 text-center text-indigo-700 font-semibold">Qty</th>
+            <th className="py-2 px-3 text-right text-indigo-700 font-semibold">Unit Price</th>
+            <th className="py-2 px-3 text-right text-indigo-700 font-semibold">Discount</th>
+            <th className="py-2 px-3 text-right text-indigo-700 font-semibold rounded-tr-lg">Total</th>
           </tr>
         </thead>
         <tbody>
