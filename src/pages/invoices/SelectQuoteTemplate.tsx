@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import QuoteTemplate1 from "@/components/quotes/templates/QuoteTemplate1";
 import QuoteTemplate2 from "@/components/quotes/templates/QuoteTemplate2";
 import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate4";
-import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate5";
+import QuoteTemplate4 from "@/components/quotes/templates/QuoteTemplate4";
 import { QuoteData } from "@/types/quote";
 import { format } from "date-fns";
 
