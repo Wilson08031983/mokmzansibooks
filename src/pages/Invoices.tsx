@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -325,13 +325,14 @@ const Invoices = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Invoice ID</TableHead>
-                      <TableHead>Client</TableHead>
+                      {/* Updated table headers to improve layout */}
+                      <TableHead className="w-[150px]">Invoice ID</TableHead>
+                      <TableHead className="w-[200px]">Client</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Due Date</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="w-[120px]">Status</TableHead>
+                      <TableHead className="text-right w-[150px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -347,86 +348,80 @@ const Invoices = () => {
                           <TableCell className="text-right">
                             {formatInvoiceCurrency(invoice.amount)}
                           </TableCell>
-                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end items-center space-x-2">
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              {getStatusBadge(invoice.status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownloadPdf(invoice.id)}
-                                className="h-8"
+                                className="h-8 ml-2"
                               >
-                                <Download className="h-4 w-4 mr-1" /> PDF
+                                <Download className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEmail(invoice.id)}
-                                className="h-8"
-                              >
-                                <Mail className="h-4 w-4 mr-1" /> Email
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleEmail(invoice.id)}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    <span>Email Invoice</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    <span>Download PDF</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  {invoice.status !== "paid" && (
-                                    <DropdownMenuItem onClick={() => handleRecordPayment(invoice.id)}>
-                                      <CreditCard className="mr-2 h-4 w-4 text-green-500" />
-                                      <span>Record Payment</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>
-                                      <span>Change Status</span>
-                                    </DropdownMenuSubTrigger>
-                                    <DropdownMenuPortal>
-                                      <DropdownMenuSubContent>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "pending")}>
-                                          <span className="text-amber-500 mr-2">●</span> Pending
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "paid")}>
-                                          <Check className="mr-2 h-4 w-4 text-green-500" /> Paid
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "overdue")}>
-                                          <span className="text-red-500 mr-2">●</span> Overdue
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "draft")}>
-                                          <span className="text-gray-500 mr-2">●</span> Draft
-                                        </DropdownMenuItem>
-                                      </DropdownMenuSubContent>
-                                    </DropdownMenuPortal>
-                                  </DropdownMenuSub>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem>View Details</DropdownMenuItem>
-                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    className="text-destructive"
-                                    onClick={() => handleDelete(invoice.id)}
-                                  >
-                                    Delete Invoice
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleEmail(invoice.id)}>
+                                  <Mail className="mr-2 h-4 w-4" />
+                                  <span>Email Invoice</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  <span>Download PDF</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {invoice.status !== "paid" && (
+                                  <DropdownMenuItem onClick={() => handleRecordPayment(invoice.id)}>
+                                    <CreditCard className="mr-2 h-4 w-4 text-green-500" />
+                                    <span>Record Payment</span>
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <span>Change Status</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuPortal>
+                                    <DropdownMenuSubContent>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "pending")}>
+                                        <span className="text-amber-500 mr-2">●</span> Pending
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "paid")}>
+                                        <Check className="mr-2 h-4 w-4 text-green-500" /> Paid
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "overdue")}>
+                                        <span className="text-red-500 mr-2">●</span> Overdue
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "draft")}>
+                                        <span className="text-gray-500 mr-2">●</span> Draft
+                                      </DropdownMenuItem>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuPortal>
+                                </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>View Details</DropdownMenuItem>
+                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="text-destructive"
+                                  onClick={() => handleDelete(invoice.id)}
+                                >
+                                  Delete Invoice
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))
@@ -450,13 +445,14 @@ const Invoices = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Invoice ID</TableHead>
-                      <TableHead>Client</TableHead>
+                      {/* Updated table headers to improve layout */}
+                      <TableHead className="w-[150px]">Invoice ID</TableHead>
+                      <TableHead className="w-[200px]">Client</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Due Date</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="w-[120px]">Status</TableHead>
+                      <TableHead className="text-right w-[150px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -472,86 +468,80 @@ const Invoices = () => {
                           <TableCell className="text-right">
                             {formatInvoiceCurrency(invoice.amount)}
                           </TableCell>
-                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end items-center space-x-2">
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              {getStatusBadge(invoice.status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownloadPdf(invoice.id)}
-                                className="h-8"
+                                className="h-8 ml-2"
                               >
-                                <Download className="h-4 w-4 mr-1" /> PDF
+                                <Download className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEmail(invoice.id)}
-                                className="h-8"
-                              >
-                                <Mail className="h-4 w-4 mr-1" /> Email
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleEmail(invoice.id)}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    <span>Email Invoice</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    <span>Download PDF</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  {invoice.status !== "paid" && (
-                                    <DropdownMenuItem onClick={() => handleRecordPayment(invoice.id)}>
-                                      <CreditCard className="mr-2 h-4 w-4 text-green-500" />
-                                      <span>Record Payment</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>
-                                      <span>Change Status</span>
-                                    </DropdownMenuSubTrigger>
-                                    <DropdownMenuPortal>
-                                      <DropdownMenuSubContent>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "pending")}>
-                                          <span className="text-amber-500 mr-2">●</span> Pending
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "paid")}>
-                                          <Check className="mr-2 h-4 w-4 text-green-500" /> Paid
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "overdue")}>
-                                          <span className="text-red-500 mr-2">●</span> Overdue
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "draft")}>
-                                          <span className="text-gray-500 mr-2">●</span> Draft
-                                        </DropdownMenuItem>
-                                      </DropdownMenuSubContent>
-                                    </DropdownMenuPortal>
-                                  </DropdownMenuSub>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem>View Details</DropdownMenuItem>
-                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    className="text-destructive"
-                                    onClick={() => handleDelete(invoice.id)}
-                                  >
-                                    Delete Invoice
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleEmail(invoice.id)}>
+                                  <Mail className="mr-2 h-4 w-4" />
+                                  <span>Email Invoice</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  <span>Download PDF</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {invoice.status !== "paid" && (
+                                  <DropdownMenuItem onClick={() => handleRecordPayment(invoice.id)}>
+                                    <CreditCard className="mr-2 h-4 w-4 text-green-500" />
+                                    <span>Record Payment</span>
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <span>Change Status</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuPortal>
+                                    <DropdownMenuSubContent>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "pending")}>
+                                        <span className="text-amber-500 mr-2">●</span> Pending
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "paid")}>
+                                        <Check className="mr-2 h-4 w-4 text-green-500" /> Paid
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "overdue")}>
+                                        <span className="text-red-500 mr-2">●</span> Overdue
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "draft")}>
+                                        <span className="text-gray-500 mr-2">●</span> Draft
+                                      </DropdownMenuItem>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuPortal>
+                                </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>View Details</DropdownMenuItem>
+                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="text-destructive"
+                                  onClick={() => handleDelete(invoice.id)}
+                                >
+                                  Delete Invoice
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))
@@ -575,13 +565,14 @@ const Invoices = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Invoice ID</TableHead>
-                      <TableHead>Client</TableHead>
+                      {/* Updated table headers to improve layout */}
+                      <TableHead className="w-[150px]">Invoice ID</TableHead>
+                      <TableHead className="w-[200px]">Client</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Due Date</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="w-[120px]">Status</TableHead>
+                      <TableHead className="text-right w-[150px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -597,86 +588,80 @@ const Invoices = () => {
                           <TableCell className="text-right">
                             {formatInvoiceCurrency(invoice.amount)}
                           </TableCell>
-                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end items-center space-x-2">
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              {getStatusBadge(invoice.status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownloadPdf(invoice.id)}
-                                className="h-8"
+                                className="h-8 ml-2"
                               >
-                                <Download className="h-4 w-4 mr-1" /> PDF
+                                <Download className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEmail(invoice.id)}
-                                className="h-8"
-                              >
-                                <Mail className="h-4 w-4 mr-1" /> Email
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleEmail(invoice.id)}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    <span>Email Invoice</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    <span>Download PDF</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  {invoice.status !== "paid" && (
-                                    <DropdownMenuItem onClick={() => handleRecordPayment(invoice.id)}>
-                                      <CreditCard className="mr-2 h-4 w-4 text-green-500" />
-                                      <span>Record Payment</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>
-                                      <span>Change Status</span>
-                                    </DropdownMenuSubTrigger>
-                                    <DropdownMenuPortal>
-                                      <DropdownMenuSubContent>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "pending")}>
-                                          <span className="text-amber-500 mr-2">●</span> Pending
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "paid")}>
-                                          <Check className="mr-2 h-4 w-4 text-green-500" /> Paid
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "overdue")}>
-                                          <span className="text-red-500 mr-2">●</span> Overdue
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "draft")}>
-                                          <span className="text-gray-500 mr-2">●</span> Draft
-                                        </DropdownMenuItem>
-                                      </DropdownMenuSubContent>
-                                    </DropdownMenuPortal>
-                                  </DropdownMenuSub>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem>View Details</DropdownMenuItem>
-                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    className="text-destructive"
-                                    onClick={() => handleDelete(invoice.id)}
-                                  >
-                                    Delete Invoice
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleEmail(invoice.id)}>
+                                  <Mail className="mr-2 h-4 w-4" />
+                                  <span>Email Invoice</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  <span>Download PDF</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {invoice.status !== "paid" && (
+                                  <DropdownMenuItem onClick={() => handleRecordPayment(invoice.id)}>
+                                    <CreditCard className="mr-2 h-4 w-4 text-green-500" />
+                                    <span>Record Payment</span>
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <span>Change Status</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuPortal>
+                                    <DropdownMenuSubContent>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "pending")}>
+                                        <span className="text-amber-500 mr-2">●</span> Pending
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "paid")}>
+                                        <Check className="mr-2 h-4 w-4 text-green-500" /> Paid
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "overdue")}>
+                                        <span className="text-red-500 mr-2">●</span> Overdue
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "draft")}>
+                                        <span className="text-gray-500 mr-2">●</span> Draft
+                                      </DropdownMenuItem>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuPortal>
+                                </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>View Details</DropdownMenuItem>
+                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="text-destructive"
+                                  onClick={() => handleDelete(invoice.id)}
+                                >
+                                  Delete Invoice
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))
@@ -700,13 +685,14 @@ const Invoices = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Invoice ID</TableHead>
-                      <TableHead>Client</TableHead>
+                      {/* Updated table headers to improve layout */}
+                      <TableHead className="w-[150px]">Invoice ID</TableHead>
+                      <TableHead className="w-[200px]">Client</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Due Date</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="w-[120px]">Status</TableHead>
+                      <TableHead className="text-right w-[150px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -722,86 +708,80 @@ const Invoices = () => {
                           <TableCell className="text-right">
                             {formatInvoiceCurrency(invoice.amount)}
                           </TableCell>
-                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end items-center space-x-2">
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              {getStatusBadge(invoice.status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownloadPdf(invoice.id)}
-                                className="h-8"
+                                className="h-8 ml-2"
                               >
-                                <Download className="h-4 w-4 mr-1" /> PDF
+                                <Download className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEmail(invoice.id)}
-                                className="h-8"
-                              >
-                                <Mail className="h-4 w-4 mr-1" /> Email
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleEmail(invoice.id)}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    <span>Email Invoice</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    <span>Download PDF</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  {invoice.status !== "paid" && (
-                                    <DropdownMenuItem onClick={() => handleRecordPayment(invoice.id)}>
-                                      <CreditCard className="mr-2 h-4 w-4 text-green-500" />
-                                      <span>Record Payment</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>
-                                      <span>Change Status</span>
-                                    </DropdownMenuSubTrigger>
-                                    <DropdownMenuPortal>
-                                      <DropdownMenuSubContent>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "pending")}>
-                                          <span className="text-amber-500 mr-2">●</span> Pending
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "paid")}>
-                                          <Check className="mr-2 h-4 w-4 text-green-500" /> Paid
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "overdue")}>
-                                          <span className="text-red-500 mr-2">●</span> Overdue
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "draft")}>
-                                          <span className="text-gray-500 mr-2">●</span> Draft
-                                        </DropdownMenuItem>
-                                      </DropdownMenuSubContent>
-                                    </DropdownMenuPortal>
-                                  </DropdownMenuSub>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem>View Details</DropdownMenuItem>
-                                  <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    className="text-destructive"
-                                    onClick={() => handleDelete(invoice.id)}
-                                  >
-                                    Delete Invoice
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleEmail(invoice.id)}>
+                                  <Mail className="mr-2 h-4 w-4" />
+                                  <span>Email Invoice</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadPdf(invoice.id)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  <span>Download PDF</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {invoice.status !== "paid" && (
+                                  <DropdownMenuItem onClick={() => handleRecordPayment(invoice.id)}>
+                                    <CreditCard className="mr-2 h-4 w-4 text-green-500" />
+                                    <span>Record Payment</span>
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <span>Change Status</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuPortal>
+                                    <DropdownMenuSubContent>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "pending")}>
+                                        <span className="text-amber-500 mr-2">●</span> Pending
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "paid")}>
+                                        <Check className="mr-2 h-4 w-4 text-green-500" /> Paid
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "overdue")}>
+                                        <span className="text-red-500 mr-2">●</span> Overdue
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "draft")}>
+                                        <span className="text-gray-500 mr-2">●</span> Draft
+                                      </DropdownMenuItem>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuPortal>
+                                </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>View Details</DropdownMenuItem>
+                                <DropdownMenuItem>Edit Invoice</DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="text-destructive"
+                                  onClick={() => handleDelete(invoice.id)}
+                                >
+                                  Delete Invoice
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))
