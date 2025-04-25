@@ -33,6 +33,7 @@ import QuoteTemplate3 from "@/components/quotes/templates/QuoteTemplate4";
 import QuoteTemplate4 from "@/components/invoices/templates/Template5";
 import { QuoteData } from "@/types/quote";
 import { downloadQuoteAsPdf } from "@/utils/pdfUtils";
+import { formatCurrency } from "@/utils/formatters";
 
 interface BaseClient {
   id: string;
@@ -201,6 +202,20 @@ const NewQuote = () => {
     });
   }
 
+  const calculateItemAmount = (item: Item) => {
+    // Calculate price with markup
+    const priceWithMarkup = item.unitPrice * (1 + item.markupPercentage / 100);
+    
+    // Calculate amount before discount
+    const amountBeforeDiscount = priceWithMarkup * item.quantity;
+    
+    // Apply discount
+    const discountAmount = (amountBeforeDiscount * item.discount) / 100;
+    
+    // Final amount
+    return parseFloat((amountBeforeDiscount - discountAmount).toFixed(2));
+  };
+
   const handleAddItem = () => {
     const newItem: Item = {
       id: String(Date.now()),
@@ -221,19 +236,24 @@ const NewQuote = () => {
 
   const updateItem = (id: string, field: string, value: any) => {
     setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
+      prevItems.map((item) => {
+        if (item.id === id) {
+          const updatedItem = { ...item, [field]: value };
+          
+          // Recalculate amount whenever relevant fields change
+          if (['markupPercentage', 'quantity', 'unitPrice', 'discount'].includes(field)) {
+            updatedItem.amount = calculateItemAmount(updatedItem);
+          }
+          
+          return updatedItem;
+        }
+        return item;
+      })
     );
   };
 
-  const calculateAmount = (item: Item) => {
-    const amount = item.quantity * item.unitPrice * (1 - item.discount / 100);
-    return parseFloat(amount.toFixed(2));
-  };
-
   const calculateSubtotal = () => {
-    return items.reduce((acc, item) => acc + calculateAmount(item), 0);
+    return items.reduce((acc, item) => acc + item.amount, 0);
   };
 
   const calculateTax = () => {
@@ -591,6 +611,8 @@ const NewQuote = () => {
                           <td className="col-span-1">
                             <Input
                               type="number"
+                              min="0"
+                              step="0.01"
                               value={item.markupPercentage}
                               onChange={(e) => {
                                 const value = parseFloat(e.target.value);
@@ -610,16 +632,12 @@ const NewQuote = () => {
                           <td className="col-span-1">
                             <Input
                               type="number"
+                              min="0"
+                              step="1"
                               value={item.quantity}
                               onChange={(e) => {
                                 const value = parseInt(e.target.value);
                                 updateItem(item.id, "quantity", isNaN(value) ? 0 : value);
-                                updateItem(item.id, "amount", calculateAmount(
-                                  {
-                                    ...item,
-                                    quantity: isNaN(value) ? 0 : value
-                                  }
-                                ))
                               }}
                               className="w-full text-center"
                             />
@@ -627,16 +645,12 @@ const NewQuote = () => {
                           <td className="col-span-2">
                             <Input
                               type="number"
+                              min="0"
+                              step="0.01"
                               value={item.unitPrice}
                               onChange={(e) => {
                                 const value = parseFloat(e.target.value);
                                 updateItem(item.id, "unitPrice", isNaN(value) ? 0 : value);
-                                updateItem(item.id, "amount", calculateAmount(
-                                  {
-                                    ...item,
-                                    unitPrice: isNaN(value) ? 0 : value
-                                  }
-                                ))
                               }}
                               className="w-full text-center"
                             />
@@ -644,24 +658,21 @@ const NewQuote = () => {
                           <td className="col-span-2">
                             <Input
                               type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
                               value={item.discount}
                               onChange={(e) => {
                                 const value = parseFloat(e.target.value);
-                                updateItem(item.id, "discount", isNaN(value) ? 0 : value);
-                                updateItem(item.id, "amount", calculateAmount(
-                                  {
-                                    ...item,
-                                    discount: isNaN(value) ? 0 : value
-                                  }
-                                ))
+                                updateItem(item.id, "discount", isNaN(value) ? 0 : Math.min(100, value));
                               }}
                               className="w-full text-center"
                             />
                           </td>
                           <td className="col-span-2">
                             <Input
-                              type="number"
-                              value={calculateAmount(item)}
+                              type="text"
+                              value={formatCurrency(item.amount)}
                               readOnly
                               className="w-full text-center bg-gray-50"
                             />
