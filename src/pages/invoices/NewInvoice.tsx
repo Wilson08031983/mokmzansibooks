@@ -506,23 +506,23 @@ const NewInvoice = () => {
             <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="grid grid-cols-16 gap-2 font-medium text-sm">
-                  <div className="col-span-1">No</div>
-                  <div className="col-span-5">Description</div>
-                  <div className="col-span-2">Quantity</div>
-                  <div className="col-span-2">Rate (R)</div>
-                  <div className="col-span-2">Amount (R)</div>
-                  <div className="col-span-2">Discount (R)</div>
-                  <div className="col-span-1">Total (R)</div>
-                  <div className="col-span-1"></div>
+                  <div className="col-span-1 flex items-center">No</div>
+                  <div className="col-span-5 flex items-center">Description</div>
+                  <div className="col-span-2 flex items-center">Quantity</div>
+                  <div className="col-span-2 flex items-center">Rate (R)</div>
+                  <div className="col-span-2 flex items-center">Amount (R)</div>
+                  <div className="col-span-2 flex items-center">Discount (R)</div>
+                  <div className="col-span-1 flex items-center">Total (R)</div>
+                  <div className="col-span-1 flex items-center"></div>
                 </div>
 
                 {items.map((item, index) => (
-                  <div key={index} className="grid grid-cols-16 gap-2">
+                  <div key={index} className="grid grid-cols-16 gap-2 items-center">
                     <div className="col-span-1">
                       <Input
                         value={item.itemNo}
                         readOnly
-                        className="bg-gray-50"
+                        className="bg-gray-50 text-center"
                       />
                     </div>
                     <div className="col-span-5">
@@ -541,6 +541,7 @@ const NewInvoice = () => {
                         type="number"
                         min="1"
                         value={item.quantity}
+                        className="text-center"
                         onChange={(e) => {
                           const newItems = [...items];
                           const quantity = parseInt(e.target.value);
@@ -557,6 +558,7 @@ const NewInvoice = () => {
                         min="0"
                         step="0.01"
                         value={item.rate}
+                        className="text-center"
                         onChange={(e) => {
                           const newItems = [...items];
                           const rate = parseFloat(e.target.value);
@@ -572,7 +574,7 @@ const NewInvoice = () => {
                         type="number"
                         readOnly
                         value={item.amount}
-                        className="bg-gray-50"
+                        className="bg-gray-50 text-center"
                       />
                     </div>
                     <div className="col-span-2">
@@ -581,6 +583,7 @@ const NewInvoice = () => {
                         min="0"
                         step="0.01"
                         value={item.discount}
+                        className="text-center"
                         onChange={(e) => {
                           const newItems = [...items];
                           const discount = parseFloat(e.target.value);
@@ -595,10 +598,10 @@ const NewInvoice = () => {
                         type="number"
                         readOnly
                         value={item.total}
-                        className="bg-gray-50"
+                        className="bg-gray-50 text-center"
                       />
                     </div>
-                    <div className="col-span-1">
+                    <div className="col-span-1 flex justify-center">
                       <Button
                         variant="ghost"
                         size="sm"
