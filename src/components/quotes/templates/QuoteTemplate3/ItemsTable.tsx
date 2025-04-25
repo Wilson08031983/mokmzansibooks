@@ -12,51 +12,53 @@ interface ItemsTableProps {
 
 const ItemsTable = ({ items, subtotal, vatRate, tax, total }: ItemsTableProps) => {
   return (
-    <div className="relative z-10 mt-8">
-      <div className="bg-indigo-600 text-white py-2 px-4 font-bold">
-        Quotation Details
-      </div>
+    <div className="w-full">
       <table className="w-full">
         <thead>
-          <tr className="bg-gray-50">
-            <th className="py-2 px-3 text-left">Item No.</th>
-            <th className="py-2 px-3 text-left">Description</th>
+          <tr className="bg-indigo-50 text-indigo-700">
+            <th className="py-2 px-3 text-left rounded-tl-lg">Description</th>
             <th className="py-2 px-3 text-center">Qty</th>
             <th className="py-2 px-3 text-right">Unit Price</th>
             <th className="py-2 px-3 text-right">Discount</th>
-            <th className="py-2 px-3 text-right">Total</th>
+            <th className="py-2 px-3 text-right rounded-tr-lg">Total</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item, i) => (
-            <tr key={i} className="border-b border-gray-100">
-              <td className="py-2 px-3">{item.itemNo || `ITEM-${i+1}`}</td>
-              <td className="py-2 px-3">{item.description}</td>
-              <td className="py-2 px-3 text-center">{item.quantity}</td>
-              <td className="py-2 px-3 text-right">{formatCurrency(item.unitPrice || item.rate)}</td>
-              <td className="py-2 px-3 text-right">{formatPercentage(item.discount || 0)}</td>
-              <td className="py-2 px-3 text-right">{formatCurrency(item.amount)}</td>
+            <tr key={i} className="border-b border-indigo-50">
+              <td className="py-3 px-3">
+                <div>
+                  <p className="font-medium">{item.description}</p>
+                  {item.itemNo && <p className="text-xs text-gray-500">Item: {item.itemNo}</p>}
+                </div>
+              </td>
+              <td className="py-3 px-3 text-center">{item.quantity}</td>
+              <td className="py-3 px-3 text-right">{formatCurrency(item.unitPrice || item.rate)}</td>
+              <td className="py-3 px-3 text-right">{formatPercentage(item.discount || 0)}</td>
+              <td className="py-3 px-3 text-right font-medium">{formatCurrency(item.amount)}</td>
             </tr>
           ))}
+          {/* Empty row for spacing */}
+          <tr className="h-4"></tr>
         </tbody>
+        <tfoot>
+          <tr className="bg-gray-50">
+            <td colSpan={3}></td>
+            <td className="py-2 px-3 text-right font-medium">Subtotal:</td>
+            <td className="py-2 px-3 text-right">{formatCurrency(subtotal)}</td>
+          </tr>
+          <tr className="bg-gray-50">
+            <td colSpan={3}></td>
+            <td className="py-2 px-3 text-right font-medium">VAT ({vatRate}%):</td>
+            <td className="py-2 px-3 text-right">{formatCurrency(tax)}</td>
+          </tr>
+          <tr className="bg-indigo-700 text-white">
+            <td colSpan={3}></td>
+            <td className="py-3 px-3 text-right font-bold rounded-bl-lg">TOTAL:</td>
+            <td className="py-3 px-3 text-right font-bold rounded-br-lg">{formatCurrency(total)}</td>
+          </tr>
+        </tfoot>
       </table>
-      
-      <div className="mt-4 flex justify-end">
-        <div className="w-1/3 space-y-1">
-          <div className="flex justify-between py-1 border-b border-gray-100">
-            <span className="font-medium">Subtotal:</span>
-            <span>{formatCurrency(subtotal)}</span>
-          </div>
-          <div className="flex justify-between py-1 border-b border-gray-100">
-            <span className="font-medium">VAT ({vatRate || 0}%):</span>
-            <span>{formatCurrency(tax)}</span>
-          </div>
-          <div className="flex justify-between py-2 bg-indigo-600 text-white px-3">
-            <span className="font-bold">Total:</span>
-            <span className="font-bold">{formatCurrency(total)}</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
