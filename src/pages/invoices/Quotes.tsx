@@ -53,7 +53,6 @@ import {
   changeStatusAction
 } from "@/utils/actionUtils";
 
-// Mock data
 const mockQuotes = [
   {
     id: "QT-2023-001",
@@ -136,17 +135,89 @@ const Quotes = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "accepted":
-        return <Badge className="bg-green-500">Accepted</Badge>;
+        return (
+          <div className="flex items-center space-x-2">
+            <Badge className="bg-green-500">Accepted</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownload(quote.id)}
+              className="h-8 ml-2"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        );
       case "pending":
-        return <Badge variant="outline" className="text-amber-500 border-amber-500">Pending</Badge>;
+        return (
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="text-amber-500 border-amber-500">Pending</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownload(quote.id)}
+              className="h-8 ml-2"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        );
       case "expired":
-        return <Badge className="bg-gray-500">Expired</Badge>;
+        return (
+          <div className="flex items-center space-x-2">
+            <Badge className="bg-gray-500">Expired</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownload(quote.id)}
+              className="h-8 ml-2"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        );
       case "declined":
-        return <Badge className="bg-red-500">Declined</Badge>;
+        return (
+          <div className="flex items-center space-x-2">
+            <Badge className="bg-red-500">Declined</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownload(quote.id)}
+              className="h-8 ml-2"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        );
       case "draft":
-        return <Badge variant="outline" className="text-gray-500 border-gray-500">Draft</Badge>;
+        return (
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="text-gray-500 border-gray-500">Draft</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownload(quote.id)}
+              className="h-8 ml-2"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return (
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline">{status}</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownload(quote.id)}
+              className="h-8 ml-2"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        );
     }
   };
 
@@ -170,7 +241,6 @@ const Quotes = () => {
   const handleDelete = async (id: string) => {
     const success = await deleteAction(id, "quote");
     if (success) {
-      // Remove the quote from the list if deletion was successful
       setQuotes(prevQuotes => prevQuotes.filter(quote => quote.id !== id));
     }
   };
@@ -178,7 +248,6 @@ const Quotes = () => {
   const handleConvertToInvoice = async (id: string) => {
     await convertAction(id, "quote", "invoice", {
       onSuccess: () => {
-        // Navigate to invoices or handle as needed
         toast({
           title: "Quote converted to invoice",
           description: "You can now view it in the invoices section."
@@ -190,7 +259,6 @@ const Quotes = () => {
   const handleChangeStatus = async (id: string, newStatus: string) => {
     await changeStatusAction(id, "quote", newStatus);
     
-    // Update the quote's status locally
     setQuotes(prevQuotes => prevQuotes.map(quote => 
       quote.id === id ? { ...quote, status: newStatus } : quote
     ));
@@ -382,7 +450,6 @@ const Quotes = () => {
               </div>
             </TabsContent>
             
-            {/* Add similar tab content for other tabs (pending, accepted, expired) */}
             <TabsContent value="pending" className="m-0">
               <div className="rounded-md border">
                 <Table>
