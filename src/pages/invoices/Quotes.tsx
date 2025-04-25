@@ -47,7 +47,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   downloadAction, 
-  emailAction, 
   deleteAction, 
   convertAction,
   changeStatusAction
@@ -160,10 +159,6 @@ const Quotes = () => {
 
   const handleDownload = async (id: string) => {
     await downloadAction(id, "quote");
-  };
-
-  const handleEmail = async (id: string) => {
-    await emailAction(id, "quote");
   };
 
   const handleDelete = async (id: string) => {
@@ -289,14 +284,6 @@ const Quotes = () => {
                               >
                                 <Download className="h-4 w-4 mr-1" /> PDF
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEmail(quote.id)}
-                                className="h-8"
-                              >
-                                <Mail className="h-4 w-4 mr-1" /> Email
-                              </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
@@ -309,10 +296,6 @@ const Quotes = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleEmail(quote.id)}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    <span>Email Quote</span>
-                                  </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleDownload(quote.id)}>
                                     <Download className="mr-2 h-4 w-4" />
                                     <span>Download PDF</span>
@@ -428,14 +411,6 @@ const Quotes = () => {
                               >
                                 <Download className="h-4 w-4 mr-1" /> PDF
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEmail(quote.id)}
-                                className="h-8"
-                              >
-                                <Mail className="h-4 w-4 mr-1" /> Email
-                              </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
@@ -448,10 +423,6 @@ const Quotes = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleEmail(quote.id)}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    <span>Email Quote</span>
-                                  </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleDownload(quote.id)}>
                                     <Download className="mr-2 h-4 w-4" />
                                     <span>Download PDF</span>
@@ -559,14 +530,6 @@ const Quotes = () => {
                               >
                                 <Download className="h-4 w-4 mr-1" /> PDF
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEmail(quote.id)}
-                                className="h-8"
-                              >
-                                <Mail className="h-4 w-4 mr-1" /> Email
-                              </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
@@ -579,10 +542,6 @@ const Quotes = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleEmail(quote.id)}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    <span>Email Quote</span>
-                                  </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleDownload(quote.id)}>
                                     <Download className="mr-2 h-4 w-4" />
                                     <span>Download PDF</span>
@@ -690,14 +649,6 @@ const Quotes = () => {
                               >
                                 <Download className="h-4 w-4 mr-1" /> PDF
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEmail(quote.id)}
-                                className="h-8"
-                              >
-                                <Mail className="h-4 w-4 mr-1" /> Email
-                              </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
@@ -710,10 +661,6 @@ const Quotes = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleEmail(quote.id)}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    <span>Email Quote</span>
-                                  </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleDownload(quote.id)}>
                                     <Download className="mr-2 h-4 w-4" />
                                     <span>Download PDF</span>
