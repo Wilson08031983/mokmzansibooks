@@ -1,8 +1,10 @@
-
 import React from "react";
 import { TemplateProps } from "@/types/quote";
-import { formatDate, formatCurrency, formatPercentage, renderCompanyLogo, renderCompanyStamp, renderSignature } from "@/utils/formatters";
-import { Badge } from "@/components/ui/badge";
+import Header from "./QuoteTemplate3/Header";
+import QuoteInfo from "./QuoteTemplate3/QuoteInfo";
+import ItemsTable from "./QuoteTemplate3/ItemsTable";
+import BankDetails from "./QuoteTemplate3/BankDetails";
+import Footer from "./QuoteTemplate3/Footer";
 
 const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
   // Sample data for preview mode
@@ -69,157 +71,37 @@ const QuoteTemplate3 = ({ data, preview = false }: TemplateProps) => {
         }}>
       </div>
       
-      {/* Header */}
-      <div className="relative z-10 flex justify-between items-start">
-        <div className="space-y-1">
-          <div className="inline-block bg-indigo-600 text-white font-bold text-2xl py-2 px-4">
-            QUOTATION
-          </div>
-          <p className="text-sm ml-1 mt-2">#{displayData.quoteNumber}</p>
-        </div>
-        <div className="bg-white p-2 rounded shadow-sm">
-          {renderCompanyLogo(displayData.company.logo)}
-        </div>
-      </div>
+      <Header 
+        quoteNumber={displayData.quoteNumber}
+        company={displayData.company}
+      />
 
-      {/* Quote Info */}
-      <div className="relative z-10 mt-8 grid grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <h3 className="font-bold text-indigo-600">FROM</h3>
-            <h4 className="font-semibold text-lg">{displayData.company.name}</h4>
-            <p className="text-gray-600 whitespace-pre-line">{displayData.company.address}</p>
-            <p className="text-gray-600">{displayData.company.email}</p>
-            <p className="text-gray-600">{displayData.company.phone}</p>
-          </div>
-          
-          <div className="space-y-1">
-            <h3 className="font-bold text-indigo-600">TO</h3>
-            <h4 className="font-semibold text-lg">{displayData.client.name}</h4>
-            <p className="text-gray-600 whitespace-pre-line">{displayData.client.address}</p>
-            <p className="text-gray-600">{displayData.client.email}</p>
-            <p className="text-gray-600">{displayData.client.phone}</p>
-          </div>
-        </div>
-        
-        <div className="flex flex-col justify-end">
-          <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-            <div className="flex justify-between border-b border-gray-200 pb-2">
-              <span className="font-medium">Quotation Number:</span>
-              <span>{displayData.quoteNumber}</span>
-            </div>
-            <div className="flex justify-between border-b border-gray-200 pb-2">
-              <span className="font-medium">Date Issued:</span>
-              <span>{formatDate(displayData.issueDate)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Valid Until:</span>
-              <span>{formatDate(displayData.expiryDate)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <QuoteInfo 
+        company={displayData.company}
+        client={displayData.client}
+        issueDate={displayData.issueDate}
+        quoteNumber={displayData.quoteNumber}
+        expiryDate={displayData.expiryDate}
+      />
 
-      {/* Items Table */}
-      <div className="relative z-10 mt-8">
-        <div className="bg-indigo-600 text-white py-2 px-4 font-bold">
-          Quotation Details
-        </div>
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="py-2 px-3 text-left">Item No.</th>
-              <th className="py-2 px-3 text-left">Description</th>
-              <th className="py-2 px-3 text-center">Qty</th>
-              <th className="py-2 px-3 text-right">Unit Price</th>
-              <th className="py-2 px-3 text-right">Discount</th>
-              <th className="py-2 px-3 text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayData.items.map((item, i) => (
-              <tr key={i} className="border-b border-gray-100">
-                <td className="py-2 px-3">{item.itemNo || `ITEM-${i+1}`}</td>
-                <td className="py-2 px-3">{item.description}</td>
-                <td className="py-2 px-3 text-center">{item.quantity}</td>
-                <td className="py-2 px-3 text-right">{formatCurrency(item.unitPrice || item.rate)}</td>
-                <td className="py-2 px-3 text-right">{formatPercentage(item.discount || 0)}</td>
-                <td className="py-2 px-3 text-right">{formatCurrency(item.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        <div className="mt-4 flex justify-end">
-          <div className="w-1/3 space-y-1">
-            <div className="flex justify-between py-1 border-b border-gray-100">
-              <span className="font-medium">Subtotal:</span>
-              <span>{formatCurrency(displayData.subtotal)}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-gray-100">
-              <span className="font-medium">VAT ({displayData.vatRate || 0}%):</span>
-              <span>{formatCurrency(displayData.tax)}</span>
-            </div>
-            <div className="flex justify-between py-2 bg-indigo-600 text-white px-3">
-              <span className="font-bold">Total:</span>
-              <span className="font-bold">{formatCurrency(displayData.total)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ItemsTable 
+        items={displayData.items}
+        subtotal={displayData.subtotal}
+        vatRate={displayData.vatRate || 0}
+        tax={displayData.tax}
+        total={displayData.total}
+      />
 
-      {/* Bank Account Details */}
-      {displayData.bankAccount && (
-        <div className="relative z-10 mt-6 bg-white border-l-4 border-indigo-600 p-3 shadow-sm">
-          <div className="flex items-center mb-2">
-            <h3 className="font-bold text-indigo-600">Banking Details</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p><span className="font-medium">Bank Name:</span> {displayData.bankAccount.bankName}</p>
-              <p><span className="font-medium">Account Name:</span> {displayData.bankAccount.accountName}</p>
-            </div>
-            <div>
-              <p><span className="font-medium">Account Number:</span> {displayData.bankAccount.accountNumber}</p>
-              <p><span className="font-medium">Branch Code:</span> {displayData.bankAccount.branchCode}</p>
-              {displayData.bankAccount.swiftCode && (
-                <p><span className="font-medium">SWIFT Code:</span> {displayData.bankAccount.swiftCode}</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <BankDetails 
+        bankAccount={displayData.bankAccount}
+      />
 
-      {/* Notes and Terms */}
-      <div className="relative z-10 mt-6 grid grid-cols-2 gap-6">
-        <div>
-          <h3 className="font-bold text-indigo-600 border-b border-indigo-200 pb-1 mb-2">Notes</h3>
-          <p className="text-gray-600 text-sm">{displayData.notes}</p>
-        </div>
-        <div>
-          <h3 className="font-bold text-indigo-600 border-b border-indigo-200 pb-1 mb-2">Terms & Conditions</h3>
-          <p className="text-gray-600 text-sm">{displayData.terms}</p>
-        </div>
-      </div>
-
-      {/* Signature & Stamp */}
-      <div className="relative z-10 mt-8 grid grid-cols-2 gap-6">
-        <div>
-          <h3 className="font-medium text-indigo-600 mb-4">Authorized Signature:</h3>
-          <div className="border-b-2 border-gray-300 w-48 h-10 mb-1">
-            {renderSignature(displayData.signature)}
-          </div>
-          <p className="text-xs text-gray-500">Signature</p>
-        </div>
-        <div className="flex justify-end items-end">
-          <div className="flex flex-col items-end">
-            <p className="text-sm mb-2">Initials: _________</p>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg w-24 h-24 flex items-center justify-center">
-              {renderCompanyStamp(displayData.company.stamp)}
-            </div>
-          </div>
-        </div>
-      </div>
+      <Footer 
+        notes={displayData.notes}
+        terms={displayData.terms}
+        signature={displayData.signature}
+        companyStamp={displayData.company.stamp}
+      />
     </div>
   );
 };
