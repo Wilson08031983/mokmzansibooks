@@ -1,7 +1,6 @@
-
 import React from "react";
 import { QuoteData } from "@/types/quote";
-import { formatDate, formatCurrency, renderCompanyLogo, renderCompanyStamp, renderSignature } from "@/utils/formatters";
+import { formatDate, formatCurrency, renderCompanyLogo, renderCompanyStamp, renderSignature, formatPercentage } from "@/utils/formatters";
 
 interface TemplateProps {
   data: QuoteData;
