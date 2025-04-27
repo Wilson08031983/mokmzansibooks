@@ -1,3 +1,4 @@
+
 import React from "react";
 import { QuoteData } from "@/types/quote";
 import { formatDate, formatCurrency, renderCompanyLogo, renderCompanyStamp, renderSignature, formatPercentage } from "@/utils/formatters";
@@ -57,7 +58,17 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
     }
   };
 
-  const displayData = preview ? previewData : data;
+  // Use the provided data or fall back to preview data
+  const displayData = preview ? data : previewData;
+  
+  // Ensure we don't encounter undefined values in the item properties
+  const safeItems = displayData.items.map(item => ({
+    ...item,
+    itemNo: item.itemNo || '',
+    markupPercentage: item.markupPercentage || 0,
+    unitPrice: item.unitPrice || item.rate || 0,
+    discount: item.discount || 0,
+  }));
   
   return (
     <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans relative overflow-hidden" style={{ minHeight: '297mm' }}>
@@ -138,14 +149,14 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
                 </tr>
               </thead>
               <tbody>
-                {displayData.items.map((item, i) => (
+                {safeItems.map((item, i) => (
                   <tr key={i} className="border-b border-gray-100">
                     <td className="py-3">{item.itemNo || `ITEM-${i+1}`}</td>
                     <td className="py-3">{item.description}</td>
                     <td className="py-3 text-right">{item.quantity}</td>
-                    <td className="py-3 text-right">{item.markupPercentage || 0}%</td>
-                    <td className="py-3 text-right">{formatCurrency(item.unitPrice || item.rate || 0)}</td>
-                    <td className="py-3 text-right">{formatPercentage(item.discount || 0)}</td>
+                    <td className="py-3 text-right">{item.markupPercentage}%</td>
+                    <td className="py-3 text-right">{formatCurrency(item.unitPrice)}</td>
+                    <td className="py-3 text-right">{formatPercentage(item.discount)}</td>
                     <td className="py-3 text-right font-medium">{formatCurrency(item.amount)}</td>
                   </tr>
                 ))}
