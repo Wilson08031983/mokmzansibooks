@@ -449,7 +449,7 @@ const NewQuote = () => {
                     </FormItem>} />
               </Card>
 
-              <Card className="mt-8 p-68 w-full">
+              <Card className="mt-8 p-6 w-full">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Items</h3>
                 </div>
