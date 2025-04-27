@@ -21,6 +21,7 @@ import QuoteTemplate4 from "@/components/invoices/templates/Template5";
 import { QuoteData } from "@/types/quote";
 import { downloadQuoteAsPdf } from "@/utils/pdfUtils";
 import { formatCurrency } from "@/utils/formatters";
+
 interface BaseClient {
   id: string;
   name: string;
@@ -30,14 +31,18 @@ interface BaseClient {
   lastInteraction: string;
   type: string;
 }
+
 interface CompanyClient extends BaseClient {
   contactPerson: string;
   type: 'company' | 'vendor';
 }
+
 interface IndividualClient extends BaseClient {
   type: 'individual';
 }
+
 type Client = CompanyClient | IndividualClient;
+
 const mockClients = {
   companies: [{
     id: "c1",
@@ -78,9 +83,11 @@ const mockClients = {
     type: "vendor"
   }]
 };
+
 const getAllClients = () => {
   return [...mockClients.companies, ...mockClients.individuals, ...mockClients.vendors] as Client[];
 };
+
 const formSchema = z.object({
   quoteNumber: z.string().min(2, {
     message: "Quote number must be at least 2 characters."
@@ -100,6 +107,7 @@ const formSchema = z.object({
   branchCode: z.string().optional(),
   swiftCode: z.string().optional()
 });
+
 interface Item {
   id: string;
   itemNo: string;
@@ -111,6 +119,7 @@ interface Item {
   amount: number;
   websiteUrl?: string;
 }
+
 const NewQuote = () => {
   const [selectedTemplate, setSelectedTemplate] = useState("template1");
   const [items, setItems] = useState<Item[]>([{
@@ -154,6 +163,7 @@ const NewQuote = () => {
       swiftCode: "FIRNZAJJ"
     }
   });
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     toast("Quote Submitted", {
       description: <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
@@ -161,19 +171,14 @@ const NewQuote = () => {
         </pre>
     });
   }
+
   const calculateItemAmount = (item: Item) => {
-    // Calculate price with markup
     const priceWithMarkup = item.unitPrice * (1 + item.markupPercentage / 100);
-
-    // Calculate amount before discount
     const amountBeforeDiscount = priceWithMarkup * item.quantity;
-
-    // Apply discount
     const discountAmount = amountBeforeDiscount * item.discount / 100;
-
-    // Final amount
     return parseFloat((amountBeforeDiscount - discountAmount).toFixed(2));
   };
+
   const handleAddItem = () => {
     const newItem: Item = {
       id: String(Date.now()),
@@ -187,9 +192,11 @@ const NewQuote = () => {
     };
     setItems([...items, newItem]);
   };
+
   const handleRemoveItem = (id: string) => {
     setItems(items.filter(item => item.id !== id));
   };
+
   const updateItem = (id: string, field: string, value: any) => {
     setItems(prevItems => prevItems.map(item => {
       if (item.id === id) {
@@ -198,7 +205,6 @@ const NewQuote = () => {
           [field]: value
         };
 
-        // Recalculate amount whenever relevant fields change
         if (['markupPercentage', 'quantity', 'unitPrice', 'discount'].includes(field)) {
           updatedItem.amount = calculateItemAmount(updatedItem);
         }
@@ -207,23 +213,28 @@ const NewQuote = () => {
       return item;
     }));
   };
+
   const calculateSubtotal = () => {
     return items.reduce((acc, item) => acc + item.amount, 0);
   };
+
   const calculateTax = () => {
     const subtotal = calculateSubtotal();
     const tax = subtotal * (form.watch("vatRate") / 100);
     return parseFloat(tax.toFixed(2));
   };
+
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     const tax = calculateTax();
     const total = subtotal + tax;
     return parseFloat(total.toFixed(2));
   };
+
   const getSelectedClient = (clientId: string) => {
     return allClients.find(client => client.id === clientId);
   };
+
   const createPreviewData = (): QuoteData => {
     const selectedClientId = form.watch("client");
     const selectedClient = getSelectedClient(selectedClientId);
@@ -273,6 +284,7 @@ const NewQuote = () => {
       bankAccount: hasBankDetails ? bankAccount : undefined
     };
   };
+
   const handleDownloadQuote = async () => {
     if (!quoteTemplateRef.current) return;
     try {
@@ -288,6 +300,7 @@ const NewQuote = () => {
       toast.error("Failed to download quote");
     }
   };
+
   return <div className="container py-8">
       <h1 className="text-2xl font-bold mb-8">Create New Quote</h1>
       <Form {...form}>
@@ -449,7 +462,7 @@ const NewQuote = () => {
                     </FormItem>} />
               </Card>
 
-              <Card className="mt-8 p-6 w-full">
+              <Card className="mt-8 p-6 w-[200%]">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Items</h3>
                 </div>
@@ -572,4 +585,5 @@ const NewQuote = () => {
       </Form>
     </div>;
 };
+
 export default NewQuote;
