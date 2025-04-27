@@ -1,4 +1,3 @@
-
 export interface QuoteData {
   quoteNumber: string;
   issueDate: string;
@@ -39,6 +38,7 @@ export interface QuoteItem {
   itemNo?: string;
   description: string;
   quantity: number;
+  markupPercentage?: number;
   unitPrice?: number;
   rate?: number;
   discount?: number;
