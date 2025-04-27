@@ -1,7 +1,8 @@
-
 import React from "react";
 import { QuoteData } from "@/types/quote";
-import { formatDate, formatCurrency, renderCompanyLogo, renderCompanyStamp, renderSignature, formatPercentage } from "@/utils/formatters";
+import QuoteSidebar from "./components/QuoteSidebar";
+import QuoteTable from "./components/QuoteTable";
+import QuoteFooter from "./components/QuoteFooter";
 
 interface TemplateProps {
   data: QuoteData;
@@ -61,73 +62,11 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
   // Use the provided data or fall back to preview data
   const displayData = preview ? data : previewData;
   
-  // Ensure we don't encounter undefined values in the item properties
-  const safeItems = displayData.items.map(item => ({
-    ...item,
-    itemNo: item.itemNo || '',
-    markupPercentage: item.markupPercentage || 0,
-    unitPrice: item.unitPrice || item.rate || 0,
-    discount: item.discount || 0,
-  }));
-  
   return (
     <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans relative overflow-hidden" style={{ minHeight: '297mm' }}>
-      {/* Left sidebar */}
       <div className="flex h-full">
-        <div className="w-1/3 bg-gray-800 text-white p-6 rounded-l-lg h-full">
-          <div className="mb-8">
-            {renderCompanyLogo(displayData.company.logo)}
-            <h3 className="font-bold text-lg mt-6 mb-1">{displayData.company.name}</h3>
-            <p className="text-sm text-gray-300 whitespace-pre-line">{displayData.company.address}</p>
-            <p className="text-sm text-gray-300">{displayData.company.email}</p>
-            <p className="text-sm text-gray-300">{displayData.company.phone}</p>
-          </div>
-          
-          <div className="mb-8 pt-6 border-t border-gray-600">
-            <h4 className="text-xs uppercase tracking-wider text-gray-400 mb-3">Bill To</h4>
-            <h3 className="font-bold text-lg mb-1">{displayData.client.name}</h3>
-            <p className="text-sm text-gray-300 whitespace-pre-line">{displayData.client.address}</p>
-            <p className="text-sm text-gray-300">{displayData.client.email}</p>
-            <p className="text-sm text-gray-300">{displayData.client.phone}</p>
-          </div>
-          
-          <div className="mb-8 pt-6 border-t border-gray-600">
-            <h4 className="text-xs uppercase tracking-wider text-gray-400 mb-3">Quote Details</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Number:</span>
-                <span>{displayData.quoteNumber}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Date:</span>
-                <span>{formatDate(displayData.issueDate)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Expiry Date:</span>
-                <span>{formatDate(displayData.expiryDate)}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-auto pt-6 border-t border-gray-600">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Subtotal:</span>
-                <span>{formatCurrency(displayData.subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">VAT ({displayData.vatRate}%):</span>
-                <span>{formatCurrency(displayData.tax)}</span>
-              </div>
-              <div className="flex justify-between text-xl font-bold mt-4">
-                <span>Total:</span>
-                <span>{formatCurrency(displayData.total)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <QuoteSidebar data={displayData} />
         
-        {/* Main content */}
         <div className="w-2/3 p-6 rounded-r-lg border-r border-t border-b border-gray-200 h-full">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-1">QUOTE</h1>
@@ -136,73 +75,10 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
           
           <div className="mb-8">
             <h2 className="text-xl font-bold text-gray-700 mb-4">Quote Items</h2>
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-gray-500 border-b-2 border-gray-200">
-                  <th className="pb-2">Item No.</th>
-                  <th className="pb-2">Description</th>
-                  <th className="pb-2 text-right">Qty</th>
-                  <th className="pb-2 text-right">Mark Up %</th>
-                  <th className="pb-2 text-right">Unit Price</th>
-                  <th className="pb-2 text-right">Discount</th>
-                  <th className="pb-2 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {safeItems.map((item, i) => (
-                  <tr key={i} className="border-b border-gray-100">
-                    <td className="py-3">{item.itemNo || `ITEM-${i+1}`}</td>
-                    <td className="py-3">{item.description}</td>
-                    <td className="py-3 text-right">{item.quantity}</td>
-                    <td className="py-3 text-right">{item.markupPercentage}%</td>
-                    <td className="py-3 text-right">{formatCurrency(item.unitPrice)}</td>
-                    <td className="py-3 text-right">{formatPercentage(item.discount)}</td>
-                    <td className="py-3 text-right font-medium">{formatCurrency(item.amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <QuoteTable items={displayData.items} />
           </div>
           
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            <div>
-              <h3 className="font-bold text-gray-700 mb-2">Notes</h3>
-              <p className="text-sm text-gray-600">{displayData.notes}</p>
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-700 mb-2">Terms & Conditions</h3>
-              <p className="text-sm text-gray-600">{displayData.terms}</p>
-            </div>
-          </div>
-          
-          {displayData.bankAccount && (
-            <div className="mb-8">
-              <h3 className="font-bold text-gray-700 mb-2">Bank Details</h3>
-              <div className="text-sm text-gray-600">
-                <p>Bank: {displayData.bankAccount.bankName}</p>
-                <p>Account Name: {displayData.bankAccount.accountName}</p>
-                <p>Account Number: {displayData.bankAccount.accountNumber}</p>
-                <p>Branch Code: {displayData.bankAccount.branchCode}</p>
-                {displayData.bankAccount.swiftCode && <p>SWIFT Code: {displayData.bankAccount.swiftCode}</p>}
-              </div>
-            </div>
-          )}
-          
-          <div className="flex justify-between items-end pt-6 mt-auto">
-            <div>
-              <h3 className="font-medium text-gray-700 mb-4">Authorized Signature</h3>
-              <div className="border-b border-gray-400 w-48 h-10 mb-1">
-                {renderSignature(displayData.signature)}
-              </div>
-              <p className="text-xs text-gray-500">Signature</p>
-            </div>
-            <div className="flex items-end">
-              <p className="text-sm mr-4">Initials: _________</p>
-              <div className="border border-dashed border-gray-400 w-20 h-20 flex items-center justify-center">
-                {renderCompanyStamp(displayData.company.stamp)}
-              </div>
-            </div>
-          </div>
+          <QuoteFooter data={displayData} />
         </div>
       </div>
     </div>
