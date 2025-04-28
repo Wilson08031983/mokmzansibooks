@@ -18,21 +18,25 @@ export interface InvoiceData {
     logo?: string;
     stamp?: string;
   };
-  items: {
-    itemNo: number;
-    description: string;
-    quantity: number;
-    rate: number;
-    amount: number;
-    discount: number;
-    total: number;
-  }[];
+  items: InvoiceItem[];
   subtotal: number;
+  vatRate: number;
   tax: number;
   total: number;
   notes?: string;
   terms?: string;
+  bankingDetails?: string;
   signature?: string;
+  currency?: string;
+}
+
+export interface InvoiceItem {
+  itemNo: number | string;
+  description: string;
+  quantity: number;
+  rate: number;
+  discount: number;
+  amount: number;
 }
 
 export interface TemplateProps {

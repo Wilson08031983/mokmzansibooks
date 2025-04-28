@@ -1,21 +1,22 @@
+
 export interface QuoteData {
   quoteNumber: string;
   issueDate: string;
   expiryDate: string;
   shortDescription?: string;
   language?: "english" | "afrikaans";
-  currency?: "ZAR" | "USD" | "EUR";
+  currency?: string;
   client: QuoteClient;
   company: QuoteCompany;
   items: QuoteItem[];
   subtotal: number;
-  vatRate?: number;
+  vatRate: number;
   tax: number;
   total: number;
   notes?: string;
   terms?: string;
+  bankingDetails?: string;
   signature?: string;
-  bankAccount?: BankAccount;
 }
 
 export interface QuoteClient {
@@ -35,23 +36,13 @@ export interface QuoteCompany {
 }
 
 export interface QuoteItem {
-  itemNo?: string;
+  itemNo: number | string;
   description: string;
   quantity: number;
   markupPercentage?: number;
-  unitPrice?: number;
-  rate?: number;
-  discount?: number;
+  unitPrice: number;
+  discount: number;
   amount: number;
-  websiteUrl?: string;
-}
-
-export interface BankAccount {
-  bankName: string;
-  accountName: string;
-  accountNumber: string;
-  branchCode: string;
-  swiftCode?: string;
 }
 
 export interface TemplateProps {
