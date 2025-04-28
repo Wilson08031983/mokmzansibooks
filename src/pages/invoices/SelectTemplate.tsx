@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,58 +58,58 @@ const SelectTemplate = () => {
     signature: "/path/to/signature.png",
   };
 
-      const sampleQuoteData: QuoteData = {
-        quoteNumber: "Q-2025-001",
-        issueDate: "2025-04-01",
-        expiryDate: "2025-05-01",
-        client: {
-          name: "TechCorp Solutions",
-          address: "123 Tech Ave, Cape Town, 8001",
-          email: "info@techcorp.co.za",
-          phone: "+27 21 555 1234"
-        },
-        company: {
-          name: "Your Business Name",
-          address: "456 Business Park, Johannesburg, 2000",
-          email: "contact@yourbusiness.co.za",
-          phone: "+27 11 123 4567",
-          logo: "/path/to/logo.png",
-          stamp: "/path/to/stamp.png",
-        },
-        items: [
-          {
-            itemNo: "Q001",
-            description: "Web Application Development",
-            quantity: 1,
-            unitPrice: 25000,
-            markupPercentage: 20,
-            discount: 5,
-            amount: 28500
-          },
-          {
-            itemNo: "Q002",
-            description: "Hosting & Maintenance (Annual)",
-            quantity: 1,
-            unitPrice: 12000,
-            markupPercentage: 10, 
-            discount: 0,
-            amount: 13200
-          }
-        ],
-        subtotal: 41700,
-        vatRate: 15,
-        tax: 6255,
-        total: 47955,
-        notes: "Thank you for your business. This quote is valid for 30 days.",
-        terms: "50% deposit required before work commences.",
-        bankingDetails: "Bank: First National Bank\nAccount Number: 62123456789\nBranch Code: 250655",
-        bankAccount: {
-          bankName: "First National Bank",
-          accountName: "Your Business Name",
-          accountNumber: "62123456789",
-          branchCode: "250655"
-        }
-      };
+  const sampleQuoteData: QuoteData = {
+    quoteNumber: "Q-2025-001",
+    issueDate: "2025-04-01",
+    expiryDate: "2025-05-01",
+    client: {
+      name: "TechCorp Solutions",
+      address: "123 Tech Ave, Cape Town, 8001",
+      email: "info@techcorp.co.za",
+      phone: "+27 21 555 1234"
+    },
+    company: {
+      name: "Your Business Name",
+      address: "456 Business Park, Johannesburg, 2000",
+      email: "contact@yourbusiness.co.za",
+      phone: "+27 11 123 4567",
+      logo: "/path/to/logo.png",
+      stamp: "/path/to/stamp.png",
+    },
+    items: [
+      {
+        itemNo: "Q001",
+        description: "Web Application Development",
+        quantity: 1,
+        unitPrice: 25000,
+        markupPercentage: 20,
+        discount: 5,
+        amount: 28500
+      },
+      {
+        itemNo: "Q002",
+        description: "Hosting & Maintenance (Annual)",
+        quantity: 1,
+        unitPrice: 12000,
+        markupPercentage: 10, 
+        discount: 0,
+        amount: 13200
+      }
+    ],
+    subtotal: 41700,
+    vatRate: 15,
+    tax: 6255,
+    total: 47955,
+    notes: "Thank you for your business. This quote is valid for 30 days.",
+    terms: "50% deposit required before work commences.",
+    bankingDetails: "Bank: First National Bank\nAccount Number: 62123456789\nBranch Code: 250655",
+    bankAccount: {
+      bankName: "First National Bank",
+      accountName: "Your Business Name",
+      accountNumber: "62123456789",
+      branchCode: "250655"
+    }
+  };
 
   return (
     <div className="container mx-auto p-4">

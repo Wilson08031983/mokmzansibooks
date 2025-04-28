@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from "react";
+
+import React, { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,9 @@ import { Plus, Trash } from "lucide-react";
 import SignatureCanvas from 'react-signature-canvas';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from "@/utils/formatters";
-import { InvoiceData } from "@/types/invoice";
+import { InvoiceData, InvoiceItem } from "@/types/invoice";
+
+type SignatureCanvasRef = SignatureCanvas | null;
 
 const NewInvoice = () => {
   const navigate = useNavigate();
@@ -17,6 +20,7 @@ const NewInvoice = () => {
   const [signature, setSignature] = useState<string | null>(null);
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [vatRate, setVatRate] = useState("15");
+  const signatureRef = useRef<SignatureCanvasRef>(null);
 
   const [formState, setFormState] = useState({
     invoiceNumber: `INV-${new Date().getFullYear()}-${uuidv4().slice(0, 4).toUpperCase()}`,
@@ -77,15 +81,17 @@ const NewInvoice = () => {
     }
   };
 
-  const handleSignatureSave = (sigCanvas: SignatureCanvas | null) => {
-    if (!sigCanvas) return;
-    setSignature(sigCanvas.getTrimmedCanvas().toDataURL('image/png'));
+  const handleSignatureSave = () => {
+    if (signatureRef.current) {
+      setSignature(signatureRef.current.getTrimmedCanvas().toDataURL('image/png'));
+    }
   };
 
-  const handleClearSignature = (sigCanvas: SignatureCanvas | null) => {
-    if (!sigCanvas) return;
-    sigCanvas.clear();
-    setSignature(null);
+  const handleClearSignature = () => {
+    if (signatureRef.current) {
+      signatureRef.current.clear();
+      setSignature(null);
+    }
   };
 
   const addLineItem = () => {
@@ -452,20 +458,16 @@ const NewInvoice = () => {
         <Label>Signature</Label>
         <div className="border rounded-md p-2">
           <SignatureCanvas
+            ref={signatureRef}
             penColor='black'
             backgroundColor='white'
             canvasProps={{ width: 500, height: 200, className: 'border' }}
-            ref={(ref) => {
-              if (ref) {
-                ref.fromDataURL(signature || '');
-              }
-            }}
           />
           <div className="flex justify-between mt-2">
-            <Button type="button" variant="secondary" size="sm" onClick={() => handleClearSignature(document.querySelector('canvas')?.signaturePad)}>
+            <Button type="button" variant="secondary" size="sm" onClick={handleClearSignature}>
               Clear
             </Button>
-            <Button type="button" size="sm" onClick={() => handleSignatureSave(document.querySelector('canvas')?.signaturePad)}>
+            <Button type="button" size="sm" onClick={handleSignatureSave}>
               Save Signature
             </Button>
           </div>

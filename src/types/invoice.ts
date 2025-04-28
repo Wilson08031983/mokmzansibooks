@@ -34,7 +34,7 @@ export interface InvoiceItem {
   itemNo: number | string;
   description: string;
   quantity: number;
-  rate: number;
+  unitPrice: number;
   discount: number;
   amount: number;
 }
