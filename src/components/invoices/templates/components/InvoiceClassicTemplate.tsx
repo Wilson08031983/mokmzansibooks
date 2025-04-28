@@ -1,4 +1,3 @@
-
 import React from "react";
 import { InvoiceData } from "@/types/invoice";
 import { formatDate, formatCurrency, renderCompanyLogo, renderSignature, renderCompanyStamp } from "@/utils/formatters";
@@ -54,7 +53,7 @@ const InvoiceClassicTemplate = ({ data, preview }: TemplateProps) => {
             <th className="py-2">Item No.</th>
             <th className="py-2">Description</th>
             <th className="py-2 text-right">Qty</th>
-            <th className="py-2 text-right">Rate (R)</th>
+            <th className="py-2 text-right">Unit Price (R)</th>
             <th className="py-2 text-right">Discount %</th>
             <th className="py-2 text-right">Amount (R)</th>
           </tr>
@@ -65,7 +64,7 @@ const InvoiceClassicTemplate = ({ data, preview }: TemplateProps) => {
               <td className="py-3">{item.itemNo}</td>
               <td className="py-3">{item.description}</td>
               <td className="py-3 text-right">{item.quantity}</td>
-              <td className="py-3 text-right">{formatCurrency(item.rate, "ZAR")}</td>
+              <td className="py-3 text-right">{formatCurrency(item.unitPrice, "ZAR")}</td>
               <td className="py-3 text-right">{item.discount}%</td>
               <td className="py-3 text-right font-semibold">{formatCurrency(item.amount, "ZAR")}</td>
             </tr>

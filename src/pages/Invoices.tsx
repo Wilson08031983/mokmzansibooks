@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,7 @@ const mockInvoiceData: Record<string, InvoiceData> = {
       }
     ],
     subtotal: 4500,
+    vatRate: 15,
     tax: 675,
     total: 5175,
     notes: "Payment due within 14 days",
@@ -168,6 +170,7 @@ const mockInvoiceData: Record<string, InvoiceData> = {
       }
     ],
     subtotal: 2750,
+    vatRate: 15,
     tax: 412.5,
     total: 3162.5,
     notes: "Thank you for your order",
@@ -201,6 +204,7 @@ const mockInvoiceData: Record<string, InvoiceData> = {
       }
     ],
     subtotal: 8500,
+    vatRate: 15,
     tax: 1275,
     total: 9775,
     notes: "Payment due within 14 days",
@@ -234,6 +238,7 @@ const mockInvoiceData: Record<string, InvoiceData> = {
       }
     ],
     subtotal: 3600,
+    vatRate: 15,
     tax: 540,
     total: 4140,
     notes: "Payment due within 14 days",
@@ -275,6 +280,7 @@ const mockInvoiceData: Record<string, InvoiceData> = {
       }
     ],
     subtotal: 5100,
+    vatRate: 15,
     tax: 765,
     total: 5865,
     notes: "Payment due within 14 days",

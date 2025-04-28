@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,55 +30,145 @@ import { InvoiceData } from "@/types/invoice";
 // Mock data for saved invoices
 const mockSavedInvoices = [
   {
-    id: "INV-2025-001",
-    client: "ABC Construction Ltd",
-    date: "2025-03-28",
-    dueDate: "2025-04-11",
-    amount: 4500,
+    id: "INV20231001",
+    client: "ABC Construction",
+    issueDate: "2023-10-01",
+    dueDate: "2023-10-15",
+    amount: 15000,
     status: "paid",
+    items: [
+      {
+        itemNo: "001",
+        description: "Website Design",
+        quantity: 1,
+        unitPrice: 10000,
+        discount: 0,
+        amount: 10000
+      },
+      {
+        itemNo: "002",
+        description: "Content Creation",
+        quantity: 5,
+        unitPrice: 1000,
+        discount: 0,
+        amount: 5000
+      }
+    ]
   },
   {
-    id: "INV-2025-002",
+    id: "INV20231002",
     client: "Cape Town Retailers",
-    date: "2025-03-25",
-    dueDate: "2025-04-08",
+    issueDate: "2023-10-02",
+    dueDate: "2023-10-10",
     amount: 2750,
     status: "pending",
+    items: [
+      {
+        itemNo: "001",
+        description: "Project Management",
+        quantity: 1,
+        unitPrice: 3000,
+        discount: 0,
+        amount: 3000
+      },
+      {
+        itemNo: "002",
+        description: "Labor Services",
+        quantity: 15,
+        unitPrice: 100,
+        discount: 0,
+        amount: 1500
+      }
+    ]
   },
   {
-    id: "INV-2025-003",
+    id: "INV20231003",
     client: "Durban Services Co",
-    date: "2025-03-20",
-    dueDate: "2025-04-03",
+    issueDate: "2023-10-03",
+    dueDate: "2023-10-07",
     amount: 8500,
     status: "paid",
+    items: [
+      {
+        itemNo: "001",
+        description: "Project Management",
+        quantity: 1,
+        unitPrice: 3000,
+        discount: 0,
+        amount: 3000
+      },
+      {
+        itemNo: "002",
+        description: "Labor Services",
+        quantity: 15,
+        unitPrice: 100,
+        discount: 0,
+        amount: 1500
+      }
+    ]
   },
   {
-    id: "INV-2025-004",
+    id: "INV20231004",
     client: "Johannesburg Tech Solutions",
-    date: "2025-03-18",
-    dueDate: "2025-04-01",
+    issueDate: "2023-10-04",
+    dueDate: "2023-10-05",
     amount: 3600,
     status: "overdue",
+    items: [
+      {
+        itemNo: "001",
+        description: "Project Management",
+        quantity: 1,
+        unitPrice: 3000,
+        discount: 0,
+        amount: 3000
+      },
+      {
+        itemNo: "002",
+        description: "Labor Services",
+        quantity: 15,
+        unitPrice: 100,
+        discount: 0,
+        amount: 1500
+      }
+    ]
   },
   {
-    id: "INV-2025-005",
+    id: "INV20231005",
     client: "Eastern Cape Supplies",
-    date: "2025-03-15",
-    dueDate: "2025-03-29",
+    issueDate: "2023-10-05",
+    dueDate: "2023-10-09",
     amount: 5100,
     status: "overdue",
+    items: [
+      {
+        itemNo: "001",
+        description: "Project Management",
+        quantity: 1,
+        unitPrice: 3000,
+        discount: 0,
+        amount: 3000
+      },
+      {
+        itemNo: "002",
+        description: "Labor Services",
+        quantity: 15,
+        unitPrice: 100,
+        discount: 0,
+        amount: 1500
+      }
+    ]
   },
 ];
 
 // Mock data for an invoice preview
 const mockInvoiceData: InvoiceData = {
-  invoiceNumber: "INV-2025-001",
-  issueDate: "2025-03-28",
-  dueDate: "2025-04-11",
+  invoiceNumber: "INV20231001",
+  issueDate: "2023-10-01",
+  dueDate: "2023-10-15",
   shortDescription: "Construction services",
   client: {
-    name: "ABC Construction Ltd",
+    name: "ABC Construction",
     address: "123 Builder St, Cape Town, 8001",
     email: "info@abcconstruction.co.za",
     phone: "021 234 5678"
@@ -95,7 +184,7 @@ const mockInvoiceData: InvoiceData = {
       itemNo: 1,
       description: "Project Management",
       quantity: 1,
-      rate: 3000,
+      unitPrice: 3000,
       amount: 3000,
       discount: 0,
     },
@@ -103,7 +192,7 @@ const mockInvoiceData: InvoiceData = {
       itemNo: 2,
       description: "Labor Services",
       quantity: 15,
-      rate: 100,
+      unitPrice: 100,
       amount: 1500,
       discount: 0,
     }
@@ -191,7 +280,7 @@ const SavedInvoices = () => {
                     {invoice.id}
                   </TableCell>
                   <TableCell>{invoice.client}</TableCell>
-                  <TableCell>{formatDate(invoice.date)}</TableCell>
+                  <TableCell>{formatDate(invoice.issueDate)}</TableCell>
                   <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                   <TableCell className="text-right">
                     {formatCurrency(invoice.amount, "ZAR")}

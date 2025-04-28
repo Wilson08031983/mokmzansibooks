@@ -1,4 +1,3 @@
-
 import React from "react";
 import { InvoiceData } from "@/types/invoice";
 import { formatDate, formatCurrency, renderCompanyLogo, renderSignature, renderCompanyStamp } from "@/utils/formatters";
@@ -62,7 +61,7 @@ const InvoiceMinimalTemplate = ({ data, preview }: TemplateProps) => {
               <th className="pb-2">Item</th>
               <th className="pb-2">Description</th>
               <th className="pb-2 text-right">Qty</th>
-              <th className="pb-2 text-right">Rate (R)</th>
+              <th className="pb-2 text-right">Unit Price (R)</th>
               <th className="pb-2 text-right">Discount</th>
               <th className="pb-2 text-right">Amount (R)</th>
             </tr>
@@ -73,7 +72,7 @@ const InvoiceMinimalTemplate = ({ data, preview }: TemplateProps) => {
                 <td className="py-2">{item.itemNo}</td>
                 <td className="py-2">{item.description}</td>
                 <td className="py-2 text-right">{item.quantity}</td>
-                <td className="py-2 text-right">{formatCurrency(item.rate, "ZAR")}</td>
+                <td className="py-2 text-right">{formatCurrency(item.unitPrice, "ZAR")}</td>
                 <td className="py-2 text-right">{item.discount}%</td>
                 <td className="py-2 text-right font-medium">{formatCurrency(item.amount, "ZAR")}</td>
               </tr>

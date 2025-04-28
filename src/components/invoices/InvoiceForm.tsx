@@ -77,7 +77,7 @@ const InvoiceForm = () => {
       itemNo: invoiceData?.items?.length ? invoiceData.items.length + 1 : 1,
       description: "",
       quantity: 1,
-      rate: 0,
+      unitPrice: 0,
       discount: 0,
       amount: 0
     };
@@ -131,8 +131,8 @@ const InvoiceForm = () => {
       client: mockClients[0],
       shortDescription: "Services for January 2025",
       items: [
-        { itemNo: 1, description: "Web Development", quantity: 40, rate: 75, discount: 10, amount: 2700 },
-        { itemNo: 2, description: "UI/UX Design", quantity: 20, rate: 90, discount: 0, amount: 1800 }
+        { itemNo: 1, description: "Web Development", quantity: 40, unitPrice: 75, discount: 10, amount: 2700 },
+        { itemNo: 2, description: "UI/UX Design", quantity: 20, unitPrice: 90, discount: 0, amount: 1800 }
       ],
       subtotal: 4500,
       vatRate: 15,
@@ -172,9 +172,9 @@ const InvoiceForm = () => {
     };
 
     // Calculate item amount
-    if (field === 'quantity' || field === 'rate' || field === 'discount') {
+    if (field === 'quantity' || field === 'unitPrice' || field === 'discount') {
       const item = updatedItems[index];
-      const baseAmount = item.quantity * item.rate;
+      const baseAmount = item.quantity * item.unitPrice;
       const discountAmount = baseAmount * (item.discount / 100);
       updatedItems[index].amount = baseAmount - discountAmount;
     }
@@ -420,8 +420,8 @@ const InvoiceForm = () => {
                         <Input
                           type="number"
                           min="0"
-                          value={item.rate}
-                          onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
+                          value={item.unitPrice}
+                          onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
                         />
                       </TableCell>
                       <TableCell>
