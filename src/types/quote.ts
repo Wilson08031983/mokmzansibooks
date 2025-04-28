@@ -17,6 +17,13 @@ export interface QuoteData {
   terms?: string;
   bankingDetails?: string;
   signature?: string;
+  bankAccount?: {
+    bankName: string;
+    accountName: string;
+    accountNumber: string;
+    branchCode: string;
+    swiftCode?: string;
+  };
 }
 
 export interface QuoteClient {

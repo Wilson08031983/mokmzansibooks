@@ -1,3 +1,4 @@
+
 import React from "react";
 import { QuoteData } from "@/types/quote";
 import QuoteSidebar from "./components/QuoteSidebar";
@@ -31,15 +32,19 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
     },
     items: [
       {
+        itemNo: 1,
         description: "Consultation Services",
         quantity: 10,
-        rate: 1500,
+        unitPrice: 1500,
+        discount: 0,
         amount: 15000
       },
       {
+        itemNo: 2,
         description: "Equipment Rental",
         quantity: 5,
-        rate: 2000,
+        unitPrice: 2000,
+        discount: 0,
         amount: 10000
       }
     ],

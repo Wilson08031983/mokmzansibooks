@@ -12,7 +12,7 @@ const QuoteTable = ({ items }: QuoteTableProps) => {
     ...item,
     itemNo: item.itemNo || '',
     markupPercentage: item.markupPercentage || 0,
-    unitPrice: item.unitPrice || item.rate || 0,
+    unitPrice: item.unitPrice || 0,
     discount: item.discount || 0,
   }));
 
