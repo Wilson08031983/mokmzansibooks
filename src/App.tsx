@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
+import { FinancialDataProvider } from "@/contexts/FinancialDataContext";
 import { Toaster } from "@/components/ui/toaster";
 
 import DashboardLayout from "@/layouts/DashboardLayout";
@@ -64,67 +65,69 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <I18nProvider>
-          <NotificationsProvider>
-            <Router>
-              <Routes>
-                <Route path="/" element={<PublicLayout />}>
-                  <Route index element={<Index />} />
-                  <Route path="signin" element={<SignIn />} />
-                  <Route path="signup" element={<SignUp />} />
-                  <Route path="onboarding" element={<Onboarding />} />
-                </Route>
+          <FinancialDataProvider>
+            <NotificationsProvider>
+              <Router>
+                <Routes>
+                  <Route path="/" element={<PublicLayout />}>
+                    <Route index element={<Index />} />
+                    <Route path="signin" element={<SignIn />} />
+                    <Route path="signup" element={<SignUp />} />
+                    <Route path="onboarding" element={<Onboarding />} />
+                  </Route>
 
-                <Route
-                  path="dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardLayout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route index element={<Dashboard />} />
-                  <Route path="invoices" element={<Invoices />} />
-                  <Route path="invoices/quotes" element={<Quotes />} />
-                  <Route path="invoices/select-template" element={<SelectTemplate />} />
-                  <Route path="invoices/select-quote-template" element={<SelectQuoteTemplate />} />
-                  <Route path="invoices/new-invoice" element={<NewInvoice />} />
-                  <Route path="invoices/new-quote" element={<NewQuote />} />
-                  <Route path="invoices/manager" element={<InvoiceQuoteManager />} />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="inventory" element={<Inventory />} />
-                  <Route path="hr" element={<HR />} />
-                  <Route path="hr/attendance" element={<Attendance />} />
-                  <Route path="hr/benefit-plan/:id" element={<BenefitPlanDetail />} />
-                  <Route path="hr/benefit-settings" element={<BenefitSettings />} />
-                  <Route path="hr/benefits" element={<Benefits />} />
-                  <Route path="hr/employee-benefits/:id" element={<EmployeeBenefits />} />
-                  <Route path="hr/employee/:id" element={<EmployeeDetail />} />
-                  <Route path="hr/employees" element={<Employees />} />
-                  <Route path="hr/generate-payslip/:id" element={<GeneratePayslip />} />
-                  <Route path="hr/leaves" element={<Leaves />} />
-                  <Route path="hr/new-benefit-plan" element={<NewBenefitPlan />} />
-                  <Route path="hr/new-employee" element={<NewEmployee />} />
-                  <Route path="hr/new-leave-request" element={<NewLeaveRequest />} />
-                  <Route path="hr/payroll" element={<Payroll />} />
-                  <Route path="hr/run-payroll" element={<RunPayroll />} />
-                  <Route path="clients" element={<Clients />} />
-                  <Route path="accounting" element={<Accounting />} />
-                  <Route path="accounting/bank-reconciliation" element={<BankReconciliation />} />
-                  <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-                  <Route path="accounting/journal-entries" element={<JournalEntries />} />
-                  <Route path="accounting/payables" element={<Payables />} />
-                  <Route path="accounting/receivables" element={<Receivables />} />
-                  <Route path="accounting/reports" element={<AccountingReports />} />
-                  <Route path="accounting/transactions" element={<Transactions />} />
-                  <Route path="payments" element={<Payment />} />
-                  <Route path="settings" element={<Settings />} />
-                </Route>
+                  <Route
+                    path="dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route index element={<Dashboard />} />
+                    <Route path="invoices" element={<Invoices />} />
+                    <Route path="invoices/quotes" element={<Quotes />} />
+                    <Route path="invoices/select-template" element={<SelectTemplate />} />
+                    <Route path="invoices/select-quote-template" element={<SelectQuoteTemplate />} />
+                    <Route path="invoices/new-invoice" element={<NewInvoice />} />
+                    <Route path="invoices/new-quote" element={<NewQuote />} />
+                    <Route path="invoices/manager" element={<InvoiceQuoteManager />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="inventory" element={<Inventory />} />
+                    <Route path="hr" element={<HR />} />
+                    <Route path="hr/attendance" element={<Attendance />} />
+                    <Route path="hr/benefit-plan/:id" element={<BenefitPlanDetail />} />
+                    <Route path="hr/benefit-settings" element={<BenefitSettings />} />
+                    <Route path="hr/benefits" element={<Benefits />} />
+                    <Route path="hr/employee-benefits/:id" element={<EmployeeBenefits />} />
+                    <Route path="hr/employee/:id" element={<EmployeeDetail />} />
+                    <Route path="hr/employees" element={<Employees />} />
+                    <Route path="hr/generate-payslip/:id" element={<GeneratePayslip />} />
+                    <Route path="hr/leaves" element={<Leaves />} />
+                    <Route path="hr/new-benefit-plan" element={<NewBenefitPlan />} />
+                    <Route path="hr/new-employee" element={<NewEmployee />} />
+                    <Route path="hr/new-leave-request" element={<NewLeaveRequest />} />
+                    <Route path="hr/payroll" element={<Payroll />} />
+                    <Route path="hr/run-payroll" element={<RunPayroll />} />
+                    <Route path="clients" element={<Clients />} />
+                    <Route path="accounting" element={<Accounting />} />
+                    <Route path="accounting/bank-reconciliation" element={<BankReconciliation />} />
+                    <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
+                    <Route path="accounting/journal-entries" element={<JournalEntries />} />
+                    <Route path="accounting/payables" element={<Payables />} />
+                    <Route path="accounting/receivables" element={<Receivables />} />
+                    <Route path="accounting/reports" element={<AccountingReports />} />
+                    <Route path="accounting/transactions" element={<Transactions />} />
+                    <Route path="payments" element={<Payment />} />
+                    <Route path="settings" element={<Settings />} />
+                  </Route>
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Router>
-            <Toaster />
-          </NotificationsProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Router>
+              <Toaster />
+            </NotificationsProvider>
+          </FinancialDataProvider>
         </I18nProvider>
       </AuthProvider>
     </ThemeProvider>

@@ -118,22 +118,20 @@ const mockInvoiceData: Record<string, InvoiceData> = {
     },
     items: [
       {
-        itemNo: 1,
-        description: "Project Management",
+        itemNo: "001",
+        description: "Website Design & Development",
         quantity: 1,
-        rate: 3000,
-        amount: 3000,
+        unitPrice: 15000,
         discount: 0,
-        total: 3000
+        amount: 15000
       },
       {
-        itemNo: 2,
-        description: "Labor Services",
-        quantity: 15,
-        rate: 100,
-        amount: 1500,
+        itemNo: "002",
+        description: "Logo Design Services",
+        quantity: 1,
+        unitPrice: 5000,
         discount: 0,
-        total: 1500
+        amount: 5000
       }
     ],
     subtotal: 4500,
@@ -161,13 +159,12 @@ const mockInvoiceData: Record<string, InvoiceData> = {
     },
     items: [
       {
-        itemNo: 1,
+        itemNo: "001",
         description: "Product Delivery",
         quantity: 5,
-        rate: 550,
-        amount: 2750,
+        unitPrice: 550,
         discount: 0,
-        total: 2750
+        amount: 2750
       }
     ],
     subtotal: 2750,
@@ -175,6 +172,113 @@ const mockInvoiceData: Record<string, InvoiceData> = {
     total: 3162.5,
     notes: "Thank you for your order",
     terms: "Payment due within 14 days"
+  },
+  "INV-2023-003": {
+    invoiceNumber: "INV-2023-003",
+    issueDate: "2023-03-20",
+    dueDate: "2023-04-03",
+    shortDescription: "Monthly Maintenance",
+    client: {
+      name: "Durban Services Co",
+      address: "123 Maintenance St, Durban, 2000",
+      email: "info@durbanservices.co.za",
+      phone: "011 123 4567"
+    },
+    company: {
+      name: "MOKMzansi Holdings",
+      address: "456 Business Ave, Johannesburg, 2000",
+      email: "contact@mokmzansi.co.za",
+      phone: "011 987 6543"
+    },
+    items: [
+      {
+        itemNo: "001",
+        description: "Monthly Maintenance",
+        quantity: 3,
+        unitPrice: 2500,
+        discount: 0,
+        amount: 7500
+      }
+    ],
+    subtotal: 8500,
+    tax: 1275,
+    total: 9775,
+    notes: "Payment due within 14 days",
+    terms: "Thank you for your business"
+  },
+  "INV-2023-004": {
+    invoiceNumber: "INV-2023-004",
+    issueDate: "2023-03-18",
+    dueDate: "2023-04-01",
+    shortDescription: "SEO Consulting Services",
+    client: {
+      name: "Johannesburg Tech Solutions",
+      address: "123 Tech St, Johannesburg, 2000",
+      email: "info@techsolutions.co.za",
+      phone: "011 234 5678"
+    },
+    company: {
+      name: "MOKMzansi Holdings",
+      address: "456 Business Ave, Johannesburg, 2000",
+      email: "contact@mokmzansi.co.za",
+      phone: "011 987 6543"
+    },
+    items: [
+      {
+        itemNo: "001",
+        description: "SEO Consulting Services",
+        quantity: 10,
+        unitPrice: 1200,
+        discount: 0,
+        amount: 12000
+      }
+    ],
+    subtotal: 3600,
+    tax: 540,
+    total: 4140,
+    notes: "Payment due within 14 days",
+    terms: "Thank you for your business"
+  },
+  "INV-2023-005": {
+    invoiceNumber: "INV-2023-005",
+    issueDate: "2023-03-15",
+    dueDate: "2023-03-29",
+    shortDescription: "Website Design & Development",
+    client: {
+      name: "Eastern Cape Supplies",
+      address: "123 Design St, Port Elizabeth, 2000",
+      email: "info@easterncape.co.za",
+      phone: "011 345 6789"
+    },
+    company: {
+      name: "MOKMzansi Holdings",
+      address: "456 Business Ave, Johannesburg, 2000",
+      email: "contact@mokmzansi.co.za",
+      phone: "011 987 6543"
+    },
+    items: [
+      {
+        itemNo: "001",
+        description: "Website Design & Development",
+        quantity: 1,
+        unitPrice: 15000,
+        discount: 0,
+        amount: 15000
+      },
+      {
+        itemNo: "002",
+        description: "Logo Design Services",
+        quantity: 1,
+        unitPrice: 5000,
+        discount: 0,
+        amount: 5000
+      }
+    ],
+    subtotal: 5100,
+    tax: 765,
+    total: 5865,
+    notes: "Payment due within 14 days",
+    terms: "Thank you for your business"
   }
 };
 
@@ -325,7 +429,6 @@ const Invoices = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {/* Updated table headers to improve layout */}
                       <TableHead className="w-[150px]">Invoice ID</TableHead>
                       <TableHead className="w-[200px]">Client</TableHead>
                       <TableHead>Date</TableHead>
@@ -445,7 +548,6 @@ const Invoices = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {/* Updated table headers to improve layout */}
                       <TableHead className="w-[150px]">Invoice ID</TableHead>
                       <TableHead className="w-[200px]">Client</TableHead>
                       <TableHead>Date</TableHead>
@@ -565,7 +667,6 @@ const Invoices = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {/* Updated table headers to improve layout */}
                       <TableHead className="w-[150px]">Invoice ID</TableHead>
                       <TableHead className="w-[200px]">Client</TableHead>
                       <TableHead>Date</TableHead>
@@ -685,7 +786,6 @@ const Invoices = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {/* Updated table headers to improve layout */}
                       <TableHead className="w-[150px]">Invoice ID</TableHead>
                       <TableHead className="w-[200px]">Client</TableHead>
                       <TableHead>Date</TableHead>

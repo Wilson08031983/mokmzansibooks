@@ -1,689 +1,481 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import React, { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, Save, ChevronDown } from "lucide-react";
+import { Plus, Trash } from "lucide-react";
+import SignatureCanvas from 'react-signature-canvas';
+import { v4 as uuidv4 } from 'uuid';
+import { formatCurrency } from "@/utils/formatters";
 import { InvoiceData } from "@/types/invoice";
-import { QuoteData } from "@/types/quote";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-// Import templates
-import Template1 from "@/components/invoices/templates/Template1";
-import Template2 from "@/components/invoices/templates/Template2";
-import Template3 from "@/components/invoices/templates/Template3";
-import Template4 from "@/components/invoices/templates/Template4";
-import Template5 from "@/components/invoices/templates/Template5";
-
-const formSchema = z.object({
-  clientId: z.string().min(1, { message: "Client is required" }),
-  invoiceNumber: z.string().min(1, { message: "Invoice number is required" }),
-  issueDate: z.string().min(1, { message: "Issue date is required" }),
-  dueDate: z.string().min(1, { message: "Due date is required" }),
-  shortDescription: z.string().optional(),
-  status: z.string(),
-  items: z.array(
-    z.object({
-      itemNo: z.number(),
-      description: z.string().min(1, { message: "Description is required" }),
-      quantity: z.number().min(1, { message: "Quantity is required" }),
-      rate: z.number().min(0, { message: "Rate is required" }),
-      amount: z.number(),
-      discount: z.number().min(0),
-      total: z.number(),
-    })
-  ).default([{ itemNo: 1, description: "", quantity: 1, rate: 0, amount: 0, discount: 0, total: 0 }]),
-  notes: z.string().optional(),
-  terms: z.string().optional(),
-  subtotal: z.number(),
-  tax: z.number(),
-  total: z.number(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-// Mock client data
-const mockClients = [
-  { id: "client1", name: "ABC Construction Ltd" },
-  { id: "client2", name: "Cape Town Retailers" },
-  { id: "client3", name: "Durban Services Co" },
-  { id: "client4", name: "Johannesburg Tech Solutions" },
-  { id: "client5", name: "Eastern Cape Supplies" },
-];
-
-// Mock quotation data
-const mockQuotations = [
-  {
-    id: "quote1",
-    quoteNumber: "QUO-2025-001",
-    clientId: "client1",
-    issueDate: "2025-03-15",
-    expiryDate: "2025-04-15",
-    description: "Office renovation project",
-    items: [
-      { 
-        itemNo: 1, 
-        description: "Design Consultation", 
-        quantity: 5, 
-        rate: 1200, 
-        amount: 6000, 
-        discount: 500, 
-        total: 5500 
-      },
-      { 
-        itemNo: 2, 
-        description: "Material Procurement", 
-        quantity: 1, 
-        rate: 8500, 
-        amount: 8500, 
-        discount: 0, 
-        total: 8500 
-      }
-    ],
-    notes: "Quote includes all consultation fees and materials.",
-    terms: "Valid for 30 days from the issue date."
-  },
-  {
-    id: "quote2",
-    quoteNumber: "QUO-2025-002",
-    clientId: "client3",
-    issueDate: "2025-03-20",
-    expiryDate: "2025-04-20",
-    description: "IT Infrastructure Setup",
-    items: [
-      { 
-        itemNo: 1, 
-        description: "Network Installation", 
-        quantity: 1, 
-        rate: 15000, 
-        amount: 15000, 
-        discount: 1500, 
-        total: 13500 
-      },
-      { 
-        itemNo: 2, 
-        description: "Hardware Supply", 
-        quantity: 10, 
-        rate: 5000, 
-        amount: 50000, 
-        discount: 5000, 
-        total: 45000 
-      }
-    ],
-    notes: "Quote includes installation and 1-year warranty.",
-    terms: "50% payment upfront, balance upon completion."
-  },
-  {
-    id: "quote3",
-    quoteNumber: "QUO-2025-003",
-    clientId: "client5",
-    issueDate: "2025-03-25",
-    expiryDate: "2025-04-25",
-    description: "Annual Supplies Contract",
-    items: [
-      { 
-        itemNo: 1, 
-        description: "Office Supplies", 
-        quantity: 12, 
-        rate: 2500, 
-        amount: 30000, 
-        discount: 3000, 
-        total: 27000 
-      }
-    ],
-    notes: "Monthly deliveries as per schedule.",
-    terms: "Monthly invoicing with 14-day payment terms."
-  }
-];
 
 const NewInvoice = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
-  const templateId = location.state?.templateId || 1;
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      clientId: "",
-      invoiceNumber: `INV-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`,
-      issueDate: new Date().toISOString().split("T")[0],
-      dueDate: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString().split("T")[0],
-      shortDescription: "",
-      status: "draft",
-      items: [{ itemNo: 1, description: "", quantity: 1, rate: 0, amount: 0, discount: 0, total: 0 }],
-      notes: "",
-      terms: "Payment due within 14 days of invoice date.",
-      subtotal: 0,
-      tax: 0,
-      total: 0,
-    },
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+  const [companyStamp, setCompanyStamp] = useState<string | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+  const [vatRate, setVatRate] = useState("15");
+
+  const [formState, setFormState] = useState({
+    invoiceNumber: `INV-${new Date().getFullYear()}-${uuidv4().slice(0, 4).toUpperCase()}`,
+    issueDate: new Date().toISOString().slice(0, 10),
+    dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().slice(0, 10),
+    shortDescription: "",
+    clientName: "",
+    clientAddress: "",
+    clientEmail: "",
+    clientPhone: "",
+    companyName: "",
+    companyAddress: "",
+    companyEmail: "",
+    companyPhone: "",
+    notes: "",
+    terms: "",
+    bankingDetails: ""
   });
 
-  const [items, setItems] = useState([{ itemNo: 1, description: "", quantity: 1, rate: 0, amount: 0, discount: 0, total: 0 }]);
-  const [previewData, setPreviewData] = useState<InvoiceData | null>(null);
-
-  useEffect(() => {
-    if (!location.state?.templateId) {
-      navigate("/invoices/select-template");
+  const [lineItems, setLineItems] = useState([
+    {
+      itemNo: "1",
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+      discount: 0,
+      amount: 0
     }
-  }, [location.state, navigate]);
+  ]);
 
-  const calculateLineAmount = (quantity: number, rate: number) => {
-    return quantity * rate;
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = event.target;
+    setFormState(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
   };
 
-  const calculateLineTotal = (amount: number, discount: number) => {
-    return amount - discount;
-  };
-
-  const addItem = () => {
-    setItems([...items, { itemNo: items.length + 1, description: "", quantity: 1, rate: 0, amount: 0, discount: 0, total: 0 }]);
-  };
-
-  const removeItem = (index: number) => {
-    if (items.length > 1) {
-      const newItems = [...items];
-      newItems.splice(index, 1);
-      
-      // Reorder item numbers
-      newItems.forEach((item, idx) => {
-        item.itemNo = idx + 1;
-      });
-      
-      setItems(newItems);
+  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCompanyLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const updatePreview = () => {
-    const formValues = form.getValues();
-    const clientInfo = mockClients.find(c => c.id === formValues.clientId);
-    
-    let subtotal = 0;
-    items.forEach(item => {
-      subtotal += item.total;
+  const handleStampChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCompanyStamp(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSignatureSave = (sigCanvas: SignatureCanvas | null) => {
+    if (!sigCanvas) return;
+    setSignature(sigCanvas.getTrimmedCanvas().toDataURL('image/png'));
+  };
+
+  const handleClearSignature = (sigCanvas: SignatureCanvas | null) => {
+    if (!sigCanvas) return;
+    sigCanvas.clear();
+    setSignature(null);
+  };
+
+  const addLineItem = () => {
+    setLineItems(prevItems => [
+      ...prevItems,
+      {
+        itemNo: String(prevItems.length + 1),
+        description: "",
+        quantity: 1,
+        unitPrice: 0,
+        discount: 0,
+        amount: 0
+      }
+    ]);
+  };
+
+  const removeLineItem = (index: number) => {
+    setLineItems(prevItems => prevItems.filter((_, i) => i !== index));
+  };
+
+  const updateLineItem = useCallback((index: number, field: string, value: any) => {
+    setLineItems(prevItems => {
+      const updatedItems = [...prevItems];
+      updatedItems[index][field] = value;
+
+      // Recalculate amount when quantity, unitPrice, or discount changes
+      if (field === 'quantity' || field === 'unitPrice' || field === 'discount') {
+        const quantity = updatedItems[index].quantity || 0;
+        const unitPrice = updatedItems[index].unitPrice || 0;
+        const discount = updatedItems[index].discount || 0;
+        updatedItems[index].amount = quantity * unitPrice * (1 - discount / 100);
+      }
+
+      return updatedItems;
     });
-    const tax = subtotal * 0.15;
-    const total = subtotal + tax;
+  }, []);
 
-    setPreviewData({
-      invoiceNumber: formValues.invoiceNumber,
-      issueDate: formValues.issueDate,
-      dueDate: formValues.dueDate,
-      shortDescription: formValues.shortDescription,
+  const calculateSubtotal = () => {
+    return lineItems.reduce((acc, item) => acc + item.amount, 0);
+  };
+
+  const calculateTax = () => {
+    const subtotal = calculateSubtotal();
+    return subtotal * (parseFloat(vatRate) / 100);
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateTax();
+  };
+
+  const handleSaveInvoice = () => {
+    // Create the invoice data from the form state
+    const invoiceData: InvoiceData = {
+      invoiceNumber: formState.invoiceNumber,
+      issueDate: formState.issueDate,
+      dueDate: formState.dueDate,
+      shortDescription: formState.shortDescription,
       client: {
-        name: clientInfo?.name || "",
-        address: "123 Client Street, Pretoria, South Africa",
-        email: "client@example.com",
-        phone: "012 345 6789"
+        name: formState.clientName,
+        address: formState.clientAddress,
+        email: formState.clientEmail,
+        phone: formState.clientPhone
       },
       company: {
-        name: "MOKMzansi Holdings",
-        address: "456 Business Ave, Johannesburg, 2000",
-        email: "contact@mokmzansi.co.za",
-        phone: "011 987 6543"
+        name: formState.companyName,
+        address: formState.companyAddress,
+        email: formState.companyEmail,
+        phone: formState.companyPhone,
+        logo: companyLogo,
+        stamp: companyStamp
       },
-      items: items,
-      subtotal: subtotal,
-      tax: tax,
-      total: total,
-      notes: formValues.notes || "",
-      terms: formValues.terms || ""
-    });
-  };
+      items: lineItems.map(item => ({
+        itemNo: item.itemNo,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        discount: item.discount,
+        amount: item.amount
+      })),
+      subtotal: calculateSubtotal(),
+      vatRate: parseFloat(vatRate),
+      tax: calculateTax(),
+      total: calculateTotal(),
+      notes: formState.notes,
+      terms: formState.terms,
+      bankingDetails: formState.bankingDetails,
+      signature: signature
+    };
 
-  const populateFromQuote = (quoteId: string) => {
-    const selectedQuote = mockQuotations.find(q => q.id === quoteId);
-    
-    if (!selectedQuote) return;
-    
-    // Update client
-    form.setValue("clientId", selectedQuote.clientId);
-    
-    // Update dates
-    form.setValue("issueDate", new Date().toISOString().split("T")[0]);
-    form.setValue("dueDate", new Date(new Date().setDate(new Date().getDate() + 14)).toISOString().split("T")[0]);
-    
-    // Update description
-    form.setValue("shortDescription", selectedQuote.description);
-    
-    // Update items
-    const formattedItems = selectedQuote.items.map(item => ({
-      itemNo: item.itemNo,
-      description: item.description,
-      quantity: item.quantity,
-      rate: item.rate,
-      amount: item.amount,
-      discount: item.discount,
-      total: item.total
-    }));
-    
-    setItems(formattedItems);
-    
-    // Update notes and terms
-    form.setValue("notes", selectedQuote.notes);
-    form.setValue("terms", selectedQuote.terms);
-    
-    // Calculate totals
-    let subtotal = 0;
-    formattedItems.forEach(item => {
-      subtotal += item.total;
-    });
-    const tax = subtotal * 0.15;
-    const total = subtotal + tax;
-    
-    form.setValue("subtotal", subtotal);
-    form.setValue("tax", tax);
-    form.setValue("total", total);
-    
-    toast({
-      title: "Quote Imported",
-      description: `Quote ${selectedQuote.quoteNumber} has been imported to this invoice.`,
-    });
-    
-    updatePreview();
-  };
-
-  useEffect(() => {
-    updatePreview();
-  }, [items, form.watch()]);
-
-  const onSubmit = (data: FormValues) => {
-    console.log("Form submitted:", data);
-    console.log("Items:", items);
-    
-    toast({
-      title: "Invoice Created",
-      description: `Invoice ${data.invoiceNumber} has been created.`,
-    });
-    navigate("/invoices");
-  };
-
-  const renderTemplate = () => {
-    if (!previewData) return null;
-
-    const templateData = templateId === 5 ? {
-      ...previewData,
-      quoteNumber: previewData.invoiceNumber,
-      expiryDate: previewData.dueDate,
-      vatRate: 15,
-    } : previewData;
-
-    switch (templateId) {
-      case 1:
-        return <Template1 data={previewData} />;
-      case 2:
-        return <Template2 data={previewData} />;
-      case 3:
-        return <Template3 data={previewData} />;
-      case 4:
-        return <Template4 data={previewData} />;
-      case 5:
-        return <Template5 data={templateData as any} />;
-      default:
-        return <Template1 data={previewData} />;
-    }
+    // Save the invoice data
+    setInvoiceData(invoiceData);
+    navigate("/dashboard/invoices/select-template");
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Button variant="ghost" onClick={() => navigate("/invoices")}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Invoices
-          </Button>
-          <h1 className="text-2xl font-bold ml-4">New Invoice</h1>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Create New Invoice</h1>
+
+      {/* Invoice Details */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div>
+          <Label htmlFor="invoiceNumber">Invoice Number</Label>
+          <Input
+            type="text"
+            id="invoiceNumber"
+            name="invoiceNumber"
+            value={formState.invoiceNumber}
+            onChange={handleInputChange}
+          />
         </div>
-        <div className="space-x-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <FileText className="mr-2 h-4 w-4" /> Import from Quote <ChevronDown className="ml-1 h-4 w-4" />
+        <div>
+          <Label htmlFor="issueDate">Issue Date</Label>
+          <Input
+            type="date"
+            id="issueDate"
+            name="issueDate"
+            value={formState.issueDate}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <Label htmlFor="dueDate">Due Date</Label>
+          <Input
+            type="date"
+            id="dueDate"
+            name="dueDate"
+            value={formState.dueDate}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <Label htmlFor="shortDescription">Short Description</Label>
+          <Input
+            type="text"
+            id="shortDescription"
+            name="shortDescription"
+            value={formState.shortDescription}
+            onChange={handleInputChange}
+          />
+        </div>
+      </div>
+
+      {/* Client Details */}
+      <h2 className="text-xl font-semibold mb-2">Client Details</h2>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div>
+          <Label htmlFor="clientName">Client Name</Label>
+          <Input
+            type="text"
+            id="clientName"
+            name="clientName"
+            value={formState.clientName}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <Label htmlFor="clientAddress">Client Address</Label>
+          <Input
+            type="text"
+            id="clientAddress"
+            name="clientAddress"
+            value={formState.clientAddress}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <Label htmlFor="clientEmail">Client Email</Label>
+          <Input
+            type="email"
+            id="clientEmail"
+            name="clientEmail"
+            value={formState.clientEmail}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <Label htmlFor="clientPhone">Client Phone</Label>
+          <Input
+            type="tel"
+            id="clientPhone"
+            name="clientPhone"
+            value={formState.clientPhone}
+            onChange={handleInputChange}
+          />
+        </div>
+      </div>
+
+      {/* Company Details */}
+      <h2 className="text-xl font-semibold mb-2">Company Details</h2>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div>
+          <Label htmlFor="companyName">Company Name</Label>
+          <Input
+            type="text"
+            id="companyName"
+            name="companyName"
+            value={formState.companyName}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <Label htmlFor="companyAddress">Company Address</Label>
+          <Input
+            type="text"
+            id="companyAddress"
+            name="companyAddress"
+            value={formState.companyAddress}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <Label htmlFor="companyEmail">Company Email</Label>
+          <Input
+            type="email"
+            id="companyEmail"
+            name="companyEmail"
+            value={formState.companyEmail}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <Label htmlFor="companyPhone">Company Phone</Label>
+          <Input
+            type="tel"
+            id="companyPhone"
+            name="companyPhone"
+            value={formState.companyPhone}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <Label htmlFor="companyLogo">Company Logo</Label>
+          <Input type="file" id="companyLogo" accept="image/*" onChange={handleLogoChange} />
+        </div>
+        <div>
+          <Label htmlFor="companyStamp">Company Stamp</Label>
+          <Input type="file" id="companyStamp" accept="image/*" onChange={handleStampChange} />
+        </div>
+      </div>
+
+      {/* Line Items */}
+      <h2 className="text-xl font-semibold mb-2">Line Items</h2>
+      <div className="mb-6">
+        {lineItems.map((item, index) => (
+          <div key={index} className="grid grid-cols-6 gap-4 mb-2">
+            <div>
+              <Label htmlFor={`itemNo-${index}`}>Item No</Label>
+              <Input
+                type="text"
+                id={`itemNo-${index}`}
+                value={item.itemNo}
+                onChange={(e) => updateLineItem(index, 'itemNo', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`description-${index}`}>Description</Label>
+              <Input
+                type="text"
+                id={`description-${index}`}
+                value={item.description}
+                onChange={(e) => updateLineItem(index, 'description', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`quantity-${index}`}>Quantity</Label>
+              <Input
+                type="number"
+                id={`quantity-${index}`}
+                value={item.quantity}
+                onChange={(e) => updateLineItem(index, 'quantity', parseInt(e.target.value))}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`unitPrice-${index}`}>Unit Price</Label>
+              <Input
+                type="number"
+                id={`unitPrice-${index}`}
+                value={item.unitPrice}
+                onChange={(e) => updateLineItem(index, 'unitPrice', parseFloat(e.target.value))}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`discount-${index}`}>Discount (%)</Label>
+              <Input
+                type="number"
+                id={`discount-${index}`}
+                value={item.discount}
+                onChange={(e) => updateLineItem(index, 'discount', parseFloat(e.target.value))}
+              />
+            </div>
+            <div className="flex items-end">
+              <Button type="button" variant="destructive" size="sm" onClick={() => removeLineItem(index)}>
+                <Trash className="h-4 w-4 mr-2" />
+                Remove
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Select Quotation</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {mockQuotations.map((quote) => (
-                <DropdownMenuItem 
-                  key={quote.id} 
-                  onClick={() => populateFromQuote(quote.id)}
-                  className="cursor-pointer"
-                >
-                  {quote.quoteNumber} - {mockClients.find(c => c.id === quote.clientId)?.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+          </div>
+        ))}
+        <Button type="button" size="sm" onClick={addLineItem}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Line Item
+        </Button>
+      </div>
 
-          <Button variant="outline" onClick={() => navigate("/invoices/select-template")}>
-            Change Template
-          </Button>
-          <Button onClick={form.handleSubmit(onSubmit)}>
-            <Save className="mr-2 h-4 w-4" /> Save Invoice
-          </Button>
+      {/* Totals */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div>
+          <Label htmlFor="vatRate">VAT Rate (%)</Label>
+          <Input
+            type="number"
+            id="vatRate"
+            name="vatRate"
+            value={vatRate}
+            onChange={(e) => setVatRate(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Subtotal</Label>
+          <div className="font-bold">{formatCurrency(calculateSubtotal())}</div>
+        </div>
+        <div>
+          <Label>Tax</Label>
+          <div className="font-bold">{formatCurrency(calculateTax())}</div>
+        </div>
+        <div>
+          <Label>Total</Label>
+          <div className="font-bold">{formatCurrency(calculateTotal())}</div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Invoice Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="clientId">Client</Label>
-                    <Select
-                      onValueChange={(value) => {
-                        form.setValue("clientId", value);
-                        updatePreview();
-                      }}
-                      defaultValue={form.getValues("clientId")}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a client" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mockClients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      onValueChange={(value) => {
-                        form.setValue("status", value);
-                        updatePreview();
-                      }}
-                      defaultValue={form.getValues("status")}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="overdue">Overdue</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+      {/* Notes and Terms */}
+      <div className="mb-6">
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          id="notes"
+          name="notes"
+          value={formState.notes}
+          onChange={handleInputChange}
+        />
+      </div>
+      <div className="mb-6">
+        <Label htmlFor="terms">Terms and Conditions</Label>
+        <Textarea
+          id="terms"
+          name="terms"
+          value={formState.terms}
+          onChange={handleInputChange}
+        />
+      </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="invoiceNumber">Invoice Number</Label>
-                    <Input
-                      id="invoiceNumber"
-                      {...form.register("invoiceNumber")}
-                      onChange={(e) => {
-                        form.setValue("invoiceNumber", e.target.value);
-                        updatePreview();
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="issueDate">Issue Date</Label>
-                    <Input
-                      id="issueDate"
-                      type="date"
-                      {...form.register("issueDate")}
-                      onChange={(e) => {
-                        form.setValue("issueDate", e.target.value);
-                        updatePreview();
-                      }}
-                    />
-                  </div>
-                </div>
+      {/* Banking Details */}
+      <div className="mb-6">
+        <Label htmlFor="bankingDetails">Banking Details</Label>
+        <Textarea
+          id="bankingDetails"
+          name="bankingDetails"
+          value={formState.bankingDetails}
+          onChange={handleInputChange}
+        />
+      </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="dueDate">Due Date</Label>
-                    <Input
-                      id="dueDate"
-                      type="date"
-                      {...form.register("dueDate")}
-                      onChange={(e) => {
-                        form.setValue("dueDate", e.target.value);
-                        updatePreview();
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="shortDescription">Short Description</Label>
-                    <Input
-                      id="shortDescription"
-                      placeholder="Brief description of the invoice"
-                      {...form.register("shortDescription")}
-                      onChange={(e) => {
-                        form.setValue("shortDescription", e.target.value);
-                        updatePreview();
-                      }}
-                    />
-                  </div>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Invoice Items</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="w-full border rounded-md">
-                <div className="min-w-[1000px]">
-                  <div className="grid grid-cols-8 gap-4 p-4 border-b bg-muted/50">
-                    <div className="text-sm font-medium text-center">No</div>
-                    <div className="col-span-2 text-sm font-medium">Description</div>
-                    <div className="text-sm font-medium text-center">Quantity</div>
-                    <div className="text-sm font-medium text-center">Rate (R)</div>
-                    <div className="text-sm font-medium text-center">Amount (R)</div>
-                    <div className="text-sm font-medium text-center">Discount (R)</div>
-                    <div className="text-sm font-medium text-center">Total (R)</div>
-                  </div>
-
-                  <div className="p-4 space-y-2">
-                    {items.map((item, index) => (
-                      <div key={index} className="grid grid-cols-8 gap-4 items-center">
-                        <div>
-                          <Input
-                            value={item.itemNo}
-                            readOnly
-                            className="bg-gray-50 text-center"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Input
-                            placeholder="Item description"
-                            value={item.description}
-                            onChange={(e) => {
-                              const newItems = [...items];
-                              newItems[index].description = e.target.value;
-                              setItems(newItems);
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            className="text-center"
-                            onChange={(e) => {
-                              const newItems = [...items];
-                              const quantity = parseInt(e.target.value);
-                              newItems[index].quantity = quantity;
-                              newItems[index].amount = calculateLineAmount(quantity, item.rate);
-                              newItems[index].total = calculateLineTotal(newItems[index].amount, item.discount);
-                              setItems(newItems);
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.rate}
-                            className="text-center"
-                            onChange={(e) => {
-                              const newItems = [...items];
-                              const rate = parseFloat(e.target.value);
-                              newItems[index].rate = rate;
-                              newItems[index].amount = calculateLineAmount(item.quantity, rate);
-                              newItems[index].total = calculateLineTotal(newItems[index].amount, item.discount);
-                              setItems(newItems);
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <Input
-                            type="number"
-                            readOnly
-                            value={item.amount}
-                            className="bg-gray-50 text-center"
-                          />
-                        </div>
-                        <div>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.discount}
-                            className="text-center"
-                            onChange={(e) => {
-                              const newItems = [...items];
-                              const discount = parseFloat(e.target.value);
-                              newItems[index].discount = discount;
-                              newItems[index].total = calculateLineTotal(item.amount, discount);
-                              setItems(newItems);
-                            }}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            readOnly
-                            value={item.total}
-                            className="bg-gray-50 text-center"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeItem(index)}
-                            className="px-2"
-                          >
-                            ×
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ScrollArea>
-              
-              <div className="p-4">
-                <Button variant="outline" onClick={addItem}>
-                  Add Item
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Notes & Terms</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Input
-                    id="notes"
-                    {...form.register("notes")}
-                    placeholder="Additional notes for the client"
-                    onChange={(e) => {
-                      form.setValue("notes", e.target.value);
-                      updatePreview();
-                    }}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="terms">Terms and Conditions</Label>
-                  <Input
-                    id="terms"
-                    {...form.register("terms")}
-                    placeholder="Payment terms and conditions"
-                    onChange={(e) => {
-                      form.setValue("terms", e.target.value);
-                      updatePreview();
-                    }}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="sticky top-4">
-          <Card className="overflow-hidden">
-            <CardHeader>
-              <CardTitle>Invoice Preview</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-[700px] overflow-auto flex items-center justify-center bg-gray-100">
-                <div className="transform scale-[0.35] origin-top-center w-full flex justify-center" style={{ marginTop: '-30px' }}>
-                  <div style={{ width: '210mm', height: '297mm' }}>
-                    {renderTemplate()}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Signature */}
+      <div className="mb-6">
+        <Label>Signature</Label>
+        <div className="border rounded-md p-2">
+          <SignatureCanvas
+            penColor='black'
+            backgroundColor='white'
+            canvasProps={{ width: 500, height: 200, className: 'border' }}
+            ref={(ref) => {
+              if (ref) {
+                ref.fromDataURL(signature || '');
+              }
+            }}
+          />
+          <div className="flex justify-between mt-2">
+            <Button type="button" variant="secondary" size="sm" onClick={() => handleClearSignature(document.querySelector('canvas')?.signaturePad)}>
+              Clear
+            </Button>
+            <Button type="button" size="sm" onClick={() => handleSignatureSave(document.querySelector('canvas')?.signaturePad)}>
+              Save Signature
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Save Button */}
+      <Button onClick={handleSaveInvoice}>
+        Save Invoice
+      </Button>
     </div>
   );
 };
