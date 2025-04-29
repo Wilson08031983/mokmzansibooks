@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -12,15 +13,15 @@ const DashboardLayout = () => {
   const { currentUser } = useAuth();
 
   const getTabsForSection = () => {
-    if (location.pathname.includes('/invoices')) {
-      if (location.pathname === '/invoices/quotes') {
+    if (location.pathname.includes('/dashboard/invoices')) {
+      if (location.pathname === '/dashboard/invoices/quotes') {
         return (
           <Tabs
             defaultValue="quotes"
             className="mb-4"
             onValueChange={value => {
-              if (value === 'quotes') navigate('/invoices/quotes');
-              else navigate('/invoices');
+              if (value === 'quotes') navigate('/dashboard/invoices/quotes');
+              else navigate('/dashboard/invoices');
             }}
           >
             <TabsList>
@@ -32,13 +33,13 @@ const DashboardLayout = () => {
       }
     }
 
-    if (location.pathname.includes('/accounting')) {
+    if (location.pathname.includes('/dashboard/accounting')) {
       const currentPath = location.pathname;
       let defaultValue = "overview";
       
-      if (currentPath.includes("/accounting/transactions")) {
+      if (currentPath.includes("/dashboard/accounting/transactions")) {
         defaultValue = "transactions";
-      } else if (currentPath.includes("/accounting/reports")) {
+      } else if (currentPath.includes("/dashboard/accounting/reports")) {
         defaultValue = "reports";
       }
       
@@ -47,7 +48,7 @@ const DashboardLayout = () => {
           defaultValue={defaultValue}
           className="mb-4"
           onValueChange={value => {
-            navigate(`/accounting${value !== 'overview' ? '/' + value : ''}`);
+            navigate(`/dashboard/accounting${value !== 'overview' ? '/' + value : ''}`);
           }}
         >
           <TabsList>
@@ -59,24 +60,24 @@ const DashboardLayout = () => {
       );
     }
 
-    if (location.pathname.includes('/hr')) {
+    if (location.pathname.includes('/dashboard/hr')) {
       const currentPath = location.pathname;
       let defaultValue = "overview";
-      if (currentPath.includes("/hr/employees")) {
+      if (currentPath.includes("/dashboard/hr/employees")) {
         defaultValue = "employees";
-      } else if (currentPath.includes("/hr/payroll")) {
+      } else if (currentPath.includes("/dashboard/hr/payroll")) {
         defaultValue = "payroll";
-      } else if (currentPath.includes("/hr/attendance")) {
+      } else if (currentPath.includes("/dashboard/hr/attendance")) {
         defaultValue = "attendance";
-      } else if (currentPath.includes("/hr/leaves")) {
+      } else if (currentPath.includes("/dashboard/hr/leaves")) {
         defaultValue = "leaves";
-      } else if (currentPath.includes("/hr/benefits")) {
+      } else if (currentPath.includes("/dashboard/hr/benefits")) {
         defaultValue = "benefits";
       }
       
       return (
         <Tabs defaultValue={defaultValue} className="mb-4" onValueChange={value => {
-          navigate(`/hr${value !== 'overview' ? '/' + value : ''}`);
+          navigate(`/dashboard/hr${value !== 'overview' ? '/' + value : ''}`);
         }}>
           <TabsList className="inline-flex h-12 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto">
             <TabsTrigger value="overview" className="px-4">Overview</TabsTrigger>

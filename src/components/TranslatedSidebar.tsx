@@ -6,12 +6,10 @@ import {
   FileText,
   Calculator,
   Package,
-  BadgeHelp,
-  CreditCard,
+  PieChart,
+  UserCircle,
   Settings,
   ChevronDown,
-  PieChart,
-  UserCircle
 } from "lucide-react";
 import { TranslatedNavItem } from "./TranslatedNavItems";
 import { Button } from "./ui/button";
@@ -28,7 +26,7 @@ export const TranslatedNavigation = () => {
   return (
     <nav className="space-y-1">
       <TranslatedNavItem
-        to="/clients"
+        to="/dashboard/clients"
         translationKey="clients"
         icon={<Users className="h-4 w-4" />}
       />
@@ -57,8 +55,9 @@ export const TranslatedNavigation = () => {
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="ml-9 space-y-1">
-          <TranslatedNavItem to="/invoices" translationKey="invoices" />
-          <TranslatedNavItem to="/invoices/quotes" translationKey="quotes" />
+          <TranslatedNavItem to="/dashboard/invoices" translationKey="invoices" />
+          <TranslatedNavItem to="/dashboard/invoices/quotes" translationKey="quotes" />
+          <TranslatedNavItem to="/dashboard/invoices/manager" translationKey="manager" />
         </CollapsibleContent>
       </Collapsible>
 
@@ -86,12 +85,14 @@ export const TranslatedNavigation = () => {
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="ml-9 space-y-1">
-          {/* Accounting subitems can be added here */}
+          <TranslatedNavItem to="/dashboard/accounting" translationKey="overview" />
+          <TranslatedNavItem to="/dashboard/accounting/transactions" translationKey="transactions" />
+          <TranslatedNavItem to="/dashboard/accounting/reports" translationKey="reports" />
         </CollapsibleContent>
       </Collapsible>
 
       <TranslatedNavItem
-        to="/inventory"
+        to="/dashboard/inventory"
         translationKey="inventory"
         icon={<Package className="h-4 w-4" />}
       />
@@ -120,18 +121,23 @@ export const TranslatedNavigation = () => {
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="ml-9 space-y-1">
-          {/* HR subitems can be added here */}
+          <TranslatedNavItem to="/dashboard/hr" translationKey="overview" />
+          <TranslatedNavItem to="/dashboard/hr/employees" translationKey="employees" />
+          <TranslatedNavItem to="/dashboard/hr/payroll" translationKey="payroll" />
+          <TranslatedNavItem to="/dashboard/hr/attendance" translationKey="attendance" />
+          <TranslatedNavItem to="/dashboard/hr/leaves" translationKey="leaves" />
+          <TranslatedNavItem to="/dashboard/hr/benefits" translationKey="benefits" />
         </CollapsibleContent>
       </Collapsible>
 
       <TranslatedNavItem
-        to="/reports"
+        to="/dashboard/reports"
         translationKey="reports"
         icon={<PieChart className="h-4 w-4" />}
       />
 
       <TranslatedNavItem
-        to="/settings"
+        to="/dashboard/settings"
         translationKey="settings"
         icon={<Settings className="h-4 w-4" />}
       />
