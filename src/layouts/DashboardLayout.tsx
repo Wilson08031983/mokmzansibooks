@@ -14,23 +14,32 @@ const DashboardLayout = () => {
 
   const getTabsForSection = () => {
     if (location.pathname.includes('/dashboard/invoices')) {
-      if (location.pathname === '/dashboard/invoices/quotes') {
-        return (
-          <Tabs
-            defaultValue="quotes"
-            className="mb-4"
-            onValueChange={value => {
-              if (value === 'quotes') navigate('/dashboard/invoices/quotes');
-              else navigate('/dashboard/invoices');
-            }}
-          >
-            <TabsList>
-              <TabsTrigger value="invoices">Invoices</TabsTrigger>
-              <TabsTrigger value="quotes">Quotes</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        );
+      const currentPath = location.pathname;
+      let defaultValue = "invoices";
+      
+      if (currentPath.includes("/dashboard/invoices/quotes")) {
+        defaultValue = "quotes";
+      } else if (currentPath.includes("/dashboard/invoices/manager")) {
+        defaultValue = "manager";
       }
+      
+      return (
+        <Tabs
+          defaultValue={defaultValue}
+          className="mb-4"
+          onValueChange={value => {
+            if (value === "invoices") navigate('/dashboard/invoices');
+            else if (value === "quotes") navigate('/dashboard/invoices/quotes');
+            else navigate(`/dashboard/invoices/${value}`);
+          }}
+        >
+          <TabsList>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
+            <TabsTrigger value="quotes">Quotes</TabsTrigger>
+            <TabsTrigger value="manager">Manager</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      );
     }
 
     if (location.pathname.includes('/dashboard/accounting')) {
