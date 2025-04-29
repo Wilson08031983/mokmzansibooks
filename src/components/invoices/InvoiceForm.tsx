@@ -2,18 +2,21 @@
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { InvoiceData, InvoiceItem } from "@/types/invoice";
-import { Plus, Trash, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
 import TemplateSelector from "./TemplateSelector";
+import InvoiceDetails from "./InvoiceDetails";
+import ClientSelector from "./ClientSelector";
+import ClientDisplay from "./ClientDisplay";
+import CompanyDisplay from "./CompanyDisplay";
+import InvoiceItems from "./InvoiceItems";
+import QuoteSelector from "./QuoteSelector";
+import InvoiceFooter from "./InvoiceFooter";
+import InvoiceTotals from "./InvoiceTotals";
 
 // Mock client data
 const mockClients = [
@@ -229,6 +232,10 @@ const InvoiceForm = () => {
     setShowTemplateSelector(true);
   };
 
+  const handleVatRateChange = (rate: string) => {
+    setInvoiceData({...invoiceData, vatRate: parseFloat(rate) || 0});
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -242,276 +249,70 @@ const InvoiceForm = () => {
           </TabsList>
           
           <TabsContent value="quote">
-            <div className="p-4 bg-gray-50 rounded-md mb-6">
-              <Label className="mb-2 block">Select a saved quote</Label>
-              <Select value={selectedQuote || ""} onValueChange={handleQuoteSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a quote" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockSavedQuotes.map(quote => (
-                    <SelectItem key={quote.id} value={quote.id}>
-                      {quote.quoteNumber} - {quote.clientName} ({formatCurrency(quote.total, "ZAR")})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <QuoteSelector 
+              quotes={mockSavedQuotes} 
+              selectedQuote={selectedQuote} 
+              onQuoteSelect={handleQuoteSelect} 
+            />
           </TabsContent>
         </Tabs>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Invoice Details */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <Label htmlFor="invoiceNumber">Invoice Number</Label>
-              <Input
-                id="invoiceNumber"
-                value={invoiceData.invoiceNumber}
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
-            <div>
-              <Label htmlFor="issueDate">Date</Label>
-              <Input
-                id="issueDate"
-                type="date"
-                value={invoiceData.issueDate}
-                onChange={(e) => setInvoiceData({...invoiceData, issueDate: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="dueDate">Due Date</Label>
-              <Input
-                id="dueDate"
-                type="date"
-                value={invoiceData.dueDate}
-                onChange={(e) => setInvoiceData({...invoiceData, dueDate: e.target.value})}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="shortDescription">Short Description</Label>
-            <Input
-              id="shortDescription"
-              placeholder="Brief description of the invoice"
-              value={invoiceData.shortDescription || ""}
-              onChange={(e) => setInvoiceData({...invoiceData, shortDescription: e.target.value})}
-            />
-          </div>
+          <InvoiceDetails
+            invoiceNumber={invoiceData.invoiceNumber}
+            issueDate={invoiceData.issueDate}
+            dueDate={invoiceData.dueDate}
+            shortDescription={invoiceData.shortDescription}
+            onIssueDateChange={(date) => setInvoiceData({...invoiceData, issueDate: date})}
+            onDueDateChange={(date) => setInvoiceData({...invoiceData, dueDate: date})}
+            onShortDescriptionChange={(desc) => setInvoiceData({...invoiceData, shortDescription: desc})}
+          />
 
           {/* Client Selection (only if not coming from a quote) */}
           {sourceType === 'new' && (
-            <div className="space-y-4">
-              <Label>Client Information</Label>
-              <Select onValueChange={handleClientSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockClients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <ClientSelector 
+              clients={mockClients}
+              onClientSelect={handleClientSelect}
+            />
           )}
 
           {/* Display Client Info */}
-          {invoiceData.client.name && (
-            <div className="bg-gray-50 p-4 rounded-md">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Name</p>
-                  <p>{invoiceData.client.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Email</p>
-                  <p>{invoiceData.client.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Address</p>
-                  <p className="whitespace-pre-line">{invoiceData.client.address}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Phone</p>
-                  <p>{invoiceData.client.phone}</p>
-                </div>
-              </div>
-            </div>
-          )}
+          <ClientDisplay client={invoiceData.client} />
           
           {/* Company Information */}
-          <div className="space-y-2">
-            <Label>My Company Details</Label>
-            <div className="bg-gray-50 p-4 rounded-md">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Name</p>
-                  <p>{invoiceData.company.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Email</p>
-                  <p>{invoiceData.company.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Address</p>
-                  <p className="whitespace-pre-line">{invoiceData.company.address}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Phone</p>
-                  <p>{invoiceData.company.phone}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <CompanyDisplay company={invoiceData.company} />
           
           {/* Items Table */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label>Items</Label>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                onClick={addItem}
-                className="flex items-center"
-              >
-                <Plus className="h-4 w-4 mr-1" /> Add Item
-              </Button>
-            </div>
-            
-            <div className="border rounded-md overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">Item No.</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="w-[100px]">Quantity</TableHead>
-                    <TableHead className="w-[120px]">Amount (R)</TableHead>
-                    <TableHead className="w-[100px]">Discount %</TableHead>
-                    <TableHead className="w-[120px]">Total (R)</TableHead>
-                    <TableHead className="w-[60px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invoiceData.items.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{item.itemNo}</TableCell>
-                      <TableCell>
-                        <Input
-                          value={item.description}
-                          onChange={(e) => updateItem(index, 'description', e.target.value)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={item.unitPrice}
-                          onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={item.discount}
-                          onChange={(e) => updateItem(index, 'discount', parseFloat(e.target.value) || 0)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(item.amount, "ZAR")}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeItem(index)}
-                          disabled={invoiceData.items.length <= 1}
-                        >
-                          <Trash className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          <InvoiceItems
+            items={invoiceData.items}
+            onAddItem={addItem}
+            onRemoveItem={removeItem}
+            onUpdateItem={updateItem}
+          />
           
           {/* Totals */}
-          <div className="flex flex-col items-end space-y-2">
-            <div className="grid grid-cols-2 gap-4 w-full sm:w-2/3 md:w-1/3">
-              <Label className="text-right">Subtotal:</Label>
-              <p className="font-medium">{formatCurrency(invoiceData.subtotal, "ZAR")}</p>
-              
-              <div className="text-right flex items-center justify-end">
-                <Label htmlFor="vatRate" className="mr-2">VAT %:</Label>
-                <Input
-                  id="vatRate"
-                  className="w-16"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={invoiceData.vatRate}
-                  onChange={(e) => setInvoiceData({...invoiceData, vatRate: parseFloat(e.target.value) || 0})}
-                />
-              </div>
-              <p className="font-medium">{formatCurrency(invoiceData.tax, "ZAR")}</p>
-              
-              <Label className="text-right font-bold">Total:</Label>
-              <p className="font-bold">{formatCurrency(invoiceData.total, "ZAR")}</p>
+          <div className="flex flex-col items-end">
+            <div className="w-full sm:w-2/3 md:w-1/3">
+              <InvoiceTotals
+                subtotal={invoiceData.subtotal}
+                tax={invoiceData.tax}
+                total={invoiceData.total}
+                vatRate={invoiceData.vatRate.toString()}
+                onVatRateChange={handleVatRateChange}
+              />
             </div>
           </div>
           
           {/* Footer Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Additional information or special comments"
-                rows={4}
-                value={invoiceData.notes || ""}
-                onChange={(e) => setInvoiceData({...invoiceData, notes: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="terms">Terms</Label>
-              <Textarea
-                id="terms"
-                placeholder="Payment terms, deadlines, etc."
-                rows={4}
-                value={invoiceData.terms || ""}
-                onChange={(e) => setInvoiceData({...invoiceData, terms: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="bankingDetails">Banking Details</Label>
-              <Textarea
-                id="bankingDetails"
-                placeholder="Bank name, account number, etc."
-                rows={4}
-                value={invoiceData.bankingDetails || ""}
-                onChange={(e) => setInvoiceData({...invoiceData, bankingDetails: e.target.value})}
-              />
-            </div>
-          </div>
+          <InvoiceFooter
+            notes={invoiceData.notes}
+            terms={invoiceData.terms}
+            bankingDetails={invoiceData.bankingDetails}
+            onNotesChange={(notes) => setInvoiceData({...invoiceData, notes})}
+            onTermsChange={(terms) => setInvoiceData({...invoiceData, terms})}
+            onBankingDetailsChange={(bankingDetails) => setInvoiceData({...invoiceData, bankingDetails})}
+          />
           
           {/* Save Button */}
           <Button type="submit" className="w-full sm:w-auto">
