@@ -1,0 +1,20 @@
+# Production Environment Variables
+# Values will be replaced during CI/CD deployment
+
+# Supabase configuration 
+VITE_SUPABASE_URL=https://bazbbweawubxqfebliil.supabase.co
+VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+
+# Application settings
+VITE_APP_NAME=MokMzansi Books
+VITE_APP_URL=https://mokmzansibooks.co.za
+VITE_APP_VERSION=1.0.0
+VITE_PUBLIC_DEPLOYMENT=true
+
+# Payment gateway settings
+VITE_PAYSTACK_PUBLIC_KEY=$PAYSTACK_PUBLIC_KEY
+
+# Feature flags
+VITE_ENABLE_ACCOUNT_SYNC=true
+VITE_ENABLE_DATA_PERSISTENCE=true
+VITE_ENABLE_ERROR_MONITORING=true
