@@ -15,23 +15,34 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     
+    - name: Validate Secrets
+      run: |
+        # Check if required secrets are available
+        if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ]; then
+          echo "Error: SUPABASE_ACCESS_TOKEN is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.SLACK_WEBHOOK }}" ]; then
+          echo "Warning: SLACK_WEBHOOK is not set. Notification will be skipped."
+        fi
+    
     - name: Setup Supabase CLI
       uses: supabase/setup-cli@v1
-      with:
-        supabase_access_token: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-    
-    - name: Verify Supabase Project
-      run: |
-        supabase projects list
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     
-    - name: Apply Migrations
+    - name: Verify Supabase Project
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       run: |
-        supabase migration up
+        supabase projects list
+    
+    - name: Apply Migrations
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_PROJECT_ID: bazbbweawubxqfebliil
+      run: |
+        supabase migration up
     
     - name: Notify on Failure
       if: failure()
@@ -39,4 +50,4 @@ jobs:
       with:
         status: ${{ job.status }}
         text: Supabase migration sync failed for project
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        webhook_url: ${{ secrets.SLACK_WEBHOOK || '' }}
