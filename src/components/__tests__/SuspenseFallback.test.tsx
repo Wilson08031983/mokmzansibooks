@@ -64,4 +64,3 @@ describe('SuspenseFallback', () => {
 
 // To enable these tests, install the required dependencies:
 // npm i --save-dev @types/jest @testing-library/react @testing-library/jest-dom
-

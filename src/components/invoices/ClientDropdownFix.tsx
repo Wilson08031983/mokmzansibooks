@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Client } from '@/types/client';
 import {
@@ -98,8 +99,8 @@ const ClientDropdownFix: React.FC<ClientDropdownFixProps> = ({
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-blue-500" />
                         <span>{client.name}</span>
-                        {client.contactPerson && (
-                          <span className="text-xs text-gray-500 ml-1">({client.contactPerson})</span>
+                        {client.hasOwnProperty('contactPerson') && (
+                          <span className="text-xs text-gray-500 ml-1">({(client as any).contactPerson})</span>
                         )}
                       </div>
                     </SelectItem>
@@ -129,8 +130,8 @@ const ClientDropdownFix: React.FC<ClientDropdownFixProps> = ({
                       <div className="flex items-center gap-2">
                         <Truck className="h-4 w-4 text-orange-500" />
                         <span>{client.name}</span>
-                        {client.contactPerson && (
-                          <span className="text-xs text-gray-500 ml-1">({client.contactPerson})</span>
+                        {client.hasOwnProperty('contactPerson') && (
+                          <span className="text-xs text-gray-500 ml-1">({(client as any).contactPerson})</span>
                         )}
                       </div>
                     </SelectItem>
