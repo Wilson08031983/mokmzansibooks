@@ -11,14 +11,7 @@ NC='\033[0m' # No Color
 # Check if Supabase CLI is installed
 if ! command -v supabase &> /dev/null
 then
-    echo -e "${RED}Supabase CLI is not installed.${NC}"
-    echo -e "${YELLOW}Installation Instructions:${NC}"
-    echo "1. For macOS (Homebrew): brew install supabase/tap/supabase"
-    echo "2. For other platforms:"
-    echo "   - npm: npm install -g supabase-cli"
-    echo "   - Download from: https://supabase.com/docs/guides/cli"
-    echo
-    echo "After installation, run 'supabase login' to authenticate"
+    echo -e "${RED}Supabase CLI is not installed. Please install it first.${NC}"
     exit 1
 fi
 
