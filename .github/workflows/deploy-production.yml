@@ -28,13 +28,35 @@ jobs:
       
       # The following environment variables require GitHub secrets to be set up in repository settings
       # Add these secrets in your GitHub repository: Settings > Secrets and variables > Actions
+      - name: Validate Secrets
+        run: |
+          # Check if secrets are available
+          if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
+            echo "Warning: SUPABASE_URL secret is not set"
+          fi
+          if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+            echo "Warning: SUPABASE_ANON_KEY secret is not set"
+          fi
+          if [ -z "${{ secrets.PRODUCTION_URL }}" ]; then
+            echo "Warning: PRODUCTION_URL secret is not set"
+          fi
+          if [ -z "${{ secrets.PAYSTACK_PUBLIC_KEY }}" ]; then
+            echo "Warning: PAYSTACK_PUBLIC_KEY secret is not set"
+          fi
+          if [ -z "${{ secrets.NETLIFY_SITE_ID }}" ]; then
+            echo "Warning: NETLIFY_SITE_ID secret is not set"
+          fi
+          if [ -z "${{ secrets.NETLIFY_AUTH_TOKEN }}" ]; then
+            echo "Warning: NETLIFY_AUTH_TOKEN secret is not set"
+          fi
+
       - name: Build production bundle
         run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL || '' }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || '' }}
-          VITE_APP_URL: ${{ secrets.PRODUCTION_URL || '' }}
-          VITE_PAYSTACK_PUBLIC_KEY: ${{ secrets.PAYSTACK_PUBLIC_KEY || '' }}
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          VITE_APP_URL: ${{ secrets.PRODUCTION_URL }}
+          VITE_PAYSTACK_PUBLIC_KEY: ${{ secrets.PAYSTACK_PUBLIC_KEY }}
       
       # Using the updated Netlify CLI action
       - name: Deploy to Netlify
@@ -48,6 +70,6 @@ jobs:
           enable-commit-comment: true
           overwrites-pull-request-comment: true
         env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || '' }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || '' }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
         timeout-minutes: 1
