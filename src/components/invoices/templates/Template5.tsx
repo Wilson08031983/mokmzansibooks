@@ -1,6 +1,6 @@
 
 import React from "react";
-import { QuoteData } from "@/types/quote";
+import { QuoteData, QuoteItem } from "@/types/quote";
 import QuoteSidebar from "./components/QuoteSidebar";
 import QuoteTable from "./components/QuoteTable";
 import QuoteFooter from "./components/QuoteFooter";
@@ -37,6 +37,7 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
         quantity: 10,
         unitPrice: 1500,
         discount: 0,
+        total: 15000,
         amount: 15000
       },
       {
@@ -45,6 +46,7 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
         quantity: 5,
         unitPrice: 2000,
         discount: 0,
+        total: 10000,
         amount: 10000
       }
     ],
@@ -65,7 +67,7 @@ const Template5 = ({ data, preview = false }: TemplateProps) => {
   };
 
   // Use the provided data or fall back to preview data
-  const displayData = preview ? data : previewData;
+  const displayData = preview ? previewData : data;
   
   return (
     <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans relative overflow-hidden" style={{ minHeight: '297mm' }}>

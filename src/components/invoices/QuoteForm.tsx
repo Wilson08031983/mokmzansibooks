@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -39,6 +38,19 @@ interface QuoteFormProps {
 const QuoteForm = ({ onSaveSuccess, onCancel, isEditing = false, initialData }: QuoteFormProps) => {
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   
+  // Define createNewItem function before using it
+  function createNewItem(): QuoteItem {
+    return {
+      itemNo: 1,
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+      discount: 0,
+      total: 0,
+      amount: 0
+    };
+  }
+  
   const [quoteData, setQuoteData] = useState<QuoteData>(() => {
     if (initialData) return initialData;
     
@@ -71,18 +83,6 @@ const QuoteForm = ({ onSaveSuccess, onCancel, isEditing = false, initialData }: 
     const year = new Date().getFullYear();
     const random = Math.floor(1000 + Math.random() * 9000);
     return `QT-${year}-${random}`;
-  }
-
-  // Create a new empty item
-  function createNewItem(): QuoteItem {
-    return {
-      itemNo: quoteData?.items?.length ? quoteData.items.length + 1 : 1,
-      description: "",
-      quantity: 1,
-      unitPrice: 0,
-      discount: 0,
-      amount: 0
-    };
   }
 
   // Handle client selection

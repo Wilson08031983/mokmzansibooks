@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useNavigate } from 'react-router-dom';
@@ -15,30 +16,27 @@ interface Notification {
 }
 
 export const useCompanySafeguards = () => {
-  const { companyDetails, loading } = useCompany();
+  const { companyDetails } = useCompany();
   const navigate = useNavigate();
-  const notifications = useNotifications();
+  const { add: addNotification } = useNotifications();
   const [safeguardChecksComplete, setSafeguardChecksComplete] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (!companyDetails?.name || !companyDetails?.address || !companyDetails?.email || !companyDetails?.phone) {
+    if (companyDetails !== undefined) {
+      if (!companyDetails?.name || !companyDetails?.address) {
         // Add a notification
-        notifications.add({
+        addNotification({
           title: 'Company details missing',
           message: 'Please complete your company profile to enable full functionality.',
           type: 'warning',
           actionLabel: 'Update Profile',
-          action: () => navigate('/settings/company'),
-          timestamp: Date.now(),
-          read: false,
-          id: ''
+          action: () => navigate('/settings/company')
         });
       }
 
       setSafeguardChecksComplete(true);
     }
-  }, [companyDetails, loading, navigate, notifications]);
+  }, [companyDetails, navigate, addNotification]);
 
   return { safeguardChecksComplete };
 };

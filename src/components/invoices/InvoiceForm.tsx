@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -46,6 +45,18 @@ const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
   const [sourceType, setSourceType] = useState<'new' | 'quote'>('new');
   const [selectedQuote, setSelectedQuote] = useState<string | null>(null);
   
+  // Define createNewItem function before using it
+  function createNewItem(): InvoiceItem {
+    return {
+      itemNo: "1", // We start with default value
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+      discount: 0,
+      amount: 0
+    };
+  }
+  
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
     invoiceNumber: generateInvoiceNumber(),
     issueDate: format(new Date(), "yyyy-MM-dd"),
@@ -74,18 +85,6 @@ const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
     const year = new Date().getFullYear();
     const random = Math.floor(1000 + Math.random() * 9000);
     return `INV-${year}-${random}`;
-  }
-
-  // Create a new empty item
-  function createNewItem(): InvoiceItem {
-    return {
-      itemNo: invoiceData?.items?.length ? invoiceData.items.length + 1 : 1,
-      description: "",
-      quantity: 1,
-      unitPrice: 0,
-      discount: 0,
-      amount: 0
-    };
   }
 
   // Handle source type change

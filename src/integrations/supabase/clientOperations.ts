@@ -5,8 +5,8 @@
  */
 
 import { supabase } from './client';
-import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from "@/types/client";
-import { getSafeClientData } from '@/utils/clientDataPersistence';
+import { Client, ClientsState } from "@/types/client";
+import { getSafeClientData, setSafeClientData } from '@/utils/clientDataPersistence';
 
 /**
  * Save all clients to storage (currently using localStorage)
@@ -25,7 +25,7 @@ export const saveClientsToSupabase = async (clients: ClientsState): Promise<void
     }
     
     // For now, just save to localStorage
-    localStorage.setItem('mokClients', JSON.stringify(clients));
+    setSafeClientData(clients);
     
     return Promise.resolve();
   } catch (error) {
@@ -48,11 +48,8 @@ export const loadClientsFromSupabase = async (): Promise<ClientsState | null> =>
     }
     
     // Get clients from localStorage
-    const clientsJson = localStorage.getItem('mokClients');
-    if (!clientsJson) return null;
-    
-    const clients = JSON.parse(clientsJson) as ClientsState;
-    return clients;
+    const clientsData = getSafeClientData();
+    return clientsData || null;
   } catch (error) {
     console.error('Error loading clients:', error);
     return null;
@@ -71,11 +68,7 @@ export const syncClientData = async (): Promise<void> => {
     // Save to storage
     await saveClientsToSupabase(clientData);
     
-    // Update local storage with latest data (currently just a no-op)
-    const latestData = await loadClientsFromSupabase();
-    if (latestData) {
-      localStorage.setItem('mokClients', JSON.stringify(latestData));
-    }
+    // No need to fetch from Supabase as we're just using localStorage for now
   } catch (error) {
     console.error('Error syncing client data:', error);
   }

@@ -1,7 +1,25 @@
-
 import React from "react";
-import { QuoteData } from "@/types/quote";
-import { formatDate, formatCurrency, renderCompanyLogo, renderSignature, renderCompanyStamp } from "@/utils/formatters";
+import { QuoteData, QuoteItem } from "@/types/quote";
+import { formatCurrency } from "@/utils/formatters";
+
+interface QuoteTableRowProps {
+  item: QuoteItem;
+}
+
+const QuoteTableRow: React.FC<QuoteTableRowProps> = ({ item }) => {
+  // Make sure to use amount or fall back to total
+  const amountToDisplay = item.amount !== undefined ? item.amount : item.total;
+  
+  return (
+    <tr className="border-b border-gray-100">
+      <td className="p-3">{item.description}</td>
+      <td className="p-3 text-center">{item.quantity}</td>
+      <td className="p-3 text-right">{formatCurrency(item.unitPrice)}</td>
+      <td className="p-3 text-right">{item.discount}%</td>
+      <td className="p-3 text-right">{formatCurrency(amountToDisplay)}</td>
+    </tr>
+  );
+};
 
 interface TemplateProps {
   data: QuoteData;
@@ -79,14 +97,7 @@ const QuoteModernTemplate = ({ data, preview }: TemplateProps) => {
           </thead>
           <tbody>
             {data.items.map((item, index) => (
-              <tr key={index} className="border-b border-gray-100">
-                <td className="py-3">{item.itemNo}</td>
-                <td className="py-3">{item.description}</td>
-                <td className="py-3 text-right">{item.quantity}</td>
-                <td className="py-3 text-right">{formatCurrency(item.unitPrice, "ZAR")}</td>
-                <td className="py-3 text-right">{item.discount}%</td>
-                <td className="py-3 text-right font-medium">{formatCurrency(item.amount, "ZAR")}</td>
-              </tr>
+              <QuoteTableRow key={index} item={item} />
             ))}
           </tbody>
         </table>

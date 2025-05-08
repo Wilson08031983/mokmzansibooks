@@ -14,6 +14,8 @@ const QuoteTable = ({ items }: QuoteTableProps) => {
     markupPercentage: item.markupPercentage || 0,
     unitPrice: item.unitPrice || 0,
     discount: item.discount || 0,
+    total: item.total || 0,
+    amount: item.amount || item.total || 0, // Fallback to total if amount is not available
   }));
 
   return (
@@ -36,7 +38,7 @@ const QuoteTable = ({ items }: QuoteTableProps) => {
             <td className="py-3 text-right">{item.quantity}</td>
             <td className="py-3 text-right">{formatCurrency(item.unitPrice)}</td>
             <td className="py-3 text-right">{formatPercentage(item.discount)}</td>
-            <td className="py-3 text-right font-medium">{formatCurrency(item.total)}</td>
+            <td className="py-3 text-right font-medium">{formatCurrency(item.amount)}</td>
           </tr>
         ))}
       </tbody>
