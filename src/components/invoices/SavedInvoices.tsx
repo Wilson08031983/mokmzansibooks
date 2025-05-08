@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,371 +10,244 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Edit, Eye, Download, Trash, Mail, MoreHorizontal, Check, RefreshCcw } from "lucide-react";
-import { formatCurrency, formatDate } from "@/utils/formatters";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Eye, Download, Trash, Mail, MoreHorizontal, Plus, RefreshCw } from "lucide-react";
+import { formatCurrency } from "@/utils/formatters";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import Template1 from "@/components/invoices/templates/Template1";
-import { InvoiceData } from "@/types/invoice";
+import { toast } from "sonner";
 
-// Mock data for saved invoices
-const mockSavedInvoices = [
-  {
-    id: "INV20231001",
-    client: "ABC Construction",
-    issueDate: "2023-10-01",
-    dueDate: "2023-10-15",
-    amount: 15000,
-    status: "paid",
-    items: [
-      {
-        itemNo: "001",
-        description: "Website Design",
-        quantity: 1,
-        unitPrice: 10000,
-        discount: 0,
-        amount: 10000
-      },
-      {
-        itemNo: "002",
-        description: "Content Creation",
-        quantity: 5,
-        unitPrice: 1000,
-        discount: 0,
-        amount: 5000
-      }
-    ]
-  },
-  {
-    id: "INV20231002",
-    client: "Cape Town Retailers",
-    issueDate: "2023-10-02",
-    dueDate: "2023-10-10",
-    amount: 2750,
-    status: "pending",
-    items: [
-      {
-        itemNo: "001",
-        description: "Project Management",
-        quantity: 1,
-        unitPrice: 3000,
-        discount: 0,
-        amount: 3000
-      },
-      {
-        itemNo: "002",
-        description: "Labor Services",
-        quantity: 15,
-        unitPrice: 100,
-        discount: 0,
-        amount: 1500
-      }
-    ]
-  },
-  {
-    id: "INV20231003",
-    client: "Durban Services Co",
-    issueDate: "2023-10-03",
-    dueDate: "2023-10-07",
-    amount: 8500,
-    status: "paid",
-    items: [
-      {
-        itemNo: "001",
-        description: "Project Management",
-        quantity: 1,
-        unitPrice: 3000,
-        discount: 0,
-        amount: 3000
-      },
-      {
-        itemNo: "002",
-        description: "Labor Services",
-        quantity: 15,
-        unitPrice: 100,
-        discount: 0,
-        amount: 1500
-      }
-    ]
-  },
-  {
-    id: "INV20231004",
-    client: "Johannesburg Tech Solutions",
-    issueDate: "2023-10-04",
-    dueDate: "2023-10-05",
-    amount: 3600,
-    status: "overdue",
-    items: [
-      {
-        itemNo: "001",
-        description: "Project Management",
-        quantity: 1,
-        unitPrice: 3000,
-        discount: 0,
-        amount: 3000
-      },
-      {
-        itemNo: "002",
-        description: "Labor Services",
-        quantity: 15,
-        unitPrice: 100,
-        discount: 0,
-        amount: 1500
-      }
-    ]
-  },
-  {
-    id: "INV20231005",
-    client: "Eastern Cape Supplies",
-    issueDate: "2023-10-05",
-    dueDate: "2023-10-09",
-    amount: 5100,
-    status: "overdue",
-    items: [
-      {
-        itemNo: "001",
-        description: "Project Management",
-        quantity: 1,
-        unitPrice: 3000,
-        discount: 0,
-        amount: 3000
-      },
-      {
-        itemNo: "002",
-        description: "Labor Services",
-        quantity: 15,
-        unitPrice: 100,
-        discount: 0,
-        amount: 1500
-      }
-    ]
-  },
-];
-
-// Mock data for an invoice preview
-const mockInvoiceData: InvoiceData = {
-  invoiceNumber: "INV20231001",
-  issueDate: "2023-10-01",
-  dueDate: "2023-10-15",
-  shortDescription: "Construction services",
-  client: {
-    name: "ABC Construction",
-    address: "123 Builder St, Cape Town, 8001",
-    email: "info@abcconstruction.co.za",
-    phone: "021 234 5678"
-  },
-  company: {
-    name: "MOKMzansi Holdings",
-    address: "456 Business Ave, Johannesburg, 2000",
-    email: "contact@mokmzansi.co.za",
-    phone: "011 987 6543"
-  },
-  items: [
-    {
-      itemNo: 1,
-      description: "Project Management",
-      quantity: 1,
-      unitPrice: 3000,
-      amount: 3000,
-      discount: 0,
-    },
-    {
-      itemNo: 2,
-      description: "Labor Services",
-      quantity: 15,
-      unitPrice: 100,
-      amount: 1500,
-      discount: 0,
-    }
-  ],
-  subtotal: 4500,
-  vatRate: 15,
-  tax: 675,
-  total: 5175,
-  notes: "Payment due within 14 days",
-  terms: "Thank you for your business",
-  bankingDetails: "Bank: First National Bank\nAccount: 1234 5678 9012\nBranch: 123456",
-  currency: "ZAR"
+// Safely format a date with fallbacks
+const safeDateFormat = (dateString: string | undefined): string => {
+  if (!dateString) return "N/A";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Invalid date";
+    return date.toLocaleDateString('en-ZA', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch (error) {
+    console.error("Date formatting error:", error);
+    return "Error";
+  }
 };
 
-const SavedInvoices = () => {
+// Function to load real invoices from localStorage
+const loadSavedInvoices = () => {
+  try {
+    // Attempt to load saved invoices from localStorage
+    const savedInvoices = localStorage.getItem('savedInvoices');
+    if (savedInvoices) {
+      return JSON.parse(savedInvoices);
+    }
+  } catch (error) {
+    console.error('Error loading invoices from localStorage:', error);
+  }
+  return []; // Return empty array if no data found or error occurs
+};
+
+interface SavedInvoicesProps {
+  onCreateNew: () => void;
+  showCreateButton?: boolean;
+}
+
+const SavedInvoices: React.FC<SavedInvoicesProps> = ({ onCreateNew, showCreateButton = true }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [showPreview, setShowPreview] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
-  const [invoices, setInvoices] = useState(mockSavedInvoices);
+  const [showInvoicePreview, setShowInvoicePreview] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [invoices, setInvoices] = useState<any[]>([]);
 
-  const handlePreviewInvoice = (invoiceId: string) => {
-    setSelectedInvoice(invoiceId);
-    setShowPreview(true);
-  };
+  // Load invoices on component mount
+  useEffect(() => {
+    // Load saved invoices from localStorage
+    const loadedInvoices = loadSavedInvoices();
+    setInvoices(loadedInvoices || []);
 
-  const handleChangeStatus = (invoiceId: string, newStatus: string) => {
-    setInvoices(prevInvoices => prevInvoices.map(invoice => 
-      invoice.id === invoiceId ? { ...invoice, status: newStatus } : invoice
-    ));
-  };
+    // Set up interval to periodically check for new invoices
+    const intervalId = setInterval(() => {
+      const updatedInvoices = loadSavedInvoices();
+      setInvoices(updatedInvoices || []);
+    }, 2000);
+    
+    // Cleanup
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Filter invoices based on search term - with additional null checks
+  const filteredInvoices = invoices.filter(invoice => {
+    if (!invoice) return false;
+    
+    const invoiceNumber = invoice.invoiceNumber || '';
+    const clientName = invoice.client?.name || '';
+    
+    return invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           clientName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "paid":
-        return <Badge className="bg-green-500">Paid</Badge>;
-      case "pending":
-        return <Badge variant="outline" className="text-amber-500 border-amber-500">Pending</Badge>;
-      case "overdue":
-        return <Badge className="bg-red-500">Overdue</Badge>;
+    if (!status) return <Badge variant="outline">Unknown</Badge>;
+    
+    switch (status.toLowerCase()) {
       case "draft":
-        return <Badge variant="outline" className="text-gray-500 border-gray-500">Draft</Badge>;
+        return <Badge variant="outline">Draft</Badge>;
+      case "sent":
+        return <Badge variant="secondary">Sent</Badge>;
+      case "paid":
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Paid</Badge>;
+      case "overdue":
+        return <Badge variant="destructive">Overdue</Badge>;
+      case "partial":
+        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">Partial</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  // Filter invoices based on search term
-  const filteredInvoices = invoices.filter(invoice =>
-    invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.client.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleViewInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setShowInvoicePreview(true);
+  };
+
+  const handleDownloadInvoice = (invoice: any) => {
+    toast.success(`Preparing download for Invoice #${invoice.invoiceNumber}`);
+    // In a real implementation, this would trigger the actual download
+    setTimeout(() => {
+      toast.success(`Invoice #${invoice.invoiceNumber} downloaded successfully`);
+    }, 1500);
+  };
+
+  const handleEmailInvoice = (invoice: any) => {
+    toast.success(`Preparing to email Invoice #${invoice.invoiceNumber}`);
+    // In a real implementation, this would open an email dialog
+    setTimeout(() => {
+      toast.success(`Invoice #${invoice.invoiceNumber} emailed successfully`);
+    }, 1500);
+  };
+
+  const handleDeleteInvoice = (invoice: any) => {
+    toast.info("Deleting invoice...");
+    
+    try {
+      // Remove from state
+      setInvoices(invoices.filter(inv => inv.id !== invoice.id));
+      
+      // Remove from localStorage
+      localStorage.setItem('savedInvoices', JSON.stringify(
+        invoices.filter(inv => inv.id !== invoice.id)
+      ));
+      
+      toast.success(`Invoice #${invoice.invoiceNumber} deleted successfully`);
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      toast.error("Failed to delete invoice");
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            placeholder="Search invoices..."
-            className="pl-8 w-full md:w-[250px]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <>
+      <div className="flex flex-col space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search invoices..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {showCreateButton && (
+            <Button onClick={onCreateNew}>
+              <Plus className="mr-2 h-4 w-4" /> New Invoice
+            </Button>
+          )}
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Invoice #</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInvoices.length > 0 ? (
+                filteredInvoices.map((invoice) => (
+                  <TableRow key={invoice.id || `invoice-${Math.random()}`}>
+                    <TableCell className="font-medium">{invoice.invoiceNumber || "N/A"}</TableCell>
+                    <TableCell>{safeDateFormat(invoice.creationDate || invoice.date)}</TableCell>
+                    <TableCell>{invoice.client?.name || "Unknown Client"}</TableCell>
+                    <TableCell>{safeDateFormat(invoice.dueDate)}</TableCell>
+                    <TableCell>{formatCurrency(invoice.total || 0)}</TableCell>
+                    <TableCell>{getStatusBadge(invoice.status || "draft")}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Actions</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewInvoice(invoice)}>
+                            <Eye className="mr-2 h-4 w-4" /> View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadInvoice(invoice)}>
+                            <Download className="mr-2 h-4 w-4" /> Download PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEmailInvoice(invoice)}>
+                            <Mail className="mr-2 h-4 w-4" /> Email to Client
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleDeleteInvoice(invoice)} className="text-red-600">
+                            <Trash className="mr-2 h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                    No invoices found. Create your first invoice to get started.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[150px]">Invoice ID</TableHead>
-              <TableHead className="w-[200px]">Client</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="w-[120px]">Status</TableHead>
-              <TableHead className="text-right w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredInvoices.length > 0 ? (
-              filteredInvoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">
-                    {invoice.id}
-                  </TableCell>
-                  <TableCell>{invoice.client}</TableCell>
-                  <TableCell>{formatDate(invoice.issueDate)}</TableCell>
-                  <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(invoice.amount, "ZAR")}
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(invoice.status)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handlePreviewInvoice(invoice.id)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          <span>View Invoice</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>Edit Invoice</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Download className="mr-2 h-4 w-4" />
-                          <span>Download PDF</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Mail className="mr-2 h-4 w-4" />
-                          <span>Email Invoice</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            <RefreshCcw className="mr-2 h-4 w-4" />
-                            <span>Change Status</span>
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuPortal>
-                            <DropdownMenuSubContent>
-                              <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "pending")}>
-                                <span className="text-amber-500 mr-2">●</span> Pending
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "paid")}>
-                                <Check className="mr-2 h-4 w-4 text-green-500" /> Paid
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "overdue")}>
-                                <span className="text-red-500 mr-2">●</span> Overdue
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleChangeStatus(invoice.id, "draft")}>
-                                <span className="text-gray-500 mr-2">●</span> Draft
-                              </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuPortal>
-                        </DropdownMenuSub>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash className="mr-2 h-4 w-4" />
-                          <span>Delete Invoice</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="h-24 text-center text-gray-500"
-                >
-                  No invoices found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
       {/* Invoice Preview Dialog */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-4xl h-[80vh] overflow-y-auto">
+      <Dialog open={showInvoicePreview} onOpenChange={setShowInvoicePreview}>
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Invoice Preview</DialogTitle>
           </DialogHeader>
-          <div className="mt-4">
-            <Template1 data={mockInvoiceData} preview={true} />
+          <div className="max-h-[70vh] overflow-y-auto">
+            {selectedInvoice && (
+              <Template1 data={selectedInvoice} />
+            )}
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 

@@ -10,8 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Edit, Heart } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/utils/supabaseClient";
 
 interface EmployeeData {
   id: string;
@@ -23,51 +26,37 @@ interface EmployeeData {
   image?: string;
 }
 
-const employees: EmployeeData[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    position: "Software Developer",
-    department: "Engineering",
-    status: "Active",
-    email: "john.doe@example.com",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    position: "Marketing Manager",
-    department: "Marketing",
-    status: "Active",
-    email: "jane.smith@example.com",
-  },
-  {
-    id: "3",
-    name: "Robert Johnson",
-    position: "Financial Analyst",
-    department: "Finance",
-    status: "On Leave",
-    email: "robert.johnson@example.com",
-  },
-  {
-    id: "4",
-    name: "Emily Davis",
-    position: "HR Specialist",
-    department: "Human Resources",
-    status: "Active",
-    email: "emily.davis@example.com",
-  },
-  {
-    id: "5",
-    name: "Michael Brown",
-    position: "Sales Representative",
-    department: "Sales",
-    status: "Remote",
-    email: "michael.brown@example.com",
-  },
-];
-
+// Employee data will be fetched from Supabase in the component
 const EmployeeTable = () => {
+  const [employees, setEmployees] = useState<EmployeeData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('employees')
+          .select('*');
+          
+        if (error) throw error;
+        
+        setEmployees(data || []);
+      } catch (err) {
+        console.error('Error fetching employees:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch employees'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchEmployees();
+  }, [supabase]);
+  
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loadingProfile, setLoadingProfile] = useState<string | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -128,14 +117,65 @@ const EmployeeTable = () => {
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(`/hr/employees/${employee.id}`)}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  <span className="sr-only">View profile</span>
-                </Button>
+                <div className="flex items-center justify-end space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`p-1 h-7 w-7 min-w-0 flex items-center justify-center transition-colors
+                      ${loadingProfile === employee.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-blue-50 hover:text-blue-600'}
+                      focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 active:bg-blue-100`}
+                    onClick={() => {
+                      setLoadingProfile(employee.id);
+                      toast({
+                        title: "Loading profile",
+                        description: `Opening ${employee.name}'s profile details`,
+                        variant: "default"
+                      });
+                      // Small timeout to show loading state for better UX
+                      setTimeout(() => {
+                        navigate(`/dashboard/hr/employee/${employee.id}`);
+                        setLoadingProfile(null);
+                      }, 300);
+                    }}
+                    title="View employee profile"
+                    disabled={loadingProfile === employee.id}
+                  >
+                    {loadingProfile === employee.id ? (
+                      <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <ExternalLink className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">View profile</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-7 w-7 min-w-0 flex items-center justify-center hover:bg-amber-50 hover:text-amber-600 transition-colors"
+                    onClick={() => {
+                      // Navigate to the new employee form but with query parameters to indicate edit mode
+                      navigate(`/dashboard/hr/new-employee?mode=edit&id=${employee.id}`);
+                      toast({
+                        title: "Edit Employee",
+                        description: `Opening edit form for ${employee.name}`,
+                        variant: "default"
+                      });
+                    }}
+                    title="Edit employee"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span className="sr-only">Edit employee</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-7 w-7 min-w-0 flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition-colors"
+                    onClick={() => navigate(`/dashboard/hr/employee-benefits/${employee.id}`)}
+                    title="View benefits"
+                  >
+                    <Heart className="h-4 w-4" />
+                    <span className="sr-only">View benefits</span>
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

@@ -9,21 +9,64 @@ import {
   FileText, 
   Briefcase, 
   GraduationCap, 
-  Heart
+  Heart,
+  Clock,
+  CalendarDays
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import EmployeeTable from "@/components/hr/EmployeeTable";
 import PayrollSummary from "@/components/hr/PayrollSummary";
 import AttendanceOverview from "@/components/hr/AttendanceOverview";
 import UpcomingLeaves from "@/components/hr/UpcomingLeaves";
 import { formatCurrency } from "@/utils/formatters";
+import { cn } from "@/lib/utils";
 
 const HR = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Define HR module tabs
+  const hrModules = [
+    {
+      id: 'overview',
+      title: 'Overview',
+      icon: <Briefcase className="h-4 w-4" />,
+      path: '/dashboard/hr'
+    },
+    {
+      id: 'employees',
+      title: 'Employees',
+      icon: <Users className="h-4 w-4" />,
+      path: '/dashboard/hr/employees'
+    },
+    {
+      id: 'payroll',
+      title: 'Payroll',
+      icon: <DollarSign className="h-4 w-4" />,
+      path: '/dashboard/hr/payroll'
+    },
+    {
+      id: 'attendance',
+      title: 'Attendance',
+      icon: <Clock className="h-4 w-4" />,
+      path: '/dashboard/hr/attendance'
+    },
+    {
+      id: 'leaves',
+      title: 'Leaves',
+      icon: <CalendarDays className="h-4 w-4" />,
+      path: '/dashboard/hr/leaves'
+    },
+    {
+      id: 'benefits',
+      title: 'Benefits',
+      icon: <Heart className="h-4 w-4" />,
+      path: '/dashboard/hr/benefits'
+    }
+  ];
 
   const handleAddEmployee = () => {
-    navigate("/hr/employees/new");
+    navigate("/dashboard/hr/new-employee");
   };
 
   return (
@@ -40,10 +83,32 @@ const HR = () => {
             <UserPlus className="mr-2 h-4 w-4" />
             Add Employee
           </Button>
-          <Button variant="outline" onClick={() => navigate("/hr/payroll/run")}>
+          <Button variant="outline" onClick={() => navigate("/dashboard/hr/run-payroll")}>
             <DollarSign className="mr-2 h-4 w-4" />
             Run Payroll
           </Button>
+        </div>
+      </div>
+      
+      {/* HR Module Navigation */}
+      <div className="flex overflow-x-auto pb-1">
+        <div className="flex space-x-2">
+          {hrModules.map((module) => (
+            <NavLink 
+              key={module.id}
+              to={module.path}
+              end={module.id === 'overview'}
+              className={({ isActive }) => cn(
+                "flex items-center space-x-1 px-3 py-2 text-sm rounded-md transition-colors",
+                isActive 
+                  ? "bg-primary text-primary-foreground" 
+                  : "hover:bg-muted"
+              )}
+            >
+              {module.icon}
+              <span className="ml-2">{module.title}</span>
+            </NavLink>
+          ))}
         </div>
       </div>
 
@@ -147,8 +212,8 @@ const HR = () => {
             <Heart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4 Plans</div>
-            <p className="text-xs text-muted-foreground mt-2">Health, Dental, Vision, 401k</p>
+            <div className="text-2xl font-bold">2 Plans</div>
+            <p className="text-xs text-muted-foreground mt-2">Health Insurance, 401k</p>
           </CardContent>
         </Card>
         <Card>

@@ -1,6 +1,7 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Card, 
   CardContent, 
@@ -45,7 +46,8 @@ import {
   Trash2, 
   FileText, 
   Mail, 
-  Phone
+  Phone,
+  ArrowLeft
 } from "lucide-react";
 
 const employees = [
@@ -111,8 +113,81 @@ const Employees = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const [employeeData, setEmployeeData] = useState(employees);
+  const [employeeImages, setEmployeeImages] = useState<Record<string, string>>({});
+  
+  // Define a type for the database employee structure
+  type EmployeeRecord = {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone?: string;
+    position?: string;
+    department?: string;
+    start_date?: string;
+    image?: string;
+    [key: string]: any; // Allow for other fields
+  };
 
-  const filteredEmployees = employees.filter(
+  // Fetch employee data from Supabase
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('*');
+          
+        if (error) {
+          console.error('Error fetching employees:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          // Type assertion to treat data as our expected structure
+          const employeeRecords = data as EmployeeRecord[];
+          
+          // Map the Supabase data to our component's format
+          const formattedData = employeeRecords.map(emp => ({
+            id: emp.id,
+            name: `${emp.first_name} ${emp.last_name}`,
+            email: emp.email || '',
+            phone: emp.phone || '',
+            position: emp.position || '',
+            department: emp.department || '',
+            status: 'Active', // Default status
+            hireDate: emp.start_date || '',
+            image: ''
+          }));
+          
+          setEmployeeData(formattedData);
+          
+          // Fetch images for employees
+          for (const emp of employeeRecords) {
+            // Check if the employee has an image field
+            if (emp.image) {
+              const { data: publicUrlData } = supabase.storage
+                .from('employee-images')
+                .getPublicUrl(emp.image);
+                
+              if (publicUrlData?.publicUrl) {
+                setEmployeeImages(prev => ({
+                  ...prev,
+                  [emp.id]: publicUrlData.publicUrl
+                }));
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchEmployees:', error);
+      }
+    };
+    
+    fetchEmployees();
+  }, []);
+
+  const filteredEmployees = employeeData.filter(
     (employee) =>
       employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -144,10 +219,19 @@ const Employees = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Employees</h1>
+          <div className="flex items-center gap-2 mb-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => navigate("/dashboard/hr")} 
+              className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-3xl font-bold tracking-tight">Employees</h1>
+          </div>
           <p className="text-muted-foreground">Manage your employee database</p>
         </div>
-        <Button onClick={() => navigate("/hr/employees/new")}>
+        <Button onClick={() => navigate("/dashboard/hr/new-employee")}>
           <UserPlus className="mr-2 h-4 w-4" />
           Add Employee
         </Button>
@@ -194,8 +278,8 @@ const Employees = () => {
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-3">
                         <Avatar>
-                          {employee.image ? (
-                            <AvatarImage src={employee.image} alt={employee.name} />
+                          {employeeImages[employee.id] ? (
+                            <AvatarImage src={employeeImages[employee.id]} alt={employee.name} />
                           ) : (
                             <AvatarFallback>
                               {employee.name
@@ -242,11 +326,11 @@ const Employees = () => {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => navigate(`/hr/employees/${employee.id}`)}>
+                          <DropdownMenuItem onClick={() => navigate(`/dashboard/hr/employee/${employee.id}`)}>
                             <FileText className="h-4 w-4 mr-2" />
                             View Profile
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}>
+                          <DropdownMenuItem onClick={() => navigate(`/dashboard/hr/new-employee`)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>

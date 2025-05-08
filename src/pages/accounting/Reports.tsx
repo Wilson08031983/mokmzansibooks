@@ -1,9 +1,9 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Download, BarChart3, PieChart, ChevronDown } from "lucide-react";
+import { Calendar, Download, BarChart3, PieChart, ChevronDown, FileText, DollarSign, TrendingUp, ArrowDownUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
   Popover,
@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, subMonths } from "date-fns";
 import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 import {
   DropdownMenu,
@@ -19,14 +19,46 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const AccountingReports = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [date, setDate] = useState<Date>(new Date());
-  const [reportRef, setReportRef] = useState<HTMLDivElement | null>(null);
+  const [activeTab, setActiveTab] = useState("income-statement");
+  const reportRef = useRef<HTMLDivElement>(null);
+  
+  // Mock financial data
+  const financialData = {
+    income: {
+      revenue: 250000,
+      otherIncome: 15000,
+      totalIncome: 265000
+    },
+    expenses: {
+      costOfSales: 100000,
+      operatingExpenses: 75000,
+      otherExpenses: 10000,
+      totalExpenses: 185000
+    },
+    netProfit: 80000,
+    assets: {
+      currentAssets: 125000,
+      fixedAssets: 200000,
+      totalAssets: 325000
+    },
+    liabilities: {
+      currentLiabilities: 50000,
+      longTermLiabilities: 75000,
+      totalLiabilities: 125000
+    },
+    equity: 200000
+  };
 
   const handleExportReports = async (reportType?: string) => {
-    if (!reportRef) return;
+    if (!reportRef.current) return;
     
     const reportTypeDisplay = reportType || "Comprehensive";
     let elementToPrint: HTMLElement;
@@ -40,9 +72,9 @@ const AccountingReports = () => {
     // Handle different report types
     if (reportType) {
       // For individual reports, find the specific card
-      const reportCards = reportRef.querySelectorAll('.report-card');
+      const reportCards = reportRef.current.querySelectorAll('.report-card');
       const cardToUse = Array.from(reportCards).find((card) => 
-        card.querySelector('h3')?.textContent?.includes(reportType)
+        (card as HTMLElement).querySelector('h3')?.textContent?.includes(reportType)
       ) as HTMLElement | undefined;
       
       if (!cardToUse) {
@@ -54,43 +86,29 @@ const AccountingReports = () => {
         return;
       }
       
-      // Create a temporary container for the individual report
-      const tempContainer = document.createElement('div');
-      tempContainer.className = 'print-container';
+      // Clone the card to avoid modifying the original
+      elementToPrint = cardToUse.cloneNode(true) as HTMLElement;
+      document.body.appendChild(elementToPrint);
       
-      // Add a heading for the report
-      const heading = document.createElement('h1');
-      heading.className = 'text-2xl font-bold mb-4';
-      heading.textContent = `${reportType} Report - ${format(date, "MMMM yyyy")}`;
-      tempContainer.appendChild(heading);
-      
-      // Clone the card to print
-      const cardClone = cardToUse.cloneNode(true) as HTMLElement;
-      cardClone.style.width = '100%';
-      cardClone.style.margin = '0';
-      tempContainer.appendChild(cardClone);
-      
-      // Append to document temporarily
-      document.body.appendChild(tempContainer);
-      elementToPrint = tempContainer;
+      // Apply print styles
+      elementToPrint.style.padding = '20px';
+      elementToPrint.style.backgroundColor = 'white';
+      elementToPrint.style.boxShadow = 'none';
+      elementToPrint.style.width = '100%';
+      elementToPrint.style.maxWidth = '800px';
+      elementToPrint.style.margin = '0 auto';
     } else {
-      // Create a temporary container with date heading for all reports
-      const tempContainer = document.createElement('div');
-      tempContainer.className = 'print-container';
+      // For comprehensive report, clone the entire report section
+      elementToPrint = reportRef.current.cloneNode(true) as HTMLElement;
+      document.body.appendChild(elementToPrint);
       
-      // Add a heading with the selected date
-      const heading = document.createElement('h1');
-      heading.className = 'text-2xl font-bold mb-4';
-      heading.textContent = `Financial Reports - ${format(date, "MMMM yyyy")}`;
-      tempContainer.appendChild(heading);
-      
-      // Clone all cards
-      const reportsContainer = reportRef.cloneNode(true) as HTMLElement;
-      tempContainer.appendChild(reportsContainer);
-      
-      // Append to document temporarily
-      document.body.appendChild(tempContainer);
-      elementToPrint = tempContainer;
+      // Apply print styles
+      elementToPrint.style.padding = '20px';
+      elementToPrint.style.backgroundColor = 'white';
+      elementToPrint.style.boxShadow = 'none';
+      elementToPrint.style.width = '100%';
+      elementToPrint.style.maxWidth = '1000px';
+      elementToPrint.style.margin = '0 auto';
       fileName = "comprehensive-financial-reports.pdf";
     }
     
@@ -119,27 +137,53 @@ const AccountingReports = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <div>
+        <div className="flex items-center space-x-4">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => navigate('/dashboard/accounting')}
+            title="Back to Accounting"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <h1 className="text-2xl font-bold">Financial Reports</h1>
-          <p className="text-gray-500">View and generate financial reports</p>
         </div>
         <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => downloadDocumentAsPdf(reportRef, "Financial_Report")}
+          >
+            <Download className="mr-2 h-4 w-4" /> Download PDF
+          </Button>
+        </div>
+      </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <p className="text-gray-500">Generate and view your financial reports</p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-2">
           <Popover>
             <PopoverTrigger asChild>
-              <Button>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
                 <Calendar className="mr-2 h-4 w-4" />
-                {format(date, "MMMM yyyy")}
+                {date ? format(date, "MMMM yyyy") : <span>Pick a month</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
               <CalendarComponent
                 mode="single"
                 selected={date}
-                onSelect={(newDate) => newDate && setDate(newDate)}
+                onSelect={(date) => date && setDate(date)}
                 initialFocus
-                className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>
@@ -163,77 +207,173 @@ const AccountingReports = () => {
                 Export Balance Sheet
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExportReports("Cash Flow")}>
-                Export Cash Flow
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportReports("Tax Summary")}>
-                Export Tax Summary
+                Export Cash Flow Statement
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="income-statement">Income Statement</TabsTrigger>
+          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
+          <TabsTrigger value="cash-flow">Cash Flow</TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6" ref={(ref) => setReportRef(ref)}>
-        <Card className="report-card cursor-pointer hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Income Statement</CardTitle>
-            <BarChart3 className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500 mb-4">
-              View your revenue, expenses, and profit for {format(date, "MMMM yyyy")}
-            </p>
-            <div className="h-44 flex items-center justify-center bg-primary/5 rounded-md">
-              <p className="text-gray-500">Income visualization will appear here</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="report-card cursor-pointer hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Balance Sheet</CardTitle>
-            <PieChart className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500 mb-4">
-              Track your assets, liabilities, and equity as of {format(date, "dd MMMM yyyy")}
-            </p>
-            <div className="h-44 flex items-center justify-center bg-primary/5 rounded-md">
-              <p className="text-gray-500">Balance sheet visualization will appear here</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="report-card cursor-pointer hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Cash Flow</CardTitle>
-            <BarChart3 className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500 mb-4">
-              Monitor your cash inflows and outflows for {format(date, "MMMM yyyy")}
-            </p>
-            <div className="h-44 flex items-center justify-center bg-primary/5 rounded-md">
-              <p className="text-gray-500">Cash flow visualization will appear here</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="report-card cursor-pointer hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Tax Summary</CardTitle>
-            <PieChart className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500 mb-4">
-              Overview of your tax liabilities and payments for {format(date, "MMMM yyyy")}
-            </p>
-            <div className="h-44 flex items-center justify-center bg-primary/5 rounded-md">
-              <p className="text-gray-500">Tax summary visualization will appear here</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <div ref={reportRef} className="space-y-6 mt-6">
+          <TabsContent value="income-statement">
+            <Card className="report-card">
+              <CardHeader>
+                <div className="flex items-center">
+                  <BarChart3 className="h-5 w-5 mr-2 text-primary" />
+                  <CardTitle>Income Statement</CardTitle>
+                </div>
+                <CardDescription>For the period ending {format(date, "MMMM dd, yyyy")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold mb-2">Revenue</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>Sales Revenue</div>
+                      <div className="text-right">R {financialData.income.revenue.toLocaleString()}</div>
+                      <div>Other Income</div>
+                      <div className="text-right">R {financialData.income.otherIncome.toLocaleString()}</div>
+                      <div className="font-semibold">Total Revenue</div>
+                      <div className="text-right font-semibold">R {financialData.income.totalIncome.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">Expenses</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>Cost of Goods Sold</div>
+                      <div className="text-right">R {financialData.expenses.costOfSales.toLocaleString()}</div>
+                      <div>Operating Expenses</div>
+                      <div className="text-right">R {financialData.expenses.operatingExpenses.toLocaleString()}</div>
+                      <div>Other Expenses</div>
+                      <div className="text-right">R {financialData.expenses.otherExpenses.toLocaleString()}</div>
+                      <div className="font-semibold">Total Expenses</div>
+                      <div className="text-right font-semibold">R {financialData.expenses.totalExpenses.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="font-bold">Net Income</div>
+                      <div className="text-right font-bold">R {financialData.netProfit.toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="balance-sheet">
+            <Card className="report-card">
+              <CardHeader>
+                <div className="flex items-center">
+                  <FileText className="h-5 w-5 mr-2 text-primary" />
+                  <CardTitle>Balance Sheet</CardTitle>
+                </div>
+                <CardDescription>As of {format(date, "MMMM dd, yyyy")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-semibold mb-2">Assets</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="font-medium">Current Assets</div>
+                      <div className="text-right">R {financialData.assets.currentAssets.toLocaleString()}</div>
+                      <div className="font-medium">Fixed Assets</div>
+                      <div className="text-right">R {financialData.assets.fixedAssets.toLocaleString()}</div>
+                      <div className="font-semibold">Total Assets</div>
+                      <div className="text-right font-semibold">R {financialData.assets.totalAssets.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">Liabilities & Equity</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="font-medium">Current Liabilities</div>
+                      <div className="text-right">R {financialData.liabilities.currentLiabilities.toLocaleString()}</div>
+                      <div className="font-medium">Long-term Liabilities</div>
+                      <div className="text-right">R {financialData.liabilities.longTermLiabilities.toLocaleString()}</div>
+                      <div className="font-medium">Total Liabilities</div>
+                      <div className="text-right font-medium">R {financialData.liabilities.totalLiabilities.toLocaleString()}</div>
+                      
+                      <div className="font-medium mt-2">Equity</div>
+                      <div className="text-right">R {financialData.equity.toLocaleString()}</div>
+                      
+                      <div className="font-semibold mt-2">Total Liabilities & Equity</div>
+                      <div className="text-right font-semibold">R {(financialData.liabilities.totalLiabilities + financialData.equity).toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="cash-flow">
+            <Card className="report-card">
+              <CardHeader>
+                <div className="flex items-center">
+                  <ArrowDownUp className="h-5 w-5 mr-2 text-primary" />
+                  <CardTitle>Cash Flow Statement</CardTitle>
+                </div>
+                <CardDescription>For the period ending {format(date, "MMMM dd, yyyy")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold mb-2">Operating Activities</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>Net Income</div>
+                      <div className="text-right">R {financialData.netProfit.toLocaleString()}</div>
+                      <div>Adjustments for non-cash items</div>
+                      <div className="text-right">R 15,000.00</div>
+                      <div>Changes in working capital</div>
+                      <div className="text-right">R 5,000.00</div>
+                      <div className="font-semibold">Net Cash from Operating Activities</div>
+                      <div className="text-right font-semibold">R {(financialData.netProfit + 20000).toLocaleString()}</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">Investing Activities</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>Purchase of Equipment</div>
+                      <div className="text-right">(R 15,000.00)</div>
+                      <div className="font-semibold">Net Cash from Investing Activities</div>
+                      <div className="text-right font-semibold">(R 15,000.00)</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">Financing Activities</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>Loan Repayment</div>
+                      <div className="text-right">(R 10,000.00)</div>
+                      <div>Owner's Withdrawals</div>
+                      <div className="text-right">(R 20,000.00)</div>
+                      <div className="font-semibold">Net Cash from Financing Activities</div>
+                      <div className="text-right font-semibold">(R 30,000.00)</div>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="font-bold">Net Change in Cash</div>
+                      <div className="text-right font-bold">R 55,000.00</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 };

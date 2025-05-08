@@ -1,6 +1,6 @@
 
 import { Menu, X, Users, AlertCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,16 +26,26 @@ const DashboardHeader = () => {
   const { notifications } = useNotifications();
   const [overdueClientsCount, setOverdueClientsCount] = useState(0);
 
+  // Use a ref to track previous count to avoid unnecessary re-renders
+  const prevCountRef = useRef(overdueClientsCount);
+  
   useEffect(() => {
     // Count overdue client notifications
-    const count = notifications.filter(n => 
-      (n.message.includes("overdue") || n.message.includes("Overdue")) && 
-      n.message.includes("client") || n.message.includes("Client") && 
-      !n.read
-    ).length;
+    const count = notifications.filter(n => {
+      const messageLC = n.message.toLowerCase();
+      return (
+        messageLC.includes("overdue") && 
+        messageLC.includes("client") && 
+        !n.read
+      );
+    }).length;
     
-    setOverdueClientsCount(count);
-  }, [notifications]);
+    // Only update state if the count has actually changed from the previous value
+    if (count !== prevCountRef.current) {
+      prevCountRef.current = count;
+      setOverdueClientsCount(count);
+    }
+  }, [notifications]); // Remove overdueClientsCount from dependencies
 
   const handleLogout = async () => {
     await signOut();
@@ -74,7 +84,7 @@ const DashboardHeader = () => {
           <Button 
             variant="ghost" 
             className="relative flex items-center gap-1 text-xs text-red-500"
-            onClick={() => navigate("/clients")}
+            onClick={() => navigate("/dashboard/clients")}
           >
             <AlertCircle className="h-4 w-4" />
             <span>{overdueClientsCount} overdue {overdueClientsCount === 1 ? 'client' : 'clients'}</span>

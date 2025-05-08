@@ -204,19 +204,39 @@ const EmployeeDetail = () => {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const navigate = useNavigate();
   
+  const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
     // In a real app, you would fetch this data from an API
-    if (employeeId && employees[employeeId]) {
-      setEmployee(employees[employeeId]);
-    }
+    setIsLoading(true);
+    
+    // Simulate API fetch with a small delay for better UX
+    const timer = setTimeout(() => {
+      if (employeeId && employees[employeeId]) {
+        setEmployee(employees[employeeId]);
+      }
+      setIsLoading(false);
+    }, 600);
+    
+    return () => clearTimeout(timer);
   }, [employeeId]);
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh]">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6"></div>
+        <h2 className="text-2xl font-bold mb-2">Loading Employee Profile</h2>
+        <p className="text-gray-500">Please wait while we fetch the employee details...</p>
+      </div>
+    );
+  }
+  
   if (!employee) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
         <h2 className="text-2xl font-bold mb-4">Employee Not Found</h2>
         <p className="text-gray-500 mb-8">The employee you're looking for doesn't exist or has been removed.</p>
-        <Button onClick={() => navigate("/hr/employees")}>
+        <Button onClick={() => navigate("/dashboard/hr")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Employees
         </Button>
@@ -227,11 +247,11 @@ const EmployeeDetail = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={() => navigate("/hr/employees")}>
+        <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/hr/employees")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Employees
         </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}>
+        <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/hr/new-employee`)}>
           <Edit className="mr-2 h-4 w-4" />
           Edit
         </Button>

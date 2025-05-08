@@ -1,0 +1,1150 @@
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Client, CompanyClient, IndividualClient, VendorClient, isCompanyClient, isVendorClient, isIndividualClient, hasContactPerson } from "@/types/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import ClientActions from "@/components/ClientActions";
+import { 
+  Building2, 
+  User, 
+  Truck, 
+  Search, 
+  PlusCircle, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Clock, 
+  CreditCard, 
+  AlertCircle, 
+  DollarSign 
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/utils/formatters";
+import { useToast } from "@/hooks/use-toast";
+import { useNotifications, Notification } from "@/contexts/NotificationsContext";
+import { useI18n } from "@/contexts/I18nContext";
+
+
+
+// Type for client state management
+interface ClientsState {
+  companies: CompanyClient[];
+  individuals: IndividualClient[];
+  vendors: VendorClient[];
+}
+
+const mockClients = {
+  companies: [
+    {
+      id: "1",
+      name: "ABC Corp",
+      contactPerson: "John Doe",
+      email: "john@abc.com",
+      phone: "123-456-7890",
+      address: "123 Main St",
+      city: "Johannesburg",
+      province: "Gauteng",
+      postalCode: "2000",
+      type: "company" as const,
+      credit: 10000,
+      outstanding: 5000,
+      overdue: 1000,
+      lastInteraction: "2022-01-01T12:00:00.000Z",
+    },
+  ],
+  individuals: [
+    {
+      id: "2",
+      name: "Jane Smith",
+      email: "jane@example.com",
+      phone: "098-765-4321",
+      address: "456 Oak Ave",
+      city: "Cape Town",
+      province: "Western Cape",
+      postalCode: "8000",
+      type: "individual" as const,
+      credit: 5000,
+      outstanding: 2000,
+      overdue: 500,
+      lastInteraction: "2022-01-15T12:00:00.000Z",
+    },
+  ],
+  vendors: [
+    {
+      id: "3",
+      name: "XYZ Supplies",
+      contactPerson: "Bob Wilson",
+      email: "bob@xyz.com",
+      phone: "111-222-3333",
+      address: "789 Pine Rd",
+      city: "Durban",
+      province: "KwaZulu-Natal",
+      postalCode: "4000",
+      type: "vendor" as const,
+      credit: 0,
+      outstanding: 0,
+      overdue: 0,
+      lastInteraction: "2022-02-01T12:00:00.000Z",
+    },
+  ],
+};
+
+// Client action buttons component for reuse across all client cards
+const ClientActions = ({ client, onEdit, onDelete, onCredit }: { 
+  client: Client, 
+  onEdit?: (client: Client) => void, 
+  onDelete?: (client: Client) => void,
+  onCredit: (client: Client) => void 
+}) => {
+  return (
+    <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-8 w-8 p-0" 
+        title="Edit Client"
+        onClick={() => onEdit?.(client)}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-blue-500">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-8 w-8 p-0" 
+        title="Manage Credit"
+        onClick={() => onCredit(client)}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-green-500">
+          <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+          <line x1="2" y1="10" x2="22" y2="10"></line>
+        </svg>
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-8 w-8 p-0" 
+        title="Delete Client"
+        onClick={() => onDelete?.(client)}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-red-500">
+          <path d="M3 6h18"></path>
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+      </Button>
+    </div>
+  );
+};
+
+const Clients = () => {
+  const { toast } = useToast();
+  const { addNotification } = useNotifications();
+  const { currency } = useI18n();
+  
+  // State for managing clients data - use the ref pattern to ensure we get fresh state in callbacks
+  const [clients, setClients] = useState<ClientsState>({
+    companies: [...mockClients.companies] as CompanyClient[],
+    individuals: [...mockClients.individuals] as IndividualClient[],
+    vendors: [...mockClients.vendors] as VendorClient[]
+  });
+  
+  // Use a ref to keep track of the current clients state
+  const clientsRef = useRef(clients);
+  useEffect(() => {
+    clientsRef.current = clients;
+    console.log('Clients state updated:', clients);
+  }, [clients]);
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("companies");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [creditAmount, setCreditAmount] = useState("");
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [clientCount, setClientCount] = useState({
+    companies: 0,
+    individuals: 0,
+    vendors: 0,
+    all: 0
+  });
+
+  // Type for new client form data including common fields and optional type-specific fields
+  type NewClientFormData = {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    addressLine2?: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    type: "company" | "individual" | "vendor";
+    credit: number;
+    outstanding: number;
+    overdue: number;
+    lastInteraction?: string;
+    contactPerson?: string; // Only required for company and vendor types
+  };
+  
+  const [newClientData, setNewClientData] = useState<NewClientFormData>({
+    name: "",
+    contactPerson: "",
+    email: "",
+    phone: "",
+    address: "",
+    addressLine2: "",
+    city: "",
+    province: "",
+    postalCode: "",
+    type: "company",
+    credit: 0,
+    outstanding: 0,
+    overdue: 0,
+    lastInteraction: "",
+  });
+
+  useEffect(() => {
+    setClientCount({
+      companies: clients.companies.length,
+      individuals: clients.individuals.length,
+      vendors: clients.vendors.length,
+      all: clients.companies.length + clients.individuals.length + clients.vendors.length,
+    });
+  }, [clients]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewClientData({
+      ...newClientData,
+      [name]: value,
+    });
+  };
+
+  const openCreditDialog = useCallback((client: Client) => {
+    setSelectedClient(client);
+    setCreditAmount("");
+    setIsCreditDialogOpen(true);
+  }, []);
+
+  const openEditDialog = useCallback((client: Client) => {
+    setSelectedClient(client);
+    setShowEditDialog(true);
+    // Pre-fill the form data with client info
+    setNewClientData({
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      address: client.address,
+      addressLine2: client.addressLine2 || "",
+      city: client.city || "",
+      province: client.province || "",
+      postalCode: client.postalCode || "",
+      type: client.type,
+      credit: client.credit,
+      outstanding: client.outstanding,
+      overdue: client.overdue,
+      lastInteraction: client.lastInteraction,
+      contactPerson: hasContactPerson(client) ? 
+        (isCompanyClient(client) || isVendorClient(client) ? client.contactPerson : "") : ""
+    });
+  }, []);
+
+  const openDeleteDialog = useCallback((client: Client) => {
+    setSelectedClient(client);
+    setShowDeleteDialog(true);
+  }, []);
+
+  const handleCreditSubmit = () => {
+    const amount = parseFloat(creditAmount);
+    if (!creditAmount || parseFloat(creditAmount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid credit amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Credit updated",
+      description: `Credit limit for ${selectedClient?.name} has been updated to ${currency}${creditAmount}.`,
+    });
+
+    if (addNotification) {
+      addNotification({
+        title: "Credit Limit Updated",
+        message: `Credit limit for ${selectedClient?.name} has been updated to ${currency}${creditAmount}.`,
+        type: "info",
+      } as Notification);
+    }
+
+    setIsCreditDialogOpen(false);
+    setSelectedClient(null);
+    setCreditAmount("");
+  };
+
+  // Debug: Log client state on mount and when updated
+  useEffect(() => {
+    console.log('Current client state:', clients);
+  }, [clients]);
+
+  const filteredClients = useCallback((type: string) => {
+    // Always use the current clients ref to ensure we have the latest data
+    const currentClients = clientsRef.current;
+    let clientsList: Client[] = [];
+    console.log('Filtering clients for type:', type);
+    console.log('Current clients state from ref:', currentClients);
+    
+    switch (type) {
+      case "companies":
+        clientsList = currentClients.companies;
+        break;
+      case "individuals":
+        clientsList = currentClients.individuals;
+        break;
+      case "vendors":
+        clientsList = currentClients.vendors;
+        break;
+      default:
+        clientsList = [
+          ...currentClients.companies,
+          ...currentClients.individuals,
+          ...currentClients.vendors,
+        ];
+    }
+    
+    if (!searchTerm) return clientsList;
+    
+    return clientsList.filter(client => {
+      const baseMatch = (
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.phone.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      
+      // Only check contactPerson for company and vendor client types
+      let contactPersonMatch = false;
+      if (isCompanyClient(client) || isVendorClient(client)) {
+        contactPersonMatch = client.contactPerson && 
+          client.contactPerson.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      
+      return baseMatch || contactPersonMatch;
+    });
+  }, [searchTerm, clients]);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-ZA");
+  };
+
+  const getClientIcon = (type: Client["type"]) => {
+    switch (type) {
+      case "company":
+        return <Building2 className="h-10 w-10 text-blue-500" />;
+      case "individual":
+        return <User className="h-10 w-10 text-green-500" />;
+      case "vendor":
+        return <Truck className="h-10 w-10 text-amber-500" />;
+      default:
+        return <Building2 className="h-10 w-10 text-gray-500" />;
+    }
+  };
+
+  const handleAddClient = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Add debug console logs
+    console.log('handleAddClient called');
+    console.log('newClientData:', newClientData);
+    
+    // Basic form validation
+    if (!newClientData.name) {
+      toast({
+        title: "Error",
+        description: "Please enter a client name",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!newClientData.email) {
+      toast({
+        title: "Error",
+        description: "Please enter an email address",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Generate a unique ID and timestamp for the new client
+    const id = `client-${Date.now()}`;
+    const timestamp = new Date().toISOString();
+    
+    // Process client data based on type
+    if (newClientData.type === 'company') {
+      // Create a company client - requires contactPerson
+      if (!newClientData.contactPerson) {
+        toast({
+          title: "Error",
+          description: "Company clients require a contact person",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const companyClient: CompanyClient = {
+        id,
+        name: newClientData.name,
+        contactPerson: newClientData.contactPerson,
+        email: newClientData.email,
+        phone: newClientData.phone,
+        address: newClientData.address,
+        addressLine2: newClientData.addressLine2,
+        city: newClientData.city,
+        province: newClientData.province,
+        postalCode: newClientData.postalCode,
+        type: "company",
+        credit: newClientData.credit,
+        outstanding: newClientData.outstanding,
+        overdue: newClientData.overdue,
+        lastInteraction: timestamp
+      };
+      
+      setClients(prev => ({
+        ...prev,
+        companies: [...prev.companies, companyClient]
+      }));
+    } else if (newClientData.type === 'individual') {
+      // Create an individual client - doesn't need contactPerson
+      const individualClient: IndividualClient = {
+        id,
+        name: newClientData.name,
+        email: newClientData.email,
+        phone: newClientData.phone,
+        address: newClientData.address,
+        addressLine2: newClientData.addressLine2,
+        city: newClientData.city,
+        province: newClientData.province,
+        postalCode: newClientData.postalCode,
+        type: "individual",
+        credit: newClientData.credit,
+        outstanding: newClientData.outstanding,
+        overdue: newClientData.overdue,
+        lastInteraction: timestamp
+      };
+      
+      setClients(prev => ({
+        ...prev,
+        individuals: [...prev.individuals, individualClient]
+      }));
+    } else if (newClientData.type === 'vendor') {
+      // Create a vendor client - requires contactPerson
+      if (!newClientData.contactPerson) {
+        toast({
+          title: "Error",
+          description: "Vendor clients require a contact person",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const vendorClient: VendorClient = {
+        id,
+        name: newClientData.name,
+    });
+
+    // Update client counts
+    setClientCount((prevCount) => {
+      const newCount = { ...prevCount };
+      newCount[newClient.type as keyof typeof newCount]++;
+      newCount.all++;
+      return newCount;
+    });
+
+    // Show a toast notification
+    toast({
+      title: "Client added",
+      description: `${newClient.name} has been added successfully.`,
+    });
+
+    // Add to notifications
+    if (addNotification) {
+      addNotification({
+        title: "New Client Added",
+        message: `${newClient.name} has been added to your clients.`,
+        type: "success",
+      } as Notification);
+    }
+
+    e.preventDefault();
+    
+    if (!selectedClient) return;
+    
+    // Basic validation
+    if (!newClientData.name || !newClientData.email) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create the updated client object
+    const updatedClient = {
+      ...selectedClient,
+      name: newClientData.name,
+      email: newClientData.email,
+      phone: newClientData.phone,
+      address: newClientData.address,
+      addressLine2: newClientData.addressLine2,
+      city: newClientData.city,
+      province: newClientData.province,
+      postalCode: newClientData.postalCode,
+      type: newClientData.type,
+      lastInteraction: new Date().toISOString()
+    };
+    
+    // If it's a company client, update contact person
+    if (isCompanyClient(updatedClient) && newClientData.contactPerson) {
+      updatedClient.contactPerson = newClientData.contactPerson;
+    }
+    
+    // Update clients array
+    setClients(prevClients => {
+      return prevClients.map(client => 
+        client.id === selectedClient.id ? updatedClient : client
+      );
+    });
+    
+    // Show a toast notification
+    toast({
+      title: "Client updated",
+      description: `${updatedClient.name} has been updated successfully.`,
+    });
+    
+    // Add to notifications
+    if (addNotification) {
+      addNotification({
+        title: "Client Updated",
+        message: `${updatedClient.name}'s information has been updated.`,
+        type: "info",
+      } as Notification);
+    }
+    
+    // Reset and close dialog
+    setNewClientData({
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      addressLine2: "",
+      city: "",
+      province: "",
+      postalCode: "",
+      type: "company",
+      credit: 0,
+      outstanding: 0,
+      overdue: 0,
+      lastInteraction: "",
+      contactPerson: ""
+    });
+    setSelectedClient(null);
+    setShowEditDialog(false);
+  }, [selectedClient, newClientData, toast, addNotification]);
+
+  const handleDeleteClient = useCallback(() => {
+    if (!selectedClient) return;
+    
+    // Get client type before removing for count updates
+    const clientType = selectedClient.type;
+    const clientName = selectedClient.name;
+    
+    // Remove the client
+    setClients(prevClients => {
+      return prevClients.filter(client => client.id !== selectedClient.id);
+    });
+    
+    // Update client counts
+    setClientCount((prevCount) => {
+      const newCount = { ...prevCount };
+      newCount[clientType as keyof typeof newCount]--;
+      newCount.all--;
+      return newCount;
+    });
+    
+    // Show a toast notification
+    toast({
+      title: "Client deleted",
+      description: `${clientName} has been deleted.`,
+    });
+    
+    // Add to notifications
+    if (addNotification) {
+      addNotification({
+        title: "Client Deleted",
+        message: `${clientName} has been removed from your clients.`,
+        type: "warning",
+      } as Notification);
+    }
+    
+    // Close dialog and reset selection
+    setSelectedClient(null);
+    setShowDeleteDialog(false);
+  }, [selectedClient, toast, addNotification]);
+
+// ...
+              <DialogTitle>Add New Client</DialogTitle>
+              <DialogDescription>
+                Enter the details of the new client below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="clientType" className="text-right">
+                  Type
+                </Label>
+                <select
+                  id="type"
+                  name="type"
+                  className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={newClientData.type}
+                  onChange={handleInputChange}
+                >
+                  <option value="company">Company</option>
+                  <option value="individual">Individual</option>
+                  <option value="vendor">Vendor</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  className="col-span-3"
+                  value={newClientData.name}
+                  onChange={handleInputChange}
+                />
+              </div>
+              {newClientData.type !== "individual" && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="contactPerson" className="text-right">
+                    Contact Person
+                  </Label>
+                  <Input
+                    id="contactPerson"
+                    name="contactPerson"
+                    className="col-span-3"
+                    value={newClientData.contactPerson}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              )}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  className="col-span-3"
+                  value={newClientData.email}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="phone" className="text-right">
+                  Phone
+                </Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  className="col-span-3"
+                  value={newClientData.phone}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="address" className="text-right">
+                  Address
+                </Label>
+                <Input
+                  id="address"
+                  name="address"
+                  placeholder="Street address"
+                  className="col-span-3"
+                  value={newClientData.address}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="addressLine2" className="text-right">
+                  Address Line 2
+                </Label>
+                <Input
+                  id="addressLine2"
+                  name="addressLine2"
+                  placeholder="Apt, Suite, Unit, etc."
+                  className="col-span-3"
+                  value={newClientData.addressLine2}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="city" className="text-right">
+                  City
+                </Label>
+                <Input
+                  id="city"
+                  name="city"
+                  className="col-span-3"
+                  value={newClientData.city}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="province" className="text-right">
+                  Province
+                </Label>
+                <Input
+                  id="province"
+                  name="province"
+                  className="col-span-3"
+                  value={newClientData.province}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="postalCode" className="text-right">
+                  Postal Code
+                </Label>
+                <Input
+                  id="postalCode"
+                  name="postalCode"
+                  className="col-span-3"
+                  value={newClientData.postalCode}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="initialCredit" className="text-right">
+                  Initial Credit
+                </Label>
+                <Input
+                  id="credit"
+                  name="credit"
+                  type="number"
+                  min="0"
+                  className="col-span-3"
+                  value={newClientData.credit}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button variant="default" onClick={handleAddClient}>Add Client</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="w-full md:w-1/4 flex flex-col space-y-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search clients..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Card>
+            <CardContent className="p-4">
+              <Tabs
+                defaultValue="companies"
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="flex flex-col gap-2 mb-4 h-auto">
+                  <TabsTrigger value="companies" className="flex items-center justify-start h-12 text-xs sm:text-sm w-full">
+                    <Building2 className="mr-1 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Companies ({clientCount.companies})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="individuals" className="flex items-center justify-start h-12 text-xs sm:text-sm w-full">
+                    <User className="mr-1 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Individuals ({clientCount.individuals})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="vendors" className="flex items-center justify-start h-12 text-xs sm:text-sm w-full">
+                    <Truck className="mr-1 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Vendors ({clientCount.vendors})</span>
+                  </TabsTrigger>
+                </TabsList>
+              
+                <div className="hidden">
+                  <TabsContent value="companies">
+                    {/* Content hidden but needed for proper structure */}
+                  </TabsContent>
+                  <TabsContent value="individuals">
+                    {/* Content hidden but needed for proper structure */}
+                  </TabsContent>
+                  <TabsContent value="vendors">
+                    {/* Content hidden but needed for proper structure */}
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="w-full md:w-3/4">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsContent value="companies" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Companies ({clientCount.companies})</CardTitle>
+                </CardHeader>
+                <CardContent className="pb-6">
+                  <div className="space-y-4">
+                    {filteredClients("companies").length > 0 ? (
+                      filteredClients("companies").map((client) => (
+                        <div
+                          key={client.id}
+                          className="p-5 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors relative group"
+                        >
+                          <ClientActions 
+                            client={client}
+                            onCredit={openCreditDialog}
+                            onEdit={openEditDialog}
+                            onDelete={openDeleteDialog}
+                          />
+                          <div className="flex items-start gap-4">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 flex-shrink-0">
+                              {getClientIcon(client.type)}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 className="text-lg font-medium">{client.name}</h3>
+                              </div>
+                              
+                              {hasContactPerson(client) && (
+                                <p className="text-sm text-gray-600 mb-3">
+                                  Contact: {isCompanyClient(client) || isVendorClient(client) ? client.contactPerson : ''}
+                                </p>
+                              )}
+                              
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Mail className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.email}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Phone className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span>{client.phone}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.address}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span>Last interaction: {client.lastInteraction ? formatDate(client.lastInteraction) : 'N/A'}</span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex mb-3 mt-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => openCreditDialog(client)}
+                                >
+                                  <CreditCard className="mr-1 h-4 w-4" /> Add Credit
+                                </Button>
+                              </div>
+                              
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {client.credit > 0 && (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    <DollarSign className="mr-1 h-3 w-3" />
+                                    Credit: {formatCurrency(client.credit)}
+                                  </Badge>
+                                )}
+                                {client.overdue > 0 && (
+                                  <Badge variant="destructive">
+                                    Overdue: {formatCurrency(client.overdue)}
+                                  </Badge>
+                                )}
+                                {client.outstanding > 0 && client.overdue === 0 && (
+                                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                    Outstanding: {formatCurrency(client.outstanding)}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No companies found matching your search
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="individuals" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Individuals ({clientCount.individuals})</CardTitle>
+                </CardHeader>
+                <CardContent className="pb-6">
+                  <div className="space-y-4">
+                    {filteredClients("individuals").length > 0 ? (
+                      filteredClients("individuals").map((client) => (
+                        <div
+                          key={client.id}
+                          className="p-5 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors relative group"
+                        >
+                          <ClientActions 
+                            client={client}
+                            onCredit={openCreditDialog}
+                            onEdit={openEditDialog}
+                            onDelete={openDeleteDialog}
+                          />
+                          <div className="flex items-start gap-4">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 flex-shrink-0">
+                              {getClientIcon(client.type)}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                                  {client.overdue > 0 && (
+                                    <Badge variant="overdue">Overdue: {formatCurrency(client.overdue)}</Badge>
+                                  )}
+                                  {client.outstanding > 0 && client.overdue === 0 && (
+                                    <Badge variant="outstanding">Outstanding: {formatCurrency(client.outstanding)}</Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center text-sm text-gray-500">
+                                    <Clock className="mr-1 h-4 w-4" />
+                                    Last interaction: {client.lastInteraction ? formatDate(client.lastInteraction) : 'N/A'}
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => openCreditDialog(client)}
+                                    className="ml-2"
+                                  >
+                                    <CreditCard className="mr-1 h-4 w-4" /> Add Credit
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
+                                <div className="flex items-center">
+                                  <Mail className="mr-1 h-4 w-4" />
+                                  {client.email}
+                                </div>
+                                <div className="flex items-center">
+                                  <Phone className="mr-1 h-4 w-4" />
+                                  {client.phone}
+                                </div>
+                                <div className="flex items-center">
+                                  <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.address}</span>
+                                </div>
+                              </div>
+                              <div className="mt-2 flex items-center gap-2">
+                                <Badge variant="credit" className="flex items-center">
+                                  <DollarSign className="mr-1 h-3 w-3" /> 
+                                  Credit: {formatCurrency(client.credit)}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No individuals found matching your search
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="vendors" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Vendors ({clientCount.vendors})</CardTitle>
+                </CardHeader>
+                <CardContent className="pb-6">
+                  <div className="space-y-4">
+                    {filteredClients("vendors").length > 0 ? (
+                      filteredClients("vendors").map((client) => (
+                        <div
+                          key={client.id}
+                          className="p-5 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors relative group"
+                        >
+                          <ClientActions 
+                            client={client}
+                            onCredit={openCreditDialog}
+                            onEdit={openEditDialog}
+                            onDelete={openDeleteDialog}
+                          />
+                          <div className="flex items-start gap-4">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 flex-shrink-0">
+                              {getClientIcon(client.type)}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 className="text-lg font-medium">{client.name}</h3>
+                              </div>
+                              
+                              {hasContactPerson(client) && (
+                                <p className="text-sm text-gray-600">
+                                  Contact: {isCompanyClient(client) || isVendorClient(client) ? client.contactPerson : ''}
+                                </p>
+                              )}
+                              
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Mail className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.email}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Phone className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span>{client.phone}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.address}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span>Last interaction: {client.lastInteraction ? formatDate(client.lastInteraction) : 'N/A'}</span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex mb-3 mt-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => openCreditDialog(client)}
+                                >
+                                  <CreditCard className="mr-1 h-4 w-4" /> Add Credit
+                                </Button>
+                              </div>
+                              
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {client.credit > 0 && (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    <DollarSign className="mr-1 h-3 w-3" />
+                                    Credit: {formatCurrency(client.credit)}
+                                  </Badge>
+                                )}
+                                {client.overdue > 0 && (
+                                  <Badge variant="destructive">
+                                    Overdue: {formatCurrency(client.overdue)}
+                                  </Badge>
+                                )}
+                                {client.outstanding > 0 && client.overdue === 0 && (
+                                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                    Outstanding: {formatCurrency(client.outstanding)}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No vendors found matching your search
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      <Dialog open={isCreditDialogOpen} onOpenChange={setIsCreditDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Add Credit</DialogTitle>
+            <DialogDescription>
+              Add credit to {selectedClient?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="creditAmount" className="text-right">
+                Amount ({currency})
+              </Label>
+              <Input
+                id="creditAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                className="col-span-3"
+                value={creditAmount}
+                onChange={(e) => setCreditAmount(e.target.value)}
+              />
+            </div>
+            {selectedClient && (
+              <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md">
+                <p className="text-sm font-medium">Client Information:</p>
+                <div className="flex justify-between text-sm">
+                  <span>Current Credit:</span>
+                  <span className="font-medium">{formatCurrency(selectedClient.credit)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Outstanding Balance:</span>
+                  <span className="font-medium">{formatCurrency(selectedClient.outstanding)}</span>
+                </div>
+                {selectedClient.overdue > 0 && (
+                  <div className="flex justify-between text-sm text-red-500">
+                    <span>Overdue Amount:</span>
+                    <span className="font-medium">{formatCurrency(selectedClient.overdue)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreditSubmit} className="w-full">Add Credit</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Clients;

@@ -70,7 +70,13 @@ const QuoteTemplate4 = ({ data, preview = false }: TemplateProps) => {
             <p className="mt-1 opacity-90">#{displayData.quoteNumber}</p>
           </div>
           <div className="bg-white p-2 rounded">
-            {renderCompanyLogo(displayData.company.logo)}
+            {displayData.company.logo && (
+              <img 
+                src={renderCompanyLogo(displayData.company.logo)} 
+                alt="Company Logo" 
+                className="h-16 object-contain" 
+              />
+            )}
           </div>
         </div>
       </div>
@@ -132,7 +138,7 @@ const QuoteTemplate4 = ({ data, preview = false }: TemplateProps) => {
                 <td className="py-3 px-4 text-center border-b border-cyan-100">{item.quantity}</td>
                 <td className="py-3 px-4 text-right border-b border-cyan-100">{formatCurrency(item.unitPrice || item.rate)}</td>
                 <td className="py-3 px-4 text-right border-b border-cyan-100">{formatPercentage(item.discount || 0)}</td>
-                <td className="py-3 px-4 text-right border-b border-cyan-100">{formatCurrency(item.amount)}</td>
+                <td className="py-3 px-4 text-right border-b border-cyan-100">{formatCurrency(item.total || item.amount || 0)}</td>
               </tr>
             ))}
           </tbody>
@@ -198,7 +204,13 @@ const QuoteTemplate4 = ({ data, preview = false }: TemplateProps) => {
         <div>
           <h3 className="text-cyan-700 font-semibold text-sm uppercase mb-4">Authorized Signature</h3>
           <div className="border-b-2 border-cyan-600 w-48 h-12 mb-1">
-            {renderSignature(displayData.signature)}
+            {displayData.signature && (
+              <img 
+                src={renderSignature(displayData.signature)} 
+                alt="Signature" 
+                className="h-12 object-contain" 
+              />
+            )}
           </div>
           <p className="text-sm text-gray-600">For {displayData.company.name}</p>
         </div>
@@ -207,7 +219,13 @@ const QuoteTemplate4 = ({ data, preview = false }: TemplateProps) => {
             <p className="text-sm mb-1">Initials: _________</p>
           </div>
           <div className="border-2 border-dashed border-cyan-300 rounded-lg p-2 w-24 h-24 flex items-center justify-center">
-            {renderCompanyStamp(displayData.company.stamp)}
+            {displayData.company.stamp && (
+              <img 
+                src={renderCompanyStamp(displayData.company.stamp)} 
+                alt="Company Stamp" 
+                className="h-20 object-contain opacity-80" 
+              />
+            )}
           </div>
         </div>
       </div>

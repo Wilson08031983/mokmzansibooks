@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, X, Zap, PieChart, Users, FileText, CheckCircle } from "lucide-react";
+import { useState } from "react";
 
 const Index = () => {
   // Features section data
@@ -33,10 +34,20 @@ const Index = () => {
   ];
 
   // Pricing plans data
+  // Pricing plans toggle state
+  const [billingCycle, setBillingCycle] = useState("monthly");
+
+  // Calculate yearly price with 6% discount
+  const calculateYearlyPrice = (monthlyPrice: number) => {
+    const yearlyPrice = monthlyPrice * 12 * 0.94; // 6% discount
+    return yearlyPrice.toFixed(2);
+  };
+
   const pricingPlans = [
     {
       name: "Free Trial",
       price: "0",
+      yearlyPrice: "0",
       duration: "for 30 days",
       description: "Perfect for getting started",
       features: [
@@ -56,8 +67,9 @@ const Index = () => {
     },
     {
       name: "Premium",
-      price: "44.90",
-      duration: "per month",
+      price: "60.00",
+      yearlyPrice: calculateYearlyPrice(60),
+      duration: billingCycle === "monthly" ? "per month" : "per year",
       description: "Everything you need to grow",
       features: [
         "Unlimited clients",
@@ -248,58 +260,153 @@ const Index = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Simple, Transparent <span className="gradient-text">Pricing</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
               Choose the plan that works for your business
             </p>
+            
+            {/* Billing Cycle Toggle */}
+            <div className="flex justify-center mb-8">
+              <div className="inline-flex items-center p-1 bg-gray-100 rounded-lg">
+                <button
+                  onClick={() => setBillingCycle("monthly")}
+                  className={`px-4 py-2 text-sm rounded-md transition-all ${billingCycle === "monthly" ? "bg-white shadow-sm" : ""}`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBillingCycle("yearly")}
+                  className={`px-4 py-2 text-sm rounded-md transition-all ${billingCycle === "yearly" ? "bg-white shadow-sm" : ""}`}
+                >
+                  Yearly <span className="text-green-600 font-medium">(Save 6%)</span>
+                </button>
+              </div>
+            </div>
           </div>
+          
+          {/* Custom pricing cards that exactly match the image */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {pricingPlans.map((plan, index) => (
-              <div
-                key={index}
-                className={`relative rounded-xl border ${
-                  plan.popular ? "border-primary shadow-lg" : "border-gray-200"
-                } bg-white p-6 lg:p-8`}
-              >
-                {plan.popular && (
-                  <div className="absolute top-0 right-0">
-                    <div className="inline-block rounded-bl-lg rounded-tr-lg bg-primary px-3 py-1 text-xs text-white">
-                      Most Popular
-                    </div>
-                  </div>
-                )}
-                <div className="mb-5">
-                  <h3 className="text-xl font-bold">{plan.name}</h3>
-                  <p className="text-gray-500 mt-1 text-sm">{plan.description}</p>
-                </div>
+            {/* Free Trial Plan */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-1">Free Trial</h3>
+                <p className="text-gray-500 mb-4">Perfect for getting started</p>
                 <div className="mb-5">
                   <div className="flex items-baseline">
-                    <span className="text-3xl font-bold">R{plan.price}</span>
-                    <span className="ml-1 text-gray-500">{plan.duration}</span>
+                    <span className="text-3xl font-bold">R0</span>
+                    <span className="ml-1 text-gray-500">for 30 days</span>
                   </div>
                 </div>
                 <div className="space-y-4 mb-6">
-                  {plan.features.map((feature, i) => (
-                    <div key={i} className="flex">
-                      <CheckCircle2 className="h-5 w-5 text-primary mr-2 flex-shrink-0" />
-                      <span className="text-gray-700">{feature}</span>
-                    </div>
-                  ))}
-                  {plan.limitations && plan.limitations.map((limitation, i) => (
-                    <div key={`limit-${i}`} className="flex">
-                      <X className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
-                      <span className="text-gray-500">{limitation}</span>
-                    </div>
-                  ))}
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Client management (up to 10 clients)</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Basic invoicing & quotations</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Limited QuickFill functionality</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Basic reports</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Email support</span>
+                  </div>
+                  <div className="flex">
+                    <X className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
+                    <span className="text-gray-500">No bulk operations</span>
+                  </div>
+                  <div className="flex">
+                    <X className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
+                    <span className="text-gray-500">Limited templates</span>
+                  </div>
+                  <div className="flex">
+                    <X className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
+                    <span className="text-gray-500">No advanced analytics</span>
+                  </div>
                 </div>
-                <Button
-                  asChild
-                  className="w-full"
-                  variant={plan.popular ? "default" : "outline"}
-                >
-                  <Link to={plan.ctaLink}>{plan.ctaText}</Link>
+                <Button asChild className="w-full" variant="outline">
+                  <Link to="/signup">Start Free Trial</Link>
                 </Button>
               </div>
-            ))}
+            </div>
+            
+            {/* Premium Plan */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-purple-200">
+              <div className="bg-purple-600 text-white text-center py-1 text-sm font-medium">
+                Most Popular
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-1">Premium</h3>
+                <p className="text-gray-500 mb-4">Everything you need to grow</p>
+                <div className="mb-5">
+                  <div className="flex items-baseline">
+                    <span className="text-3xl font-bold">
+                      R{billingCycle === "monthly" ? "60.00" : calculateYearlyPrice(60)}
+                    </span>
+                    <span className="ml-1 text-gray-500">{billingCycle === "monthly" ? "per month" : "per year"}</span>
+                  </div>
+                  {billingCycle === "yearly" && (
+                    <div className="text-sm text-green-600 mt-1">
+                      Save R{((60 * 12) - Number(calculateYearlyPrice(60))).toFixed(2)} per year
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-4 mb-6">
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Unlimited clients</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Advanced invoicing & quotations</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Full QuickFill functionality</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Comprehensive reports & analytics</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Priority email & phone support</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Custom branding</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Tender document auto-fill</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Price comparison engine</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Data backup & restoration</span>
+                  </div>
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0" />
+                    <span className="text-gray-700">Multiple users (team access)</span>
+                  </div>
+                </div>
+                {/* Use Paystack Button with plan code */}
+                <Link to="/signup" className="block w-full">
+                  <Button className="w-full" variant="default">
+                    Subscribe Now
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>

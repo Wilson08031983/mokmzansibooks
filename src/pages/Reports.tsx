@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,11 +30,12 @@ const Reports = () => {
     });
   };
 
+  // Modified to ensure comprehensive data from all website sections
   const handlePrintReports = async (reportType?: string) => {
     const printRef = reportsRef.current;
     if (!printRef) return;
     
-    const reportTypeDisplay = reportType || "Comprehensive";
+    const reportTypeDisplay = reportType || "Full Business";
     let elementToPrint: HTMLElement;
     let fileName = `${reportTypeDisplay.toLowerCase()}-business-report.pdf`;
     
@@ -81,10 +81,10 @@ const Reports = () => {
       document.body.appendChild(tempContainer);
       elementToPrint = tempContainer;
     } else {
-      // For comprehensive reports, print the entire reports section
+      // For comprehensive reports, print the entire reports section including all website data
       printRef.classList.add('printing-reports');
       elementToPrint = printRef;
-      fileName = "comprehensive-business-reports.pdf";
+      fileName = "full-business-report.pdf";
     }
     
     const success = await downloadDocumentAsPdf(
@@ -123,7 +123,7 @@ const Reports = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Reports</h1>
-          <p className="text-gray-500">Generate and view reports for your business</p>
+          <p className="text-gray-500">Generate and view comprehensive reports for your entire business</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -135,7 +135,7 @@ const Reports = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => handlePrintReports()}>
-              Print All Reports
+              Print Full Business Report
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handlePrintReports("Financial")}>
               Print Financial Reports
@@ -148,6 +148,12 @@ const Reports = () => {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handlePrintReports("Client")}>
               Print Client Reports
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handlePrintReports("Inventory")}>
+              Print Inventory Reports
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handlePrintReports("HR")}>
+              Print HR Reports
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Sample data for 7 days
@@ -35,7 +35,10 @@ const AttendanceOverview = () => {
   const { toast } = useToast();
 
   const toggleWeek = () => {
-    if (viewingCurrent) {
+    // Store the current state in a variable to avoid closure issues
+    const isCurrentlyViewing = viewingCurrent;
+    
+    if (isCurrentlyViewing) {
       setDays(previousWeekDays);
       setWeekLabel("Mar 25 - Mar 31");
       setViewingCurrent(false);
@@ -47,7 +50,7 @@ const AttendanceOverview = () => {
 
     toast({
       title: "Week Changed",
-      description: viewingCurrent ? "Viewing previous week data" : "Viewing current week data",
+      description: isCurrentlyViewing ? "Viewing previous week data" : "Viewing current week data",
     });
   };
 
@@ -138,12 +141,14 @@ const AttendanceOverview = () => {
             Target: 95% • Above quarterly average by 2.5%
           </p>
           <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleExportData}
-          >
-            Export Data
-          </Button>
+  variant="ghost" 
+  size="sm" 
+  className="p-1 h-7 w-7 min-w-0 flex items-center justify-center"
+  onClick={handleExportData}
+>
+  <Download className="h-4 w-4" />
+  <span className="sr-only">Export Data</span>
+</Button>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { 
   Card, 
   CardContent, 
@@ -20,38 +20,19 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
+import { downloadDocumentAsPdf } from "@/utils/pdfUtils";
 
 // Update sample employee benefits data with contribution splits
 const employeeBenefits = [
   {
     id: 1,
-    name: "Healthcare",
+    name: "Health Insurance",
     status: "Enrolled",
     startDate: "January 1, 2025",
     coverage: "Comprehensive",
     contribution: 1200,
     companyContribution: 80, // company pays 80%
     employeeContribution: 20  // employee pays 20%
-  },
-  {
-    id: 2,
-    name: "Dental",
-    status: "Enrolled",
-    startDate: "January 1, 2025",
-    coverage: "Basic",
-    contribution: 300,
-    companyContribution: 70,
-    employeeContribution: 30
-  },
-  {
-    id: 3,
-    name: "Vision",
-    status: "Eligible",
-    startDate: "Pending Enrollment",
-    coverage: "Standard",
-    contribution: 150,
-    companyContribution: 60,
-    employeeContribution: 40
   },
   {
     id: 4,
@@ -97,13 +78,50 @@ const employee = {
 const EmployeeBenefits = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const benefitsSummaryRef = useRef<HTMLDivElement>(null);
+  const [selectedBenefit, setSelectedBenefit] = useState<number | null>(null);
+  const singleBenefitRef = useRef<HTMLDivElement>(null);
   
-  const handleDownloadSummary = () => {
+  const handleDownloadSummary = async () => {
+    if (!benefitsSummaryRef.current) {
+      toast({
+        title: "Error",
+        description: "Could not generate the benefits summary PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show loading toast
     toast({
-      title: "Summary Downloaded",
-      description: "Employee benefits summary has been downloaded successfully.",
-      variant: "success",
+      title: "Generating PDF",
+      description: "Please wait while we prepare your benefits summary...",
     });
+
+    try {
+      // Use the utility function to download the PDF
+      const success = await downloadDocumentAsPdf(
+        benefitsSummaryRef.current,
+        "employee-benefits-summary.pdf"
+      );
+
+      if (success) {
+        toast({
+          title: "Summary Downloaded",
+          description: "Employee benefits summary has been downloaded as PDF in A4 format.",
+          variant: "success",
+        });
+      } else {
+        throw new Error("PDF generation failed");
+      }
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Download Failed",
+        description: "There was a problem generating the PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   const getBadgeVariant = (status: string) => {
@@ -122,11 +140,150 @@ const EmployeeBenefits = () => {
   const calculateContribution = (total: number, percentage: number) => {
     return (total * percentage) / 100;
   };
+
+  const handleDownloadBenefit = useCallback(async (benefitId: number) => {
+    // Show loading toast first
+    toast({
+      title: "Generating PDF",
+      description: "Please wait while we prepare your benefit details...",
+    });
+    
+    try {
+      // Find the benefit to use in the filename
+      const benefit = employeeBenefits.find(b => b.id === benefitId);
+      if (!benefit) {
+        throw new Error("Benefit not found");
+      }
+      
+      // Set the selected benefit and wait for the state to update
+      setSelectedBenefit(benefitId);
+      
+      // Use a promise to ensure the DOM has updated before proceeding
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (!singleBenefitRef.current) {
+        throw new Error("PDF element reference not available");
+      }
+      
+      // Make sure the hidden div is properly rendered before capturing
+      singleBenefitRef.current.style.display = "block";
+      singleBenefitRef.current.style.position = "fixed";
+      singleBenefitRef.current.style.top = "-9999px";
+      singleBenefitRef.current.style.left = "-9999px";
+      
+      // Wait a bit more to ensure styles are applied
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const fileName = `${benefit.name.toLowerCase().replace(/\s+/g, '-')}-details.pdf`;
+      
+      // Use the utility function to download the PDF
+      const success = await downloadDocumentAsPdf(
+        singleBenefitRef.current,
+        fileName
+      );
+      
+      // Reset the styles
+      singleBenefitRef.current.style.display = "none";
+      singleBenefitRef.current.style.position = "";
+      singleBenefitRef.current.style.top = "";
+      singleBenefitRef.current.style.left = "";
+      
+      if (success) {
+        toast({
+          title: "Details Downloaded",
+          description: `${benefit.name} details have been downloaded as PDF.`,
+          variant: "success",
+        });
+      } else {
+        throw new Error("PDF generation failed");
+      }
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Download Failed",
+        description: "There was a problem generating the PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      // Reset the selected benefit state
+      setSelectedBenefit(null);
+    }
+  }, [toast, employeeBenefits]);
   
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <div className="mb-4">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="flex items-center gap-1 text-muted-foreground hover:text-foreground" 
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
+      {/* Hidden div for single benefit PDF generation */}
+      <div 
+        ref={singleBenefitRef} 
+        style={{ 
+          display: 'none', 
+          width: '210mm', 
+          padding: '20mm', 
+          backgroundColor: 'white',
+          boxSizing: 'border-box',
+          margin: '0 auto'
+        }}
+      >
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold mb-2">Employee Benefit Details</h1>
+            <div className="text-sm text-muted-foreground mb-1">Employee: {employee.name} ({employee.id})</div>
+            <div className="text-sm text-muted-foreground mb-1">Department: {employee.department}</div>
+            <div className="text-sm text-muted-foreground">Position: {employee.position}</div>
+          </div>
+          
+          {employeeBenefits.filter(b => b.id === selectedBenefit).map(benefit => (
+            <div key={benefit.id} className="border rounded-lg p-6 mb-6">
+              <div className="flex flex-col mb-4">
+                <h2 className="text-xl font-bold mb-2">{benefit.name}</h2>
+                <div className="py-1 px-2 rounded text-sm inline-flex w-fit mb-2" 
+                     style={{
+                       backgroundColor: benefit.status === "Enrolled" ? "#dcfce7" : 
+                                        benefit.status === "Eligible" ? "#dbeafe" : "#f3f4f6",
+                       color: benefit.status === "Enrolled" ? "#166534" : 
+                              benefit.status === "Eligible" ? "#1e40af" : "#4b5563"
+                     }}>
+                  {benefit.status}
+                </div>
+                <div className="text-sm mb-1">Start Date: {benefit.status === "Enrolled" ? benefit.startDate : "N/A"}</div>
+                <div className="text-sm mb-4">Coverage: {benefit.coverage}</div>
+                
+                {benefit.status === "Enrolled" && (
+                  <div className="mt-4">
+                    <h3 className="font-medium mb-2">Monthly Contribution Details</h3>
+                    <div className="mb-2">Total: {formatCurrency(benefit.contribution)}</div>
+                    <div className="flex items-center mb-1">
+                      <div style={{ width: '12px', height: '12px', marginRight: '8px', backgroundColor: '#16a34a', borderRadius: '50%' }}></div>
+                      <span>Company: {benefit.companyContribution}% ({formatCurrency(calculateContribution(benefit.contribution, benefit.companyContribution))})</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div style={{ width: '12px', height: '12px', marginRight: '8px', backgroundColor: '#2563eb', borderRadius: '50%' }}></div>
+                      <span>Employee: {benefit.employeeContribution}% ({formatCurrency(calculateContribution(benefit.contribution, benefit.employeeContribution))})</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+          
+          <div className="text-xs text-muted-foreground mt-8">
+            <p>This document was generated on {new Date().toLocaleDateString()} and is for informational purposes only.</p>
+            <p>For any questions regarding your benefits, please contact the HR department.</p>
+          </div>
+        </div>
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate("/hr/benefits")}>
+        <Button variant="ghost" onClick={() => navigate("/dashboard/hr/benefits")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Benefits
         </Button>
@@ -137,6 +294,7 @@ const EmployeeBenefits = () => {
       </div>
       
       <Card>
+        <div ref={benefitsSummaryRef} className="bg-white p-6">
         <CardHeader>
           <div className="flex items-start justify-between">
             <div>
@@ -212,7 +370,13 @@ const EmployeeBenefits = () => {
                           <span className="text-blue-600">Employee: {benefit.employeeContribution}% ({formatCurrency(calculateContribution(benefit.contribution, benefit.employeeContribution))})</span>
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleDownloadBenefit(benefit.id)}
+                        title="Download benefit details"
+                      >
                         <FileText className="h-4 w-4" />
                       </Button>
                     </div>
@@ -243,6 +407,7 @@ const EmployeeBenefits = () => {
             </div>
           </div>
         </CardFooter>
+        </div>
       </Card>
     </div>
   );

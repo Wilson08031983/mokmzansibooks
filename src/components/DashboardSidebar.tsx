@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import Logo from "./Logo";
 import { 
-  Users, FileText, Calculator, Receipt, PieChart, Settings, LogOut, Package, UserRound, LayoutDashboard
+  Users, FileText, Calculator, Receipt, PieChart, Settings, LogOut, Package, UserRound, LayoutDashboard, Building
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
@@ -25,7 +24,12 @@ const DashboardSidebar = () => {
   const navigate = useNavigate();
 
   const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+    // Remove '/dashboard' prefix for comparison
+    const cleanPath = path.replace('/dashboard', '');
+    const cleanCurrentPath = location.pathname.replace('/dashboard', '');
+    
+    return cleanCurrentPath === cleanPath || 
+           cleanCurrentPath.startsWith(`${cleanPath}/`);
   };
 
   const handleLogout = async () => {
@@ -35,13 +39,14 @@ const DashboardSidebar = () => {
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: Users, label: "Clients", path: "/clients" },
-    { icon: FileText, label: "Invoices & Quotes", path: "/invoices" },
-    { icon: Calculator, label: "Accounting", path: "/accounting" },
-    { icon: UserRound, label: "HR & Payroll", path: "/hr" },
-    { icon: Package, label: "Inventory", path: "/inventory" },
-    { icon: PieChart, label: "Reports", path: "/reports" },
-    { icon: Settings, label: "Settings", path: "/settings" },
+    { icon: Building, label: "My Company", path: "/dashboard/my-company" },
+    { icon: Users, label: "Clients", path: "/dashboard/clients" },
+    { icon: FileText, label: "Invoices & Quotes", path: "/dashboard/invoices" },
+    { icon: Calculator, label: "Accounting", path: "/dashboard/accounting" },
+    { icon: UserRound, label: "HR & Payroll", path: "/dashboard/hr" },
+    { icon: Package, label: "Inventory", path: "/dashboard/inventory" },
+    { icon: PieChart, label: "Reports", path: "/dashboard/reports" },
+    { icon: Settings, label: "Settings", path: "/dashboard/settings" },
   ];
 
   return (

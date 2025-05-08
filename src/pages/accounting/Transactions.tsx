@@ -1,519 +1,517 @@
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, Search, FileText, Upload, Download, Tag, Camera, FileUp, User, Link as LinkIcon, X, Check, ImageIcon, ArrowLeft } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus, FileText, Download, Upload, Tag, Camera, Image, FileUp, User, Link as LinkIcon } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/utils/formatters";
-import { useState, useRef, useEffect } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
+// Interfaces
+interface TransactionCategory {
+  id: string;
+  name: string;
+  color: string;
+}
 
-const CATEGORIES = [
-  { id: "all", name: "All Categories", color: "#8E9196" },
-  { id: "income", name: "Income", color: "#4CAF50" },
-  { id: "expense", name: "Expense", color: "#F97316" },
-  { id: "supplies", name: "Office Supplies", color: "#8B5CF6" },
-  { id: "marketing", name: "Marketing", color: "#0EA5E9" },
-  { id: "salary", name: "Salary", color: "#D946EF" },
-  { id: "rent", name: "Rent", color: "#F59E0B" },
-  { id: "utilities", name: "Utilities", color: "#10B981" },
-];
-
-const CLIENTS = [
-  { id: "client1", name: "Acme Corporation", email: "billing@acme.com" },
-  { id: "client2", name: "Stark Industries", email: "accounts@stark.com" },
-  { id: "client3", name: "Wayne Enterprises", email: "finance@wayne.com" },
-  { id: "client4", name: "Umbrella Corporation", email: "payments@umbrella.com" },
-  { id: "client5", name: "Oscorp Industries", email: "treasury@oscorp.com" },
-];
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface Transaction {
-  id: number;
+  id: string;
   date: string;
-  amount: number;
-  type: string;
-  categoryId: string;
   description: string;
+  amount: number;
+  type: 'income' | 'expense';
+  category?: string;
+  categoryId: string;
+  account?: string;
   clientId?: string;
 }
 
-const generateTransactions = (): Transaction[] => {
-  return [...Array(8)].map((_, index) => {
-    const isIncome = index % 3 === 0;
-    let categoryId = isIncome ? "income" : "expense";
+interface NewTransactionForm {
+  amount: string;
+  description: string;
+  type: 'income' | 'expense';
+  categoryId: string;
+  clientId: string;
+}
+
+// Transaction Categories
+const TRANSACTION_CATEGORIES: TransactionCategory[] = [
+  { id: 'all', name: 'All Categories', color: '#8E9196' },
+  { id: 'income', name: 'Income', color: '#4CAF50' },
+  { id: 'expense', name: 'Expense', color: '#F44336' },
+  { id: 'salary', name: 'Salary', color: '#2196F3' },
+  { id: 'rent', name: 'Rent', color: '#FF9800' },
+  { id: 'utilities', name: 'Utilities', color: '#9C27B0' },
+  { id: 'groceries', name: 'Groceries', color: '#795548' },
+  { id: 'entertainment', name: 'Entertainment', color: '#607D8B' },
+  { id: 'transportation', name: 'Transportation', color: '#00BCD4' },
+  { id: 'medical', name: 'Medical', color: '#E91E63' },
+  { id: 'insurance', name: 'Insurance', color: '#673AB7' },
+  { id: 'education', name: 'Education', color: '#3F51B5' },
+  { id: 'savings', name: 'Savings', color: '#CDDC39' },
+  { id: 'gifts', name: 'Gifts', color: '#FF5722' },
+  { id: 'taxes', name: 'Taxes', color: '#9E9E9E' },
+  { id: 'other', name: 'Other', color: '#8BC34A' },
+];
+
+// Mock Clients
+const CLIENTS: Client[] = [
+  { id: 'client1', name: 'ABC Corp', email: 'contact@abccorp.com' },
+  { id: 'client2', name: 'XYZ Ltd', email: 'info@xyzltd.com' },
+  { id: 'client3', name: 'Acme Inc', email: 'hello@acmeinc.com' },
+  { id: 'client4', name: 'Global Enterprises', email: 'contact@globalent.com' },
+  { id: 'client5', name: 'Local Business', email: 'info@localbiz.com' },
+];
+
+// Mock Transactions Generator
+const generateMockTransactions = (): Transaction[] => {
+  const transactions: Transaction[] = [];
+  const types: ('income' | 'expense')[] = ['income', 'expense'];
+  const accounts = ['Business Account', 'Savings Account', 'Credit Card'];
+  
+  // Get categories excluding 'all'
+  const categories = TRANSACTION_CATEGORIES.filter(cat => cat.id !== 'all');
+  
+  // Generate 20 random transactions
+  for (let i = 0; i < 20; i++) {
+    const type = types[Math.floor(Math.random() * types.length)];
+    const category = categories[Math.floor(Math.random() * categories.length)];
+    const amount = Math.floor(Math.random() * 10000) / 100;
+    const date = new Date();
+    date.setDate(date.getDate() - Math.floor(Math.random() * 30));
     
-    if (!isIncome) {
-      const expenseCategories = ["supplies", "marketing", "salary", "rent", "utilities"];
-      categoryId = expenseCategories[index % expenseCategories.length];
-    }
-
-    const hasClient = isIncome && Math.random() > 0.4;
-    const clientId = hasClient ? CLIENTS[Math.floor(Math.random() * CLIENTS.length)].id : undefined;
-
-    return {
-      id: 1000 + index,
-      date: `April ${index + 1}, 2025`,
-      amount: Math.random() * 1000,
-      type: isIncome ? "income" : "expense",
-      categoryId,
-      description: isIncome ? "Client Payment" : "Business Expense",
-      clientId,
+    const transaction: Transaction = {
+      id: `tx${Math.floor(1000 + Math.random() * 9000)}`,
+      date: date.toISOString().split('T')[0],
+      amount: amount,
+      type: type,
+      categoryId: category.id,
+      category: category.name,
+      description: type === 'income' 
+        ? ['Client Payment', 'Service Fee', 'Product Sale', 'Consultation', 'Subscription'][Math.floor(Math.random() * 5)]
+        : ['Office Supplies', 'Software Subscription', 'Utilities', 'Rent', 'Marketing', 'Travel Expense'][Math.floor(Math.random() * 6)],
+      account: accounts[Math.floor(Math.random() * accounts.length)],
     };
-  });
+    
+    // Add client ID for some income transactions
+    if (type === 'income' && Math.random() > 0.3) {
+      transaction.clientId = CLIENTS[Math.floor(Math.random() * CLIENTS.length)].id;
+    }
+    
+    transactions.push(transaction);
+  }
+  
+  // Sort by date (newest first)
+  return transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
-const TRANSACTIONS = generateTransactions();
-
-const AccountingTransactions = () => {
+const Transactions: React.FC = () => {
   const { toast } = useToast();
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [newTransactionOpen, setNewTransactionOpen] = useState(false);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [currentImportTab, setCurrentImportTab] = useState("statement");
-  const [showCameraPreview, setShowCameraPreview] = useState(false);
-  const [cameraError, setCameraError] = useState("");
-  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
-  const [attachmentType, setAttachmentType] = useState<string | null>(null);
-  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
-  const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const [clientLinkDialogOpen, setClientLinkDialogOpen] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>(TRANSACTIONS);
+  const navigate = useNavigate();
   
-  const [newTransaction, setNewTransaction] = useState({
-    amount: "",
-    description: "",
-    type: "expense",
-    categoryId: "expense",
-    clientId: "",
+  // State management
+  const [transactions, setTransactions] = useState<Transaction[]>(generateMockTransactions());
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  
+  // Dialog states
+  const [newTransactionOpen, setNewTransactionOpen] = useState<boolean>(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
+  const [importDialogOpen, setImportDialogOpen] = useState<boolean>(false);
+  const [attachmentDialogOpen, setAttachmentDialogOpen] = useState<boolean>(false);
+  const [clientLinkDialogOpen, setClientLinkDialogOpen] = useState<boolean>(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<boolean>(false);
+  
+  // Form state
+  const [newTransaction, setNewTransaction] = useState<NewTransactionForm>({
+    amount: '',
+    description: '',
+    type: 'expense',
+    categoryId: 'expense',
+    clientId: '',
   });
   
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-
+  // Filter transactions based on category and search query
   useEffect(() => {
-    return () => {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [cameraStream]);
-
-  useEffect(() => {
-    if (!importDialogOpen && cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-      setShowCameraPreview(false);
+    let filtered = [...transactions];
+    
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(tx => tx.categoryId === selectedCategory);
     }
-  }, [importDialogOpen, cameraStream]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewTransaction({
-      ...newTransaction,
-      [name]: value,
-    });
-  };
-
-  const handleSubmitTransaction = () => {
-    const newTransactionObj: Transaction = {
-      id: Math.floor(1000 + Math.random() * 9000),
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-      amount: parseFloat(newTransaction.amount) || 0,
+    
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(tx => 
+        tx.description.toLowerCase().includes(query) ||
+        tx.account?.toLowerCase().includes(query) ||
+        tx.category?.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredTransactions(filtered);
+  }, [transactions, selectedCategory, searchQuery]);
+  
+  // Handle adding a new transaction
+  const handleAddTransaction = () => {
+    if (!newTransaction.description || !newTransaction.amount) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const amount = parseFloat(newTransaction.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Generate a unique ID using timestamp and random string to avoid duplicate keys
+    const timestamp = new Date().getTime();
+    const randomStr = Math.random().toString(36).substring(2, 10);
+    
+    const newTx: Transaction = {
+      id: `tx${timestamp}-${randomStr}`,
+      date: new Date().toISOString().split('T')[0],
+      description: newTransaction.description,
+      amount: amount,
       type: newTransaction.type,
       categoryId: newTransaction.categoryId,
-      description: newTransaction.description || (newTransaction.type === "income" ? "Client Payment" : "Business Expense"),
-      clientId: newTransaction.type === "income" ? newTransaction.clientId : undefined,
+      category: TRANSACTION_CATEGORIES.find(cat => cat.id === newTransaction.categoryId)?.name,
+      clientId: newTransaction.clientId || undefined,
     };
-
-    setTransactions([newTransactionObj, ...transactions]);
-
+    
+    setTransactions(prev => [newTx, ...prev]);
+    
     toast({
-      title: "Transaction Added",
-      description: `${newTransaction.type === "income" ? "Income" : "Expense"} of ${formatCurrency(parseFloat(newTransaction.amount) || 0, "ZAR")} added successfully.`,
+      title: "Success",
+      description: `${newTransaction.type === 'income' ? 'Income' : 'Expense'} of ${formatCurrency(amount)} added successfully`,
     });
-
+    
+    // Reset form and close dialog
     setNewTransactionOpen(false);
     setNewTransaction({
-      amount: "",
-      description: "",
-      type: "expense",
-      categoryId: "expense",
-      clientId: "",
+      amount: '',
+      description: '',
+      type: 'expense',
+      categoryId: 'expense',
+      clientId: '',
     });
   };
-
-  const handleImport = (type: string = "statement") => {
-    toast({
-      title: "Import Successful",
-      description: `Your ${type === "statement" ? "transactions have" : "attachment has"} been imported successfully.`,
-    });
-    setImportDialogOpen(false);
-    setAttachmentPreview(null);
-    setAttachmentType(null);
-    setShowCameraPreview(false);
-    
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-    }
-    
-    if (type === "attachment" && selectedTransactionId) {
+  
+  // Handle deleting a transaction
+  const handleDeleteTransaction = () => {
+    if (selectedTransactionId) {
+      setTransactions(prev => prev.filter(tx => tx.id !== selectedTransactionId));
+      
       toast({
-        title: "Attachment Linked",
-        description: `Attachment has been linked to transaction #${selectedTransactionId}.`,
+        title: "Success",
+        description: "Transaction deleted successfully",
       });
+      
       setSelectedTransactionId(null);
+      setDeleteConfirmOpen(false);
     }
   };
-
-  const handleExport = () => {
+  
+  // Handle export transactions
+  const handleExportTransactions = () => {
     toast({
-      title: "Export Successful",
-      description: "Your transactions have been exported successfully.",
+      title: "Export Initiated",
+      description: "Your transactions are being exported",
     });
+    
     setExportDialogOpen(false);
   };
-
-  const handleClientLink = () => {
-    if (selectedTransactionId && selectedClientId) {
-      setTransactions(prev => 
-        prev.map(transaction => 
-          transaction.id === selectedTransactionId 
-            ? { ...transaction, clientId: selectedClientId } 
-            : transaction
-        )
-      );
-      
-      const client = CLIENTS.find(c => c.id === selectedClientId);
-      
-      toast({
-        title: "Client Linked",
-        description: `Transaction #${selectedTransactionId} has been linked to ${client?.name}.`,
-      });
-      
-      setClientLinkDialogOpen(false);
-      setSelectedTransactionId(null);
-      setSelectedClientId(null);
-    }
-  };
-
-  const filteredTransactions = transactions.filter(
-    (transaction) =>
-      selectedCategory === "all" || transaction.categoryId === selectedCategory
-  );
-
-  const getCategoryById = (id) => CATEGORIES.find((cat) => cat.id === id) || CATEGORIES[0];
   
-  const getClientById = (id?: string) => id ? CLIENTS.find((client) => client.id === id) : null;
-
-  const startCamera = async () => {
-    try {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        setCameraStream(null);
-      }
-      
-      console.log("Starting camera...");
-      setCameraError("");
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "environment" } 
-      });
-      
-      setCameraStream(stream);
-      
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          setShowCameraPreview(true);
-          console.log("Camera started successfully");
-        } else {
-          stream.getTracks().forEach(track => track.stop());
-          setCameraError("Camera element not ready. Please try again.");
-          console.error("Video ref is still not available after delay");
-        }
-      }, 100);
-    } catch (err) {
-      console.error("Error accessing camera:", err);
-      setCameraError(`Could not access camera: ${err.message || "Please check permissions and try again."}`);
-    }
-  };
-
-  const takePhoto = () => {
-    if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
-      console.log("Taking photo...");
-      const canvas = document.createElement("canvas");
-      const video = videoRef.current;
-      
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg");
-        setAttachmentPreview(dataUrl);
-        setAttachmentType("camera");
-        
-        if (cameraStream) {
-          cameraStream.getTracks().forEach(track => track.stop());
-          setCameraStream(null);
-        }
-        
-        setShowCameraPreview(false);
-        console.log("Photo taken successfully");
-      }
-    } else {
-      console.error("Video not ready for capture");
-      setCameraError("Camera not ready. Please wait a moment and try again.");
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const fileType = file.type;
-      const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setAttachmentPreview(result);
-        setAttachmentType(fileType.includes('pdf') ? 'pdf' : 'image');
-      };
-      
-      if (fileType.includes('pdf')) {
-        reader.readAsDataURL(file);
-      } else {
-        reader.readAsDataURL(file);
-      }
-    }
-  };
-
-  const handleTransactionClick = (transactionId: number) => {
-    setSelectedTransactionId(transactionId);
-    setAttachmentDialogOpen(true);
-  };
-
-  const startAttachmentProcess = () => {
-    setAttachmentDialogOpen(false);
-    setImportDialogOpen(true);
-    setCurrentImportTab("attachment");
+  // Find a transaction by ID
+  const findTransaction = (id: string): Transaction | undefined => {
+    return transactions.find(tx => tx.id === id);
   };
   
-  const startClientLinkProcess = () => {
-    setAttachmentDialogOpen(false);
-    setClientLinkDialogOpen(true);
-    
-    const transaction = transactions.find(t => t.id === selectedTransactionId);
-    if (transaction?.clientId) {
-      setSelectedClientId(transaction.clientId);
-    }
+  // Get category color
+  const getCategoryColor = (categoryId: string): string => {
+    return TRANSACTION_CATEGORIES.find(cat => cat.id === categoryId)?.color || '#9E9E9E';
   };
-
+  
+  // Get client name
+  const getClientName = (clientId: string | undefined): string => {
+    if (!clientId) return 'N/A';
+    return CLIENTS.find(client => client.id === clientId)?.name || 'Unknown Client';
+  };
+  
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Transactions</h1>
-          <p className="text-gray-500">Manage your financial transactions</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button onClick={() => setNewTransactionOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Transaction
-          </Button>
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Button>
-          <Button variant="outline" onClick={() => setExportDialogOpen(true)}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-[250px_1fr] gap-6">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Filters</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={selectedCategory}
-                  onValueChange={setSelectedCategory}
-                >
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center">
-                          <div
-                            className="w-3 h-3 rounded-full mr-2"
-                            style={{ backgroundColor: category.color }}
-                          ></div>
-                          {category.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Transactions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredTransactions.map((transaction) => {
-                const category = getCategoryById(transaction.categoryId);
-                const client = getClientById(transaction.clientId);
-                
-                return (
-                  <div 
-                    key={transaction.id} 
-                    className="flex justify-between items-center p-4 border rounded-md hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleTransactionClick(transaction.id)}
-                  >
-                    <div className="flex items-center">
-                      <div className="bg-primary/10 p-2 rounded-md mr-4">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Transaction #{transaction.id}</p>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <span>{transaction.date}</span>
-                          <div className="flex items-center ml-3">
-                            <Tag className="h-3 w-3 mr-1" />
-                            <div className="flex items-center">
-                              <div
-                                className="w-2 h-2 rounded-full mr-1"
-                                style={{ backgroundColor: category.color }}
-                              ></div>
-                              <span>{category.name}</span>
-                            </div>
-                          </div>
-                          {client && (
-                            <div className="flex items-center ml-3">
-                              <User className="h-3 w-3 mr-1" />
-                              <Badge variant="client" className="text-xs py-0 px-1.5 ml-1">
-                                {client.name}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(transaction.amount, "ZAR")}</p>
-                      <p className="text-sm text-gray-500">
-                        {transaction.type === "income" ? "Income" : "Expense"}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {filteredTransactions.length === 0 && (
-                <div className="text-center py-6 text-gray-500">
-                  No transactions found for the selected category.
-                </div>
-              )}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => navigate('/dashboard/accounting')}
+              className="h-9 w-9"
+              title="Back to Accounting"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle className="text-2xl font-bold">Transactions</CardTitle>
+          </div>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setImportDialogOpen(true)}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setExportDialogOpen(true)}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button 
+              onClick={() => setNewTransactionOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Transaction
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search transactions..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {TRANSACTION_CATEGORIES.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    <div className="flex items-center">
+                      <div 
+                        className="w-3 h-3 rounded-full mr-2" 
+                        style={{ backgroundColor: category.color }}
+                      />
+                      {category.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.length > 0 ? (
+                  filteredTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell>{formatDate(transaction.date)}</TableCell>
+                      <TableCell>{transaction.description}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            backgroundColor: getCategoryColor(transaction.categoryId),
+                            color: '#fff'
+                          }}
+                        >
+                          {transaction.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {transaction.clientId ? (
+                          <span className="flex items-center">
+                            <User className="h-3.5 w-3.5 mr-1" />
+                            {getClientName(transaction.clientId)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        <span className={transaction.type === 'expense' ? 'text-red-500' : 'text-green-500'}>
+                          {transaction.type === 'expense' ? '-' : '+'}{formatCurrency(transaction.amount)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => {
+                              setSelectedTransactionId(transaction.id);
+                              setAttachmentDialogOpen(true);
+                            }}
+                          >
+                            <FileUp className="h-4 w-4" />
+                          </Button>
+                          {transaction.type === 'income' && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => {
+                                setSelectedTransactionId(transaction.id);
+                                setClientLinkDialogOpen(true);
+                              }}
+                            >
+                              <LinkIcon className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => {
+                              setSelectedTransactionId(transaction.id);
+                              setDeleteConfirmOpen(true);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                      No transactions found. Try adjusting your filters or add a new transaction.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Add New Transaction Dialog */}
       <Dialog open={newTransactionOpen} onOpenChange={setNewTransactionOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Add New Transaction</DialogTitle>
+            <DialogDescription>
+              Enter the details of the transaction below.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="amount" className="text-right">
-                Amount (ZAR)
-              </Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="transaction-type">Type</Label>
+                <Select
+                  value={newTransaction.type}
+                  onValueChange={(value) => setNewTransaction({
+                    ...newTransaction,
+                    type: value as 'income' | 'expense',
+                    categoryId: value // Set default category based on type
+                  })}
+                >
+                  <SelectTrigger id="transaction-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="income">Income</SelectItem>
+                    <SelectItem value="expense">Expense</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="transaction-amount">Amount</Label>
+                <Input
+                  id="transaction-amount"
+                  placeholder="0.00"
+                  value={newTransaction.amount}
+                  onChange={(e) => setNewTransaction({
+                    ...newTransaction,
+                    amount: e.target.value
+                  })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="transaction-description">Description</Label>
               <Input
-                id="amount"
-                name="amount"
-                type="number"
-                value={newTransaction.amount}
-                onChange={handleInputChange}
-                placeholder="0.00"
-                className="col-span-3"
+                id="transaction-description"
+                placeholder="Description"
+                value={newTransaction.description}
+                onChange={(e) => setNewTransaction({
+                  ...newTransaction,
+                  description: e.target.value
+                })}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">
-                Type
-              </Label>
-              <Select
-                value={newTransaction.type}
-                onValueChange={(value) => setNewTransaction({...newTransaction, type: value})}
-              >
-                <SelectTrigger id="type" className="col-span-3">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="category" className="text-right">
-                Category
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="transaction-category">Category</Label>
               <Select
                 value={newTransaction.categoryId}
-                onValueChange={(value) => setNewTransaction({...newTransaction, categoryId: value})}
+                onValueChange={(value) => setNewTransaction({
+                  ...newTransaction,
+                  categoryId: value
+                })}
               >
-                <SelectTrigger id="category" className="col-span-3">
+                <SelectTrigger id="transaction-category">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.filter(cat => cat.id !== "all").map((category) => (
+                  {TRANSACTION_CATEGORIES.filter(cat => 
+                    cat.id !== 'all' && 
+                    (cat.id === newTransaction.type || 
+                     (cat.id !== 'income' && cat.id !== 'expense'))
+                  ).map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center">
-                        <div
-                          className="w-3 h-3 rounded-full mr-2"
+                        <div 
+                          className="w-3 h-3 rounded-full mr-2" 
                           style={{ backgroundColor: category.color }}
-                        ></div>
+                        />
                         {category.name}
                       </div>
                     </SelectItem>
@@ -521,20 +519,21 @@ const AccountingTransactions = () => {
                 </SelectContent>
               </Select>
             </div>
-            {newTransaction.type === "income" && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="client" className="text-right">
-                  Client
-                </Label>
+            {newTransaction.type === 'income' && (
+              <div className="space-y-2">
+                <Label htmlFor="transaction-client">Client (Optional)</Label>
                 <Select
                   value={newTransaction.clientId}
-                  onValueChange={(value) => setNewTransaction({...newTransaction, clientId: value})}
+                  onValueChange={(value) => setNewTransaction({
+                    ...newTransaction,
+                    clientId: value
+                  })}
                 >
-                  <SelectTrigger id="client" className="col-span-3">
-                    <SelectValue placeholder="Select client (optional)" />
+                  <SelectTrigger id="transaction-client">
+                    <SelectValue placeholder="Select client" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No Client</SelectItem>
+                    <SelectItem value="">No Client</SelectItem>
                     {CLIENTS.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}
@@ -544,285 +543,127 @@ const AccountingTransactions = () => {
                 </Select>
               </div>
             )}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={newTransaction.description}
-                onChange={handleInputChange}
-                placeholder="Transaction details"
-                className="col-span-3"
-              />
-            </div>
           </div>
           <DialogFooter>
-            <Button type="submit" onClick={handleSubmitTransaction}>Add Transaction</Button>
+            <Button variant="outline" onClick={() => setNewTransactionOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddTransaction}>
+              Add Transaction
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={importDialogOpen} onOpenChange={(open) => {
-        if (!open && cameraStream) {
-          cameraStream.getTracks().forEach(track => track.stop());
-          setCameraStream(null);
-          setShowCameraPreview(false);
-        }
-        setImportDialogOpen(open);
-      }}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>
-              {currentImportTab === "statement" ? "Import Transactions" : "Attach Document to Transaction"}
-            </DialogTitle>
-            {currentImportTab === "statement" && (
-              <DialogDescription>Upload a CSV or Excel file with your transactions</DialogDescription>
-            )}
-            {currentImportTab === "attachment" && (
-              <DialogDescription>
-                Upload a receipt or supporting document for transaction #{selectedTransactionId}
-              </DialogDescription>
-            )}
-          </DialogHeader>
-          
-          <Tabs value={currentImportTab} onValueChange={setCurrentImportTab}>
-            <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="statement">Bank Statement</TabsTrigger>
-              <TabsTrigger value="attachment">File Upload</TabsTrigger>
-              <TabsTrigger value="camera">Camera</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="statement" className="space-y-4">
-              <div className="flex justify-center">
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-8 h-8 mb-2 text-gray-500" />
-                    <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="text-xs text-gray-500">CSV, XLSX (MAX. 10MB)</p>
-                  </div>
-                  <input ref={fileInputRef} type="file" className="hidden" accept=".csv,.xlsx" />
-                </label>
-              </div>
-              <Button type="submit" onClick={() => handleImport("statement")} className="w-full">Import</Button>
-            </TabsContent>
-            
-            <TabsContent value="attachment" className="space-y-4">
-              {attachmentPreview && attachmentType ? (
-                <div className="flex flex-col items-center space-y-4">
-                  {attachmentType.includes('pdf') ? (
-                    <div className="flex items-center justify-center h-48 w-full bg-gray-100 rounded-md">
-                      <FileText className="h-16 w-16 text-gray-400" />
-                      <p className="ml-2 text-gray-500">PDF Document</p>
-                    </div>
-                  ) : (
-                    <div className="max-h-64 overflow-hidden border rounded-md">
-                      <img 
-                        src={attachmentPreview} 
-                        alt="Preview" 
-                        className="object-contain max-h-64 w-full"
-                      />
-                    </div>
-                  )}
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setAttachmentPreview(null);
-                        setAttachmentType(null);
-                      }}
-                    >
-                      Change
-                    </Button>
-                    <Button onClick={() => handleImport("attachment")}>Attach to Transaction</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col space-y-4">
-                  <div className="flex justify-center">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <FileUp className="w-8 h-8 mb-2 text-gray-500" />
-                        <p className="mb-2 text-sm text-gray-500">
-                          <span className="font-semibold">Click to upload</span> receipt or document
-                        </p>
-                        <p className="text-xs text-gray-500">PDF, JPG, PNG (MAX. 10MB)</p>
-                      </div>
-                      <input 
-                        ref={fileInputRef} 
-                        type="file" 
-                        className="hidden" 
-                        accept=".pdf,.jpg,.jpeg,.png" 
-                        onChange={handleFileChange}
-                      />
-                    </label>
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="camera" className="space-y-4">
-              {showCameraPreview ? (
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="w-full rounded-md overflow-hidden border">
-                    <video 
-                      ref={videoRef} 
-                      autoPlay 
-                      playsInline 
-                      className="w-full h-64 object-cover"
-                    />
-                  </div>
-                  <Button onClick={takePhoto}>
-                    <Camera className="mr-2 h-4 w-4" />
-                    Take Photo
-                  </Button>
-                </div>
-              ) : attachmentPreview && attachmentType === "camera" ? (
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="max-h-64 overflow-hidden border rounded-md">
-                    <img 
-                      src={attachmentPreview} 
-                      alt="Captured photo" 
-                      className="object-contain max-h-64 w-full"
-                    />
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setAttachmentPreview(null);
-                        startCamera();
-                      }}
-                    >
-                      Retake
-                    </Button>
-                    <Button onClick={() => handleImport("attachment")}>Attach to Transaction</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center space-y-4">
-                  {cameraError && (
-                    <div className="text-red-500 text-center p-2 bg-red-50 rounded-md w-full">
-                      {cameraError}
-                    </div>
-                  )}
-                  <Button onClick={startCamera}>
-                    <Camera className="mr-2 h-4 w-4" />
-                    Start Camera
-                  </Button>
-                  <p className="text-sm text-gray-500">
-                    Or upload an existing photo
-                  </p>
-                  <Button variant="outline" onClick={() => cameraInputRef.current?.click()}>
-                    <Image className="mr-2 h-4 w-4" />
-                    Choose Photo
-                  </Button>
-                  <input 
-                    ref={cameraInputRef} 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*" 
-                    capture="environment"
-                    onChange={handleFileChange}
-                  />
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-
+      
+      {/* Export Dialog */}
       <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Export Transactions</DialogTitle>
+            <DialogDescription>
+              Choose the format and date range for your export.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <p className="text-sm text-gray-500">Choose a format to export your transactions.</p>
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" onClick={handleExport} className="flex flex-col p-4 h-auto">
-                <FileText className="h-6 w-6 mb-2" />
-                <span>CSV</span>
-              </Button>
-              <Button variant="outline" onClick={handleExport} className="flex flex-col p-4 h-auto">
-                <FileText className="h-6 w-6 mb-2" />
-                <span>Excel</span>
-              </Button>
-            </div>
-            <div className="space-y-2 mt-2">
-              <Label htmlFor="date-range">Date Range</Label>
-              <Select defaultValue="all">
-                <SelectTrigger id="date-range">
-                  <SelectValue placeholder="Select date range" />
+            <div className="space-y-2">
+              <Label htmlFor="export-format">Format</Label>
+              <Select defaultValue="csv">
+                <SelectTrigger id="export-format">
+                  <SelectValue placeholder="Select format" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="this-month">This Month</SelectItem>
-                  <SelectItem value="last-month">Last Month</SelectItem>
-                  <SelectItem value="this-year">This Year</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="xlsx">Excel (XLSX)</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="export-from">From</Label>
+                <Input id="export-from" type="date" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="export-to">To</Label>
+                <Input id="export-to" type="date" />
+              </div>
+            </div>
           </div>
           <DialogFooter>
-            <Button type="submit" onClick={handleExport}>Export</Button>
+            <Button variant="outline" onClick={() => setExportDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleExportTransactions}>
+              Export
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={attachmentDialogOpen} onOpenChange={setAttachmentDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Transaction Options</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with Transaction #{selectedTransactionId}?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
-            <Button variant="outline" onClick={startAttachmentProcess} className="flex flex-col items-center py-6">
-              <FileUp className="h-6 w-6 mb-2" />
-              <span>Attach Document</span>
-              <span className="text-xs text-muted-foreground mt-1">Receipt, invoice, etc.</span>
-            </Button>
-            <Button variant="outline" onClick={startClientLinkProcess} className="flex flex-col items-center py-6">
-              <LinkIcon className="h-6 w-6 mb-2" />
-              <span>Link to Client</span>
-              <span className="text-xs text-muted-foreground mt-1">Associate with customer</span>
-            </Button>
+      
+      {/* Attachment Dialog */}
+      <Dialog open={attachmentDialogOpen} onOpenChange={setAttachmentDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Attachment</DialogTitle>
+            <DialogDescription>
+              {selectedTransactionId && findTransaction(selectedTransactionId) ? 
+                `Add an attachment to transaction: ${findTransaction(selectedTransactionId)?.description}` :
+                'Add an attachment to this transaction'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 gap-4">
+              <Button variant="outline">
+                <FileText className="mr-2 h-4 w-4" />
+                Choose File
+              </Button>
+              <Button variant="outline">
+                <Camera className="mr-2 h-4 w-4" />
+                Take Photo
+              </Button>
+            </div>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAttachmentDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              toast({
+                title: "Success",
+                description: "Attachment added successfully",
+              });
+              setAttachmentDialogOpen(false);
+            }}>
+              Add Attachment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Client Link Dialog */}
       <Dialog open={clientLinkDialogOpen} onOpenChange={setClientLinkDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Link Transaction to Client</DialogTitle>
+            <DialogTitle>Link to Client</DialogTitle>
             <DialogDescription>
-              Associate Transaction #{selectedTransactionId} with a client
+              {selectedTransactionId && findTransaction(selectedTransactionId) ? 
+                `Link transaction "${findTransaction(selectedTransactionId)?.description}" to a client` :
+                'Link this transaction to a client'
+              }
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="client-select">Select Client</Label>
-              <Select
-                value={selectedClientId || ""}
-                onValueChange={setSelectedClientId}
-              >
+              <Select defaultValue="">
                 <SelectTrigger id="client-select">
-                  <SelectValue placeholder="Choose a client" />
+                  <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no-client">No Client (Unlink)</SelectItem>
                   {CLIENTS.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
-                      {client.name} ({client.email})
+                      {client.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -830,14 +671,41 @@ const AccountingTransactions = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleClientLink}>
-              {selectedClientId ? "Link Client" : "Remove Link"}
+            <Button variant="outline" onClick={() => setClientLinkDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              toast({
+                title: "Success",
+                description: "Transaction linked to client successfully",
+              });
+              setClientLinkDialogOpen(false);
+            }}>
+              Link Client
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the selected transaction.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTransaction}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
 
-export default AccountingTransactions;
+export default Transactions;

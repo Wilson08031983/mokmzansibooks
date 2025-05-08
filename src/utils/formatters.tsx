@@ -1,15 +1,28 @@
-
 import React from "react";
 import { format } from "date-fns";
 import Logo from "@/components/Logo";
 import { useI18n } from "@/contexts/I18nContext";
 
+// Supported currencies
+const SUPPORTED_CURRENCIES = ["ZAR", "USD", "EUR"] as const;
+type SupportedCurrency = typeof SUPPORTED_CURRENCIES[number];
+
 // Store the active currency from context
-let globalCurrency: string = "ZAR";
+let globalCurrency: SupportedCurrency = "ZAR";
 
 // Update the global currency when it changes in context
-export function setGlobalCurrency(currency: string) {
-  globalCurrency = currency;
+export function setGlobalCurrency(currency: SupportedCurrency) {
+  if (SUPPORTED_CURRENCIES.includes(currency)) {
+    globalCurrency = currency;
+  } else {
+    console.warn(`Unsupported currency: ${currency}. Defaulting to ZAR.`);
+    globalCurrency = "ZAR";
+  }
+}
+
+// Get current global currency
+export function getGlobalCurrency(): SupportedCurrency {
+  return globalCurrency as SupportedCurrency;
 }
 
 export const formatDate = (dateString: string): string => {

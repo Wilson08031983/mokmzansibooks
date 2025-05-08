@@ -1,8 +1,8 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { backupCompanyData, restoreCompanyDataFromBackup } from "@/utils/companyDataPersistence";
 
 interface UserProfile {
   id: string;
@@ -20,7 +20,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -51,11 +50,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (currentSession?.user) {
           const user = currentSession.user;
           
-          // Get the provider from user metadata
-          const providerValue = user.app_metadata?.provider;
-          // Ensure provider is either "email" or "google"
-          const provider = providerValue === "google" ? "google" : "email";
-          
           // Create user profile from Supabase user
           const userProfile: UserProfile = {
             id: user.id,
@@ -63,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: user.user_metadata?.name || user.email?.split('@')[0] || "",
             subscriptionStatus: "active", // Setting this to "active" to enable premium features
             trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-            provider: provider
+            provider: "email"
           };
           
           setCurrentUser(userProfile);
@@ -143,38 +137,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signInWithGoogle = async () => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: window.location.origin,
-        },
-      });
-      
-      if (error) {
-        throw error;
-      }
-    } catch (error: any) {
-      toast({
-        title: "Google sign in failed",
-        description: error.message || "Failed to sign in with Google. Please try again.",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const signOut = async () => {
     setIsLoading(true);
     try {
+      // First, create a comprehensive backup of all company data
+      // This stores data in both localStorage and sessionStorage for redundancy
+      backupCompanyData();
+      
+      // Proceed with sign out
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         throw error;
+      }
+      
+      // Restore all company data from our backups
+      // This ensures persistence across logout and application restarts
+      restoreCompanyDataFromBackup();
+      
+      // Add a permanent flag to indicate this is preserved data
+      localStorage.setItem('companyDataPreserved', 'true');
+      
+      // Double-check to make sure the public company info is definitely available
+      const publicData = localStorage.getItem('publicCompanyDetails');
+      if (!publicData) {
+        console.error('Failed to restore public company details after logout');
+      } else {
+        console.log('Successfully preserved company data across logout');
       }
     } catch (error: any) {
       toast({
@@ -195,7 +184,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAuthenticated,
     signIn,
     signUp,
-    signInWithGoogle,
     signOut,
   };
 

@@ -125,7 +125,7 @@ const QuoteTemplate2 = ({ data, preview = false }: TemplateProps) => {
                 <td className="py-3 px-4 text-center">{item.quantity}</td>
                 <td className="py-3 px-4 text-right">{formatCurrency(item.unitPrice || item.rate)}</td>
                 <td className="py-3 px-4 text-right">{formatPercentage(item.discount || 0)}</td>
-                <td className="py-3 px-4 text-right">{formatCurrency(item.amount)}</td>
+                <td className="py-3 px-4 text-right">{formatCurrency(item.total || item.amount || 0)}</td>
               </tr>
             ))}
           </tbody>

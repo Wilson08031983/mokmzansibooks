@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import PublicCompanyInfo from "@/components/PublicCompanyInfo";
 
 const PublicLayout = () => {
   const location = useLocation();
@@ -29,6 +30,13 @@ const PublicLayout = () => {
         <div className="relative z-10">
           <Outlet />
         </div>
+        
+        {/* Add PublicCompanyInfo to the bottom right of public pages */}
+        {!isHomepage && (
+          <div className="fixed bottom-4 right-4 z-50 w-72">
+            <PublicCompanyInfo />
+          </div>
+        )}
       </main>
       <Footer />
     </div>

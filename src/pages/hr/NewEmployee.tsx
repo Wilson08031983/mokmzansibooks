@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +33,16 @@ interface EmployeeFormData {
 
 const NewEmployee = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Check if we're in edit mode by looking for a query parameter
+  const queryParams = new URLSearchParams(location.search);
+  const isEditMode = queryParams.get('mode') === 'edit';
+  const employeeIdToEdit = queryParams.get('id');
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingEmployee, setIsFetchingEmployee] = useState(isEditMode);
   
   const [formData, setFormData] = useState<EmployeeFormData>({
     firstName: "",
@@ -53,6 +62,63 @@ const NewEmployee = () => {
     profileImage: null as File | null,
     notes: ""
   });
+  
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      if (!isEditMode || !employeeIdToEdit) return;
+      
+      setIsFetchingEmployee(true);
+      
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('*')
+          .eq('id', employeeIdToEdit)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          setFormData({
+            firstName: data.first_name || "",
+            lastName: data.last_name || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            department: data.department || "",
+            position: data.position || "",
+            employmentType: data.employment_type || "full-time",
+            startDate: data.start_date || "",
+            salary: data.monthly_salary?.toString() || "",
+            site: data.site || "",
+            address: data.address || "",
+            dateOfBirth: data.date_of_birth || "",
+            bonusDate: data.bonus_date || "",
+            noBonusApplicable: data.no_bonus_applicable || false,
+            profileImage: null, // We can't load the file object from the database
+            notes: data.notes || ""
+          });
+        } else {
+          toast({
+            title: "Employee Not Found",
+            description: "The employee you're trying to edit could not be found.",
+            variant: "destructive"
+          });
+          navigate("/dashboard/hr/employees");
+        }
+      } catch (error) {
+        console.error("Error fetching employee:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load employee data. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsFetchingEmployee(false);
+      }
+    };
+    
+    fetchEmployeeData();
+  }, [isEditMode, employeeIdToEdit, navigate, toast]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -81,45 +147,142 @@ const NewEmployee = () => {
     }
   };
   
+  // Define a type for the employee data structure in the database
+  type EmployeeDBRecord = {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone?: string;
+    department?: string;
+    position?: string;
+    employment_type?: string;
+    start_date?: string;
+    monthly_salary?: number;
+    site?: string;
+    address?: string;
+    date_of_birth?: string;
+    bonus_date?: string | null;
+    no_bonus_applicable?: boolean;
+    notes?: string;
+    image?: string;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const employeeData = {
-      first_name: formData.firstName,
-      last_name: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      department: formData.department,
-      position: formData.position,
-      employment_type: formData.employmentType,
-      start_date: formData.startDate,
-      monthly_salary: Number(formData.salary),
-      site: formData.site,
-      address: formData.address,
-      date_of_birth: formData.dateOfBirth,
-      bonus_date: formData.noBonusApplicable ? null : formData.bonusDate,
-      no_bonus_applicable: formData.noBonusApplicable
-    };
-
-    const { error } = await supabase
-      .from('employees')
-      .insert([employeeData]);
-
-    if (error) {
+    if (!formData.firstName || !formData.lastName || !formData.email) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       });
       return;
     }
     
-    toast({
-      title: "Employee Added",
-      description: `${formData.firstName} ${formData.lastName} has been added to the system.`,
-    });
+    setIsLoading(true);
     
-    navigate("/hr/employees");
+    try {
+      // Create the employee data object with the correct type
+      const employeeData: EmployeeDBRecord = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        department: formData.department,
+        position: formData.position,
+        employment_type: formData.employmentType,
+        start_date: formData.startDate,
+        monthly_salary: Number(formData.salary) || 0,
+        site: formData.site,
+        address: formData.address,
+        date_of_birth: formData.dateOfBirth,
+        bonus_date: formData.noBonusApplicable ? null : formData.bonusDate,
+        no_bonus_applicable: formData.noBonusApplicable,
+        notes: formData.notes
+      };
+      
+      let error;
+      
+      if (isEditMode && employeeIdToEdit) {
+        // Update existing employee
+        const { error: updateError } = await supabase
+          .from('employees')
+          .update(employeeData)
+          .eq('id', employeeIdToEdit);
+          
+        error = updateError;
+      } else {
+        // Insert new employee
+        const { error: insertError } = await supabase
+          .from('employees')
+          .insert([employeeData]);
+          
+        error = insertError;
+      }
+      
+      if (error) throw error;
+      
+      // Handle profile image upload if provided
+      if (formData.profileImage) {
+        const fileExt = formData.profileImage.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('employee-images')
+          .upload(fileName, formData.profileImage);
+          
+        if (uploadError) {
+          console.error("Error uploading image:", uploadError);
+          // We don't throw here as we've already saved the employee data
+          toast({
+            title: "Image Upload Failed",
+            description: "Employee saved, but profile image could not be uploaded.",
+            variant: "warning",
+          });
+        } else {
+          // Update the employee record with the image filename
+          // Use a properly typed update object
+          const imageUpdate: Pick<EmployeeDBRecord, 'image'> = { 
+            image: fileName 
+          };
+          
+          const updateTarget = isEditMode && employeeIdToEdit
+            ? supabase.from('employees').update(imageUpdate).eq('id', employeeIdToEdit)
+            : supabase.from('employees').update(imageUpdate).eq('email', formData.email);
+          
+          const { error: updateError } = await updateTarget;
+          
+          if (updateError) {
+            console.error("Error updating employee with image:", updateError);
+            toast({
+              title: "Image Reference Update Failed",
+              description: "Image uploaded but couldn't update employee record with reference.",
+              variant: "warning",
+            });
+          }
+        }
+      }
+      
+      toast({
+        title: isEditMode ? "Employee Updated" : "Employee Added",
+        description: isEditMode
+          ? `${formData.firstName} ${formData.lastName}'s information has been updated.`
+          : `${formData.firstName} ${formData.lastName} has been added to the system.`,
+        variant: "success",
+      });
+      
+      // Navigate back to employees list
+      navigate("/dashboard/hr/employees");
+    } catch (error: any) {
+      console.error("Error saving employee:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save employee. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -127,20 +290,24 @@ const NewEmployee = () => {
       <div className="flex items-center">
         <Button 
           variant="ghost" 
-          onClick={() => navigate("/hr")} 
+          onClick={() => navigate("/dashboard/hr")} 
           className="mr-2"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">Add New Employee</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Edit Employee
+        </h1>
       </div>
       
       <Card>
         <CardHeader>
           <CardTitle>Employee Information</CardTitle>
           <CardDescription>
-            Enter the details of the new employee. All fields marked with * are required.
+            {isEditMode 
+              ? "Update the employee's information. All fields marked with * are required."
+              : "Enter the details of the new employee. All fields marked with * are required."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -386,12 +553,28 @@ const NewEmployee = () => {
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => navigate("/hr")}>
+          <Button variant="outline" onClick={() => navigate("/dashboard/hr")}>
             Cancel
           </Button>
-          <Button type="submit" form="employee-form">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Add Employee
+          <Button 
+            type="submit" 
+            form="employee-form" 
+            disabled={isLoading || isFetchingEmployee}
+          >
+            {isLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {isEditMode ? "Updating..." : "Saving..."}
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                {isEditMode ? "Update Employee" : "Save Employee"}
+              </>
+            )}
           </Button>
         </CardFooter>
       </Card>

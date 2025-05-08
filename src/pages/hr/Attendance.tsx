@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { format, subDays } from "date-fns";
-import { Calendar as CalendarIcon, Users, Clock, UserCheck, UserMinus, Download, FileText } from "lucide-react";
+import { Calendar as CalendarIcon, Users, Clock, UserCheck, UserMinus, Download, FileText, ArrowLeft } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
+import { jsPDF } from "jspdf";
 import {
   Card,
   CardContent,
@@ -98,6 +100,7 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [view, setView] = useState<"daily" | "weekly">("daily");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const filteredAttendance = attendanceData.filter(
     (record) =>
@@ -143,45 +146,137 @@ const Attendance = () => {
       employees: attendanceData
     };
 
-    const reportText = `
-Attendance Report - ${reportData.date}
-
-Summary:
-- Total Employees: ${reportData.summaryData.total}
-- Present: ${reportData.summaryData.present}
-- Late: ${reportData.summaryData.late}
-- Absent: ${reportData.summaryData.absent}
-- On Leave: ${reportData.summaryData.leave}
-- Attendance Rate: ${reportData.summaryData.attendanceRate}%
-
-Weekly Breakdown:
-${reportData.weeklyData.map(day => `${format(new Date(day.date), "EEE, MMM d")}:
-- Present: ${day.present}
-- Late: ${day.late}
-- Absent: ${day.absent}
-- On Leave: ${day.leave}
-`).join('\n')}
-
-Employee Details:
-${reportData.employees.map(emp => `${emp.name} - ${emp.status}
-Clock In: ${emp.clockIn ? format(new Date(emp.clockIn), "hh:mm a") : "N/A"}
-Clock Out: ${emp.clockOut ? format(new Date(emp.clockOut), "hh:mm a") : "N/A"}
-`).join('\n')}
-`;
-
-    const blob = new Blob([reportText], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `attendance-report-${format(date, "yyyy-MM-dd")}.txt`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    // Create a new PDF document in A4 format
+    // A4 size: 210 x 297 mm
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+    
+    // Set font styles
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    
+    // Add company logo/header
+    doc.text("MokMzansi Books", 105, 15, { align: "center" });
+    
+    // Add report title
+    doc.setFontSize(16);
+    doc.text(`Attendance Report - ${reportData.date}`, 105, 25, { align: "center" });
+    
+    // Add horizontal line
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.5);
+    doc.line(20, 30, 190, 30);
+    
+    // Summary section
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Summary", 20, 40);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Total Employees: ${reportData.summaryData.total}`, 25, 50);
+    doc.text(`Present: ${reportData.summaryData.present}`, 25, 56);
+    doc.text(`Late: ${reportData.summaryData.late}`, 25, 62);
+    doc.text(`Absent: ${reportData.summaryData.absent}`, 25, 68);
+    doc.text(`On Leave: ${reportData.summaryData.leave}`, 25, 74);
+    doc.text(`Attendance Rate: ${reportData.summaryData.attendanceRate}%`, 25, 80);
+    
+    // Weekly breakdown section
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Weekly Breakdown", 20, 95);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    let yPos = 105;
+    
+    reportData.weeklyData.forEach(day => {
+      doc.text(`${format(new Date(day.date), "EEE, MMM d")}:`, 25, yPos);
+      yPos += 6;
+      doc.text(`Present: ${day.present}, Late: ${day.late}, Absent: ${day.absent}, On Leave: ${day.leave}`, 30, yPos);
+      yPos += 10;
+      
+      // Add a new page if we're running out of space
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+    });
+    
+    // Employee details section
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Employee Details", 20, yPos);
+    yPos += 10;
+    
+    // Table headers
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, yPos, 170, 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Employee", 25, yPos + 5.5);
+    doc.text("Status", 85, yPos + 5.5);
+    doc.text("Clock In", 125, yPos + 5.5);
+    doc.text("Clock Out", 160, yPos + 5.5);
+    yPos += 8;
+    
+    // Table rows
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    
+    reportData.employees.forEach((emp, index) => {
+      // Add a new page if we're running out of space
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+        
+        // Repeat headers on new page
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, yPos, 170, 8, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text("Employee", 25, yPos + 5.5);
+        doc.text("Status", 85, yPos + 5.5);
+        doc.text("Clock In", 125, yPos + 5.5);
+        doc.text("Clock Out", 160, yPos + 5.5);
+        yPos += 8;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+      }
+      
+      // Add alternating row background
+      if (index % 2 === 0) {
+        doc.setFillColor(248, 248, 248);
+        doc.rect(20, yPos, 170, 7, "F");
+      }
+      
+      doc.text(emp.name, 25, yPos + 5);
+      doc.text(emp.status, 85, yPos + 5);
+      doc.text(emp.clockIn ? format(new Date(emp.clockIn), "hh:mm a") : "N/A", 125, yPos + 5);
+      doc.text(emp.clockOut ? format(new Date(emp.clockOut), "hh:mm a") : "N/A", 160, yPos + 5);
+      
+      yPos += 7;
+    });
+    
+    // Add footer with page numbers
+    const totalPages = doc.internal.pages.length - 1;
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.text(`Page ${i} of ${totalPages}`, 105, 287, { align: "center" });
+      doc.text(`Generated on ${format(new Date(), "MMMM d, yyyy 'at' h:mm a")}`, 105, 292, { align: "center" });
+    }
+    
+    // Save the PDF
+    doc.save(`attendance-report-${format(date, "yyyy-MM-dd")}.pdf`);
 
     toast({
       title: "Report Generated",
-      description: "Your attendance report has been downloaded",
+      description: "Your attendance report has been downloaded as PDF",
     });
   };
 
@@ -276,12 +371,19 @@ Clock Out: ${emp.clockOut ? format(new Date(emp.clockOut), "hh:mm a") : "N/A"}
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Attendance Tracking</h1>
-          <p className="text-muted-foreground">
-            Monitor employee attendance and time tracking
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => navigate("/dashboard/hr")} 
+              className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-3xl font-bold tracking-tight">Attendance Tracking</h1>
+          </div>
+          <p className="text-muted-foreground">Monitor employee attendance and time tracking</p>
         </div>
         <div className="flex items-center gap-2">
           <Popover>
@@ -303,13 +405,7 @@ Clock Out: ${emp.clockOut ? format(new Date(emp.clockOut), "hh:mm a") : "N/A"}
               />
             </PopoverContent>
           </Popover>
-          <Button 
-            onClick={handleGenerateReport}
-            className="flex items-center gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            Generate Report
-          </Button>
+
         </div>
       </div>
 

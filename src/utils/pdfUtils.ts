@@ -83,8 +83,17 @@ export const downloadQuoteAsPdf = async (
   fileName: string = "quote.pdf"
 ) => {
   try {
+    // Create a clone of the element to avoid modifying the original
     const elementClone = quoteElement.cloneNode(true) as HTMLElement;
     
+    // Remove any scale transformations that might affect rendering
+    elementClone.style.transform = 'none';
+    elementClone.style.transformOrigin = 'top left';
+    elementClone.style.width = '210mm';
+    elementClone.style.margin = '0';
+    elementClone.style.padding = '0';
+    
+    // Add necessary styles for PDF rendering
     const styleElement = document.createElement('style');
     styleElement.textContent = `
       * {
@@ -95,30 +104,45 @@ export const downloadQuoteAsPdf = async (
       table {
         border-collapse: separate !important;
         border-spacing: 2px !important;
+        width: 100% !important;
       }
       td, th {
         padding: 4px !important;
-        white-space: nowrap !important;
+      }
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
       }
     `;
     elementClone.appendChild(styleElement);
     
-    elementClone.style.position = 'absolute';
+    // Add the clone to the document but hide it from view
+    elementClone.style.position = 'fixed';
     elementClone.style.left = '-9999px';
+    elementClone.style.top = '0';
     document.body.appendChild(elementClone);
     
+    // Use higher scale for better quality
     const canvas = await html2canvas(elementClone, {
-      scale: 3,
+      scale: 2,
       useCORS: true,
       logging: false,
       backgroundColor: "#ffffff",
       allowTaint: true,
-      windowWidth: 980,
-      windowHeight: 1400
+      onclone: (clonedDoc) => {
+        // Further style adjustments if needed in the cloned document
+        const clonedElement = clonedDoc.body.querySelector('[data-pdf-container]') as HTMLElement || elementClone;
+        if (clonedElement instanceof HTMLElement) {
+          clonedElement.style.transform = 'none';
+          clonedElement.style.width = '210mm';
+        }
+      }
     });
     
+    // Clean up by removing the clone
     document.body.removeChild(elementClone);
     
+    // Create the PDF document
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -126,18 +150,26 @@ export const downloadQuoteAsPdf = async (
       compress: true
     });
     
-    const imgWidth = 210;
+    // Convert the canvas to an image and add it to the PDF
+    const imgWidth = 210; // A4 width in mm
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
     const imgData = canvas.toDataURL("image/png", 1.0);
     pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
     
+    // Save the PDF
     pdf.save(fileName);
     
     return true;
   } catch (error) {
     console.error("Error generating quote PDF:", error);
-    return downloadDocumentAsPdf(quoteElement, fileName);
+    // Try the simpler download method as a fallback
+    try {
+      return downloadDocumentAsPdf(quoteElement, fileName);
+    } catch (fallbackError) {
+      console.error("Fallback PDF generation also failed:", fallbackError);
+      return false;
+    }
   }
 };
 

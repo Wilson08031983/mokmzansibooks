@@ -116,7 +116,8 @@ interface Item {
   quantity: number;
   unitPrice: number;
   discount: number;
-  amount: number;
+  total: number;
+  amount?: number; // Keeping for backward compatibility
   websiteUrl?: string;
 }
 
@@ -130,7 +131,7 @@ const NewQuote = () => {
     quantity: 10,
     unitPrice: 1500,
     discount: 0,
-    amount: 15000
+    total: 15000
   }, {
     id: "2",
     itemNo: "ITEM-002",
@@ -139,7 +140,7 @@ const NewQuote = () => {
     quantity: 5,
     unitPrice: 2000,
     discount: 0,
-    amount: 10000
+    total: 10000
   }]);
   const navigate = useNavigate();
   const location = useLocation();
@@ -188,7 +189,7 @@ const NewQuote = () => {
       quantity: 1,
       unitPrice: 0,
       discount: 0,
-      amount: 0
+      total: 0
     };
     setItems([...items, newItem]);
   };
@@ -271,7 +272,7 @@ const NewQuote = () => {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         discount: item.discount,
-        amount: item.amount,
+        total: item.total,
         websiteUrl: item.websiteUrl
       })),
       subtotal: calculateSubtotal(),
@@ -288,8 +289,37 @@ const NewQuote = () => {
   const handleDownloadQuote = async () => {
     if (!quoteTemplateRef.current) return;
     try {
-      const templateElement = quoteTemplateRef.current.querySelector('.tabscontent-active > div') || quoteTemplateRef.current;
-      const success = await downloadQuoteAsPdf(templateElement as HTMLElement, `Quote-${form.watch("quoteNumber")}.pdf`);
+      // Show a loading toast
+      toast.loading("Generating PDF, please wait...");
+      
+      // Select the specific template based on the currently selected template
+      let templateSelector = `[data-state="active"] > *`;
+      let templateElement = quoteTemplateRef.current.querySelector(templateSelector);
+      
+      // Fallback selectors if the first one doesn't work
+      if (!templateElement) {
+        templateSelector = `.tabscontent-active`;
+        templateElement = quoteTemplateRef.current.querySelector(templateSelector);
+      }
+      
+      // Final fallback
+      if (!templateElement) {
+        templateElement = quoteTemplateRef.current;
+      }
+      
+      // Make sure we have a valid element
+      if (!templateElement) {
+        throw new Error("Could not find the quote template element");
+      }
+      
+      // Convert the template to PDF
+      const success = await downloadQuoteAsPdf(
+        templateElement as HTMLElement, 
+        `Quote-${form.watch("quoteNumber")}.pdf`
+      );
+      
+      // Dismiss all toasts and show appropriate message
+      toast.dismiss();
       if (success) {
         toast.success("Quote downloaded successfully");
       } else {
@@ -297,7 +327,8 @@ const NewQuote = () => {
       }
     } catch (error) {
       console.error("Error downloading quote:", error);
-      toast.error("Failed to download quote");
+      toast.dismiss();
+      toast.error("Failed to download quote: " + (error instanceof Error ? error.message : "Unknown error"));
     }
   };
 

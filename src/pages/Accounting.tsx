@@ -1,191 +1,112 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { CheckCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { BankStatementUploader } from "@/components/accounting/BankStatementUploader";
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate, Outlet, NavLink } from 'react-router-dom';
+import { Calculator, BarChart3, FileText, CreditCard, ArrowLeftRight, FileImage } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface AccountingModule {
-  id: string;
-  title: string;
-  description: string;
-  path: string;
-  keywords?: string[];
-}
-
-const Accounting = () => {
-  const { currentUser } = useAuth();
-  const { toast } = useToast();
+const Accounting: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
-  const modules: AccountingModule[] = [
+  // Define accounting modules
+  const accountingModules = [
     {
-      id: "chart-of-accounts",
-      title: "Chart of Accounts",
-      description: "Organize your accounts in a structured hierarchy",
-      path: "/accounting/chart-of-accounts",
-      keywords: ["chart", "accounts", "organize", "hierarchy", "structure"]
+      id: 'chart-of-accounts',
+      title: 'Chart of Accounts',
+      description: 'Manage your financial accounts structure',
+      icon: <Calculator className="h-5 w-5" />,
+      path: 'chart-of-accounts'
     },
     {
-      id: "journal-entries",
-      title: "Journal Entries",
-      description: "Record and manage your accounting transactions",
-      path: "/accounting/journal-entries",
-      keywords: ["journal", "entries", "record", "transactions", "accounting"]
+      id: 'transactions',
+      title: 'Transactions',
+      description: 'Record and manage financial transactions',
+      icon: <ArrowLeftRight className="h-5 w-5" />,
+      path: 'transactions'
     },
     {
-      id: "bank-reconciliation",
-      title: "Bank Reconciliation",
-      description: "Match your accounting records with bank statements",
-      path: "/accounting/bank-reconciliation",
-      keywords: ["bank", "reconciliation", "match", "statements", "records"]
+      id: 'reports',
+      title: 'Reports',
+      description: 'Generate financial reports and insights',
+      icon: <BarChart3 className="h-5 w-5" />,
+      path: 'reports'
     },
     {
-      id: "reports",
-      title: "Financial Reports",
-      description: "Generate income statements, balance sheets, and cash flow reports",
-      path: "/accounting/reports",
-      keywords: ["financial", "reports", "income", "balance", "cash flow"]
+      id: 'bank-reconciliation',
+      title: 'Bank Reconciliation',
+      description: 'Reconcile bank statements with your records',
+      icon: <CreditCard className="h-5 w-5" />,
+      path: 'bank-reconciliation'
     },
     {
-      id: "receivables",
-      title: "Accounts Receivable",
-      description: "Track money owed to your business by customers",
-      path: "/accounting/receivables",
-      keywords: ["accounts", "receivable", "track", "money", "customers", "owed"]
+      id: 'journal-entries',
+      title: 'Journal Entries',
+      description: 'Create and manage journal entries',
+      icon: <FileText className="h-5 w-5" />,
+      path: 'journal-entries'
     },
     {
-      id: "payables",
-      title: "Accounts Payable",
-      description: "Manage bills and payments to your suppliers",
-      path: "/accounting/payables",
-      keywords: ["accounts", "payable", "bills", "payments", "suppliers"]
-    },
-    {
-      id: "transactions",
-      title: "Transactions",
-      description: "View and categorize all your financial transactions",
-      path: "/accounting/transactions",
-      keywords: ["transactions", "view", "categorize", "financial"]
+      id: 'documents',
+      title: 'Document Manager',
+      description: 'Upload and link receipts, invoices, and bank statements',
+      icon: <FileImage className="h-5 w-5" />,
+      path: 'documents'
     }
   ];
 
-  const toggleSelection = (moduleId: string) => {
-    setSelectedModules(prev => {
-      if (prev.includes(moduleId)) {
-        return prev.filter(id => id !== moduleId);
-      }
-      return [...prev, moduleId];
-    });
-  };
-
-  const isSelected = (moduleId: string) => selectedModules.includes(moduleId);
-
-  const clearSelection = () => {
-    setSelectedModules([]);
-  };
-
-  const findSimilarModules = () => {
-    if (selectedModules.length === 0) {
-      toast({
-        title: "No modules selected",
-        description: "Please select at least one module to find similar ones",
-      });
-      return;
-    }
-
-    const selectedKeywords = selectedModules.flatMap(id => {
-      const module = modules.find(m => m.id === id);
-      if (!module) return [];
-      return module.keywords || [];
-    });
-
-    const similarModuleIds = modules
-      .filter(module => !selectedModules.includes(module.id))
-      .map(module => {
-        const moduleKeywords = module.keywords || [];
-        const matchCount = moduleKeywords.filter(keyword => 
-          selectedKeywords.includes(keyword)
-        ).length;
-        return { id: module.id, matchCount };
-      })
-      .filter(item => item.matchCount > 0)
-      .sort((a, b) => b.matchCount - a.matchCount)
-      .slice(0, 3)
-      .map(item => item.id);
-
-    if (similarModuleIds.length === 0) {
-      toast({
-        title: "No similar modules found",
-        description: "We couldn't find any modules similar to your selection",
-      });
-      return;
-    }
-
-    setSelectedModules([...selectedModules, ...similarModuleIds]);
-    toast({
-      title: "Similar modules added",
-      description: `Added ${similarModuleIds.length} similar modules to your selection`,
-    });
-  };
-
-  const openModule = (path: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(path);
-  };
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Accounting</h1>
-        <p className="text-gray-500">Manage your company's financial transactions</p>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">My Accounting</h1>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {modules.map((module) => (
-              <div key={module.id} className="relative">
-                <div
-                  className={`absolute top-3 right-3 z-10 ${isSelected(module.id) ? 'block' : 'hidden'}`}
-                >
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </div>
-                <Card 
-                  className={`h-full hover:shadow-md transition-shadow ${isSelected(module.id) ? 'bg-green-50 ring-2 ring-green-500 ring-offset-2' : ''}`}
-                  onClick={() => toggleSelection(module.id)}
-                >
-                  <CardHeader>
-                    <CardTitle>{module.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-500">
-                      {module.description}
-                    </p>
-                    <div className="mt-4 flex justify-between items-center">
-                      <Button 
-                        variant="link" 
-                        className="p-0 h-auto text-primary hover:underline text-sm"
-                        onClick={(e) => openModule(module.path, e)} 
-                      >
-                        Open {module.title}
-                      </Button>
-                      {isSelected(module.id) && (
-                        <Badge variant="secondary">Selected</Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+      
+      <div className="flex flex-col space-y-6">
+        {/* Navigation Tabs */}
+        <div className="flex overflow-x-auto pb-1">
+          <div className="flex space-x-2">
+            {accountingModules.map((module) => (
+              <NavLink 
+                key={module.id}
+                to={module.path}
+                end
+                className={({ isActive }) => cn(
+                  "flex items-center space-x-1 px-2 py-1 text-sm rounded-md transition-colors",
+                  isActive 
+                    ? "bg-primary text-primary-foreground" 
+                    : "hover:bg-muted"
+                )}
+              >
+                {module.icon}
+                <span>{module.title}</span>
+              </NavLink>
             ))}
           </div>
         </div>
-        <div>
-          <BankStatementUploader />
+
+        {/* Module Grid for Quick Access */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {accountingModules.map((module) => (
+            <Card 
+              key={module.id} 
+              className="hover:shadow-md transition-all cursor-pointer"
+              onClick={() => navigate(module.path)}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-center space-x-2">
+                  {module.icon}
+                  <CardTitle className="text-lg">{module.title}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{module.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Outlet for nested routes */}
+        <div className="mt-6">
+          <Outlet />
         </div>
       </div>
     </div>

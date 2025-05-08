@@ -1,5 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { 
   Card, 
   CardContent, 
@@ -31,7 +42,8 @@ import {
   DollarSign, 
   Download, 
   ExternalLink,
-  FileText
+  FileText,
+  ArrowLeft
 } from "lucide-react";
 import { format } from "date-fns";
 import { formatCurrency } from "@/utils/formatters";
@@ -120,18 +132,66 @@ const headcountData = [
 const Payroll = () => {
   const navigate = useNavigate();
   const [year, setYear] = useState("2025");
+  const { toast } = useToast();
+  const [selectedPayroll, setSelectedPayroll] = useState<typeof payrollHistory[0] | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  
+  // Function to handle viewing details of a scheduled payroll
+  const handleViewScheduledPayroll = (payrollId: string) => {
+    // Navigate to the run-payroll page with the payroll ID
+    navigate(`/dashboard/hr/run-payroll?id=${payrollId}`);
+  };
+  
+  // Function to handle downloading a payroll report
+  const handleDownloadReport = (payroll: typeof payrollHistory[0]) => {
+    // Create a new PDF document
+    const doc = new jsPDF();
+    
+    // Add content to the PDF
+    doc.setFontSize(22);
+    doc.text(`Payroll Report: ${payroll.period}`, 20, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`Payroll ID: ${payroll.id}`, 20, 40);
+    doc.text(`Date: ${new Date(payroll.date).toLocaleDateString()}`, 20, 50);
+    doc.text(`Total Amount: ${formatCurrency(payroll.totalAmount)}`, 20, 60);
+    doc.text(`Number of Employees: ${payroll.employeeCount}`, 20, 70);
+    doc.text(`Status: ${payroll.status}`, 20, 80);
+    
+    // Save the PDF
+    doc.save(`payroll-report-${payroll.id}.pdf`);
+    
+    // Show success toast
+    toast({
+      title: "Report Downloaded",
+      description: `Payroll report for ${payroll.period} has been downloaded.`,
+    });
+  };
+  
+  // Function to handle viewing details of a completed payroll
+  const handleViewCompletedPayroll = (payroll: typeof payrollHistory[0]) => {
+    // Set the selected payroll and open the dialog
+    setSelectedPayroll(payroll);
+    setIsDetailsDialogOpen(true);
+    // No longer navigating to a non-existent route
+  };
   
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Payroll Management</h1>
+          <div className="flex items-center gap-2 mb-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => navigate("/dashboard/hr")} 
+              className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-3xl font-bold tracking-tight">Payroll Management</h1>
+          </div>
           <p className="text-muted-foreground">Manage your company's payroll processing</p>
         </div>
-        <Button onClick={() => navigate("/hr/payroll/run")}>
-          <DollarSign className="mr-2 h-4 w-4" />
-          Run Payroll
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -238,7 +298,7 @@ const Payroll = () => {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" onClick={() => navigate("/hr/payroll/run")}>
+            <Button className="w-full" onClick={() => navigate("/dashboard/hr/run-payroll")}>
               <DollarSign className="mr-2 h-4 w-4" />
               Process Now
             </Button>
@@ -303,16 +363,31 @@ const Payroll = () => {
                       <div className="flex justify-end space-x-2">
                         {payroll.status === "Completed" && (
                           <>
-                            <Button variant="ghost" size="icon" title="Download Report">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              title="Download Report"
+                              onClick={() => handleDownloadReport(payroll)}
+                            >
                               <Download className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" title="View Details">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              title="View Details"
+                              onClick={() => handleViewCompletedPayroll(payroll)}
+                            >
                               <ExternalLink className="h-4 w-4" />
                             </Button>
                           </>
                         )}
                         {payroll.status === "Scheduled" && (
-                          <Button variant="ghost" size="icon" title="View Details">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="View Details"
+                            onClick={() => handleViewScheduledPayroll(payroll.id)}
+                          >
                             <FileText className="h-4 w-4" />
                           </Button>
                         )}
@@ -325,6 +400,122 @@ const Payroll = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Payroll Details Dialog */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              Payroll Details: {selectedPayroll?.period}
+            </DialogTitle>
+            <DialogDescription>
+              Complete information about this payroll run
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedPayroll && (
+            <div className="space-y-6 py-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Payroll ID</h3>
+                  <p className="text-base font-medium">{selectedPayroll.id}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
+                  <Badge
+                    variant="outline"
+                    className={selectedPayroll.status === "Completed" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"}
+                  >
+                    {selectedPayroll.status}
+                  </Badge>
+                </div>
+              </div>
+              
+              {/* Date and Period */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Period</h3>
+                  <p className="text-base font-medium">{selectedPayroll.period}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Processing Date</h3>
+                  <p className="text-base font-medium">{format(new Date(selectedPayroll.date), "MMMM d, yyyy")}</p>
+                </div>
+              </div>
+              
+              {/* Financial Details */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Financial Summary</h3>
+                <div className="rounded-md border p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Amount</p>
+                      <p className="text-lg font-bold">{formatCurrency(selectedPayroll.totalAmount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Employees Paid</p>
+                      <p className="text-lg font-bold">{selectedPayroll.employeeCount}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Additional Details - Mock data for demonstration */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Breakdown</h3>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Category</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>Base Salary</TableCell>
+                        <TableCell className="text-right">{formatCurrency(selectedPayroll.totalAmount * 0.75)}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Bonuses</TableCell>
+                        <TableCell className="text-right">{formatCurrency(selectedPayroll.totalAmount * 0.15)}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Overtime</TableCell>
+                        <TableCell className="text-right">{formatCurrency(selectedPayroll.totalAmount * 0.05)}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Other</TableCell>
+                        <TableCell className="text-right">{formatCurrency(selectedPayroll.totalAmount * 0.05)}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="flex justify-between items-center">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDetailsDialogOpen(false)}
+            >
+              Close
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedPayroll) {
+                  handleDownloadReport(selectedPayroll);
+                }
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download Report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

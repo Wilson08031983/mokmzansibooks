@@ -13,6 +13,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 interface JournalEntry {
   id: string;
@@ -49,7 +51,7 @@ const journalEntrySchema = z.object({
   creditAccount: z.string().min(1, "Credit account is required"),
   amount: z.coerce.number().positive("Amount must be positive"),
 }).refine(data => data.debitAccount !== data.creditAccount, {
-  message: "Debit and credit accounts cannot be the same",
+  message: "Debit and credit accounts must be different",
   path: ["creditAccount"],
 });
 
@@ -57,41 +59,42 @@ type JournalEntryFormValues = z.infer<typeof journalEntrySchema>;
 
 const JournalEntries = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   // Sample journal entries data
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([
     {
-      id: "1",
-      date: "2025-04-01",
-      description: "Office Rent Payment",
-      debitAccount: "6200 - Rent Expense",
-      creditAccount: "1100 - Cash",
-      amount: 2500,
+      id: '1',
+      date: '2025-04-01',
+      description: 'Sales Revenue Recognition',
+      debitAccount: '1100 - Cash',
+      creditAccount: '4100 - Sales Revenue',
+      amount: 5000
     },
     {
-      id: "2",
-      date: "2025-04-02",
-      description: "Client Invoice Payment",
-      debitAccount: "1100 - Cash",
-      creditAccount: "4100 - Sales Revenue",
-      amount: 5000,
+      id: '2',
+      date: '2025-04-02',
+      description: 'Office Supplies Purchase',
+      debitAccount: '5300 - Utilities Expense',
+      creditAccount: '1100 - Cash',
+      amount: 250
     },
     {
-      id: "3",
-      date: "2025-04-03",
-      description: "Equipment Purchase",
-      debitAccount: "1600 - Equipment",
-      creditAccount: "2100 - Accounts Payable",
-      amount: 12000,
+      id: '3',
+      date: '2025-04-03',
+      description: 'Client Invoice Payment',
+      debitAccount: '1100 - Cash',
+      creditAccount: '1120 - Accounts Receivable',
+      amount: 3500
     },
     {
-      id: "4",
-      date: "2025-04-05",
-      description: "Utility Bill Payment",
-      debitAccount: "6300 - Utilities Expense",
-      creditAccount: "1100 - Cash",
-      amount: 350,
+      id: '4',
+      date: '2025-04-04',
+      description: 'Monthly Rent Payment',
+      debitAccount: '5200 - Rent Expense',
+      creditAccount: '1100 - Cash',
+      amount: 2500
     },
   ]);
 
@@ -99,9 +102,9 @@ const JournalEntries = () => {
     resolver: zodResolver(journalEntrySchema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
-      description: "",
-      debitAccount: "",
-      creditAccount: "",
+      description: '',
+      debitAccount: '',
+      creditAccount: '',
       amount: 0,
     },
   });
@@ -109,48 +112,40 @@ const JournalEntries = () => {
   const addNewEntry = (data: JournalEntryFormValues) => {
     const newEntry: JournalEntry = {
       id: (journalEntries.length + 1).toString(),
-      date: data.date,
-      description: data.description,
-      debitAccount: data.debitAccount,
-      creditAccount: data.creditAccount,
-      amount: data.amount,
+      ...data
     };
 
-    setJournalEntries(prev => [newEntry, ...prev]);
-    
+    setJournalEntries([newEntry, ...journalEntries]);
+    setIsDialogOpen(false);
+    form.reset();
+
     toast({
       title: "Journal Entry Added",
-      description: `New entry for ${formatCurrency(data.amount, "ZAR")} has been recorded.`,
-    });
-    
-    setIsDialogOpen(false);
-    form.reset({
-      date: new Date().toISOString().split('T')[0],
-      description: "",
-      debitAccount: "",
-      creditAccount: "",
-      amount: 0,
+      description: "Your journal entry has been recorded successfully.",
     });
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Journal Entries</h1>
-          <p className="text-gray-500">Record and manage your accounting transactions</p>
-        </div>
-        <Button 
-          onClick={() => setIsDialogOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-white"
-        >
-          Add Journal Entry
-        </Button>
-      </div>
-
+    <div className="container mx-auto py-6 space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Entries</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => navigate('/dashboard/accounting')}
+              title="Back to Accounting"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle className="text-2xl font-bold">Journal Entries</CardTitle>
+          </div>
+          <Button 
+            onClick={() => setIsDialogOpen(true)}
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            Add Journal Entry
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="border rounded-md">
@@ -168,7 +163,9 @@ const JournalEntries = () => {
                   <div className="col-span-2">{entry.description}</div>
                   <div>{entry.debitAccount}</div>
                   <div>{entry.creditAccount}</div>
-                  <div className="text-right">{formatCurrency(entry.amount, "ZAR")}</div>
+                  <div className="text-right font-medium">
+                    {formatCurrency(entry.amount, "ZAR")}
+                  </div>
                 </div>
               ))}
             </div>

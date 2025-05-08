@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,61 +52,52 @@ import {
   changeStatusAction
 } from "@/utils/actionUtils";
 
-const mockQuotes = [
-  {
-    id: "QT-2023-001",
-    client: "ABC Construction Ltd",
-    date: "2023-03-28",
-    expiryDate: "2023-04-27",
-    amount: 4500,
-    status: "pending",
-  },
-  {
-    id: "QT-2023-002",
-    client: "Cape Town Retailers",
-    date: "2023-03-25",
-    expiryDate: "2023-04-24",
-    amount: 2750,
-    status: "accepted",
-  },
-  {
-    id: "QT-2023-003",
-    client: "Durban Services Co",
-    date: "2023-03-20",
-    expiryDate: "2023-04-19",
-    amount: 8500,
-    status: "accepted",
-  },
-  {
-    id: "QT-2023-004",
-    client: "Johannesburg Tech Solutions",
-    date: "2023-03-18",
-    expiryDate: "2023-04-17",
-    amount: 3600,
-    status: "expired",
-  },
-  {
-    id: "QT-2023-005",
-    client: "Eastern Cape Supplies",
-    date: "2023-03-15",
-    expiryDate: "2023-04-14",
-    amount: 5100,
-    status: "expired",
-  },
-  {
-    id: "QT-2023-006",
-    client: "Free State Construction",
-    date: "2023-03-10",
-    expiryDate: "2023-04-09",
-    amount: 4250,
-    status: "declined",
-  },
-];
+// Load quotes from localStorage
+const loadQuotesFromStorage = () => {
+  try {
+    const savedQuotes = localStorage.getItem('savedQuotes');
+    if (savedQuotes) {
+      return JSON.parse(savedQuotes);
+    }
+  } catch (error) {
+    console.error('Error loading quotes from localStorage:', error);
+  }
+  return [];
+};
+
+// Format the quotes to match the expected structure for this page
+const formatLoadedQuotes = (loadedQuotes) => {
+  return loadedQuotes.map(quote => ({
+    id: quote.quoteNumber || quote.id,
+    client: quote.client?.name || 'Unknown Client',
+    date: quote.issueDate || new Date().toISOString().split('T')[0],
+    expiryDate: quote.expiryDate || new Date().toISOString().split('T')[0],
+    amount: quote.total || 0,
+    status: quote.status || 'draft'
+  }));
+};
 
 const Quotes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [quotes, setQuotes] = useState(mockQuotes);
+  const [quotes, setQuotes] = useState(() => formatLoadedQuotes(loadQuotesFromStorage()));
+  
+  // Refresh quotes periodically from localStorage
+  useEffect(() => {
+    const refreshQuotes = () => {
+      const freshQuotes = loadQuotesFromStorage();
+      setQuotes(formatLoadedQuotes(freshQuotes));
+    };
+    
+    // Initial load
+    refreshQuotes();
+    
+    // Set up interval for periodic refresh
+    const intervalId = setInterval(refreshQuotes, 2000);
+    
+    // Clean up on unmount
+    return () => clearInterval(intervalId);
+  }, []);
   const { toast } = useToast();
 
   const filteredQuotes = quotes.filter((quote) => {

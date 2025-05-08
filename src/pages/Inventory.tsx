@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -37,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import { StatusBadge } from "@/utils/statusUtils";
 import { 
   Package, 
   Plus, 
@@ -53,7 +53,8 @@ import {
   Image as ImageIcon,
   Upload,
   Building,
-  UserRound
+  UserRound,
+  Minus
 } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
 import InventoryStats from "@/components/inventory/InventoryStats";
@@ -191,8 +192,21 @@ const Inventory = () => {
   const [showScannerDialog, setShowScannerDialog] = useState(false);
   const [showImageUploadDialog, setShowImageUploadDialog] = useState(false);
   const [showSupplierDialog, setShowSupplierDialog] = useState(false);
+  const [showEditItemDialog, setShowEditItemDialog] = useState(false);
+  const [showAdjustStockDialog, setShowAdjustStockDialog] = useState(false);
+  const [showItemHistoryDialog, setShowItemHistoryDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("items");
-  const [activeItem, setActiveItem] = useState<InventoryItem | null>(null);
+  
+  // Initialize inventory items state with mock data
+  const [inventoryItems, setInventoryItems] = useState(mockInventoryData);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [itemHistory, setItemHistory] = useState<Array<{
+    date: string;
+    action: string;
+    quantity: number;
+    user: string;
+    notes?: string;
+  }>>([]);
   const [newItemForm, setNewItemForm] = useState({
     name: "",
     sku: "",
@@ -209,14 +223,16 @@ const Inventory = () => {
       phone: ""
     }
   });
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(mockInventoryData);
   
-  const filteredItems = inventoryItems.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.supplier?.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Properly memoize filtered items to prevent render loops
+  const filteredItems = useMemo(() => 
+    inventoryItems.filter(item => 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.supplier?.name && item.supplier.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.supplier?.contactPerson && item.supplier.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()))
+    ), [inventoryItems, searchTerm]
   );
 
   // Check for low stock items and create notifications on initial load
@@ -233,19 +249,90 @@ const Inventory = () => {
     }
   }, []);
 
+  // State for barcode processing dialog
+  const [showBarcodeProcessDialog, setShowBarcodeProcessDialog] = useState(false);
+  const [scannedBarcode, setScannedBarcode] = useState('');
+  const [isExistingProduct, setIsExistingProduct] = useState(false);
+  const [expiryDateNotApplicable, setExpiryDateNotApplicable] = useState(false);
+  const [quantityToAdd, setQuantityToAdd] = useState(1);
+  const [expiryDate, setExpiryDate] = useState('');
+  const [foundItem, setFoundItem] = useState<InventoryItem | null>(null);
+
   const handleBarcodeScanned = (barcode: string) => {
-    // In a real app, we would look up the barcode in a database
-    // For this demo, we'll just pre-fill the SKU field and open the add item dialog
-    setNewItemForm({
-      ...newItemForm,
-      sku: barcode
-    });
-    setShowAddItemDialog(true);
+    // Check if the barcode exists in our inventory
+    const existingItem = inventoryItems.find(item => item.sku === barcode);
+    setScannedBarcode(barcode);
     
-    toast({
-      title: "Barcode Scanned",
-      description: `Item with barcode ${barcode} ready to be added`,
-    });
+    if (existingItem) {
+      // Found existing product
+      setIsExistingProduct(true);
+      setFoundItem(existingItem);
+      setShowBarcodeProcessDialog(true);
+      
+      toast({
+        title: "Product Found",
+        description: `Found: ${existingItem.name}`,
+      });
+    } else {
+      // New product - pre-fill the SKU field and open the add item dialog
+      setIsExistingProduct(false);
+      setFoundItem(null);
+      setNewItemForm({
+        ...newItemForm,
+        sku: barcode
+      });
+      setShowBarcodeProcessDialog(true);
+      
+      toast({
+        title: "New Product",
+        description: `Barcode ${barcode} not found. Please add product details.`,
+      });
+    }
+  };
+  
+  const handleProcessBarcodeComplete = () => {
+    if (isExistingProduct && foundItem) {
+      // Update existing item quantity
+      const updatedItems = inventoryItems.map(item => {
+        if (item.id === foundItem.id) {
+          const newQuantity = item.quantity + quantityToAdd;
+          
+          // Check if stock is low after update
+          if (newQuantity <= item.reorderPoint) {
+            toast({
+              title: "Low Stock Warning",
+              description: `${item.name} is below reorder point (${newQuantity} remaining)`,
+              variant: "warning"
+            });
+          }
+          
+          // Add expiry date logic here if needed
+          return {
+            ...item,
+            quantity: newQuantity,
+            // Store expiry date if applicable
+            expiryDate: expiryDateNotApplicable ? undefined : expiryDate
+          };
+        }
+        return item;
+      });
+      
+      setInventoryItems(updatedItems);
+      toast({
+        title: "Inventory Updated",
+        description: `Added ${quantityToAdd} units of ${foundItem.name}`,
+        variant: "success"
+      });
+    } else {
+      // For new items, open the add dialog with pre-filled barcode
+      setShowAddItemDialog(true);
+    }
+    
+    // Reset the form
+    setShowBarcodeProcessDialog(false);
+    setQuantityToAdd(1);
+    setExpiryDate('');
+    setExpiryDateNotApplicable(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -325,16 +412,16 @@ const Inventory = () => {
     // For this demo, we'll create a local URL
     const imageUrl = URL.createObjectURL(file);
     
-    if (activeItem) {
+    if (selectedItem) {
       // Updating existing item
       const updatedItems = inventoryItems.map(item => 
-        item.id === activeItem.id ? { ...item, image: imageUrl } : item
+        item.id === selectedItem.id ? { ...item, image: imageUrl } : item
       );
       setInventoryItems(updatedItems);
       
       toast({
         title: "Image Updated",
-        description: `Image for ${activeItem.name} has been updated`,
+        description: `Image for ${selectedItem.name} has been updated`,
       });
     } else {
       // Adding to new item form
@@ -345,30 +432,30 @@ const Inventory = () => {
     }
     
     setShowImageUploadDialog(false);
-    setActiveItem(null);
+    setSelectedItem(null);
   };
 
   const openImageUploadDialog = (item?: InventoryItem) => {
     if (item) {
-      setActiveItem(item);
+      setSelectedItem(item);
     }
     setShowImageUploadDialog(true);
   };
 
   const openSupplierDialog = (item?: InventoryItem) => {
     if (item) {
-      setActiveItem(item);
+      setSelectedItem(item);
     } else {
-      setActiveItem(null);
+      setSelectedItem(null);
     }
     setShowSupplierDialog(true);
   };
 
   const handleUpdateSupplier = () => {
-    if (!activeItem) return;
+    if (!selectedItem) return;
     
     const updatedItems = inventoryItems.map(item => 
-      item.id === activeItem.id 
+      item.id === selectedItem.id 
         ? { 
             ...item, 
             supplier: {
@@ -385,26 +472,181 @@ const Inventory = () => {
     
     toast({
       title: "Supplier Updated",
-      description: `Supplier information for ${activeItem.name} has been updated`,
+      description: `Supplier information for ${selectedItem.name} has been updated`,
     });
     
     setShowSupplierDialog(false);
-    setActiveItem(null);
+    setSelectedItem(null);
   };
 
-  const editSupplier = (item: InventoryItem) => {
-    setActiveItem(item);
+  // Edit item function implementation
+
+  const editItem = (item: InventoryItem) => {
+    setSelectedItem(item);
     setNewItemForm({
-      ...newItemForm,
-      supplier: {
-        name: item.supplier?.name || "",
-        contactPerson: item.supplier?.contactPerson || "",
-        email: item.supplier?.email || "",
-        phone: item.supplier?.phone || ""
+      name: item.name,
+      sku: item.sku,
+      category: item.category,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      location: item.location,
+      reorderPoint: item.reorderPoint,
+      supplier: item.supplier ? {
+        name: item.supplier.name || '',
+        contactPerson: item.supplier.contactPerson || '',
+        email: item.supplier.email || '',
+        phone: item.supplier.phone || ''
+      } : {
+        name: '',
+        contactPerson: '',
+        email: '',
+        phone: ''
       }
     });
+    setShowEditItemDialog(true);
+  };
+
+  const adjustStock = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setShowAdjustStockDialog(true);
+  };
+
+  const viewHistory = (item: InventoryItem) => {
+    setSelectedItem(item);
+    
+    // In a real app, we would fetch the item's history from a database
+    // For this demo, we'll generate some mock history data
+    const mockHistory = [
+      {
+        date: '2025-05-01T10:30:00',
+        action: 'Stock Added',
+        quantity: 10,
+        user: 'Wilson Moabelo',
+        notes: 'Regular inventory replenishment'
+      },
+      {
+        date: '2025-04-25T14:15:00',
+        action: 'Stock Adjusted',
+        quantity: -2,
+        user: 'Thabo Mkhize',
+        notes: 'Damaged items removed'
+      },
+      {
+        date: '2025-04-20T09:45:00',
+        action: 'Stock Count',
+        quantity: 15,
+        user: 'Lerato Ndlovu',
+        notes: 'Monthly inventory audit'
+      },
+      {
+        date: '2025-04-15T16:20:00',
+        action: 'Stock Added',
+        quantity: 20,
+        user: 'Wilson Moabelo',
+        notes: 'New shipment received'
+      }
+    ];
+    
+    setItemHistory(mockHistory);
+    setShowItemHistoryDialog(true);
+  };
+
+  const handleSaveEditedItem = () => {
+    if (!selectedItem) return;
+    
+    const updatedItems = inventoryItems.map(item => {
+      if (item.id === selectedItem.id) {
+        return {
+          ...item,
+          name: newItemForm.name,
+          sku: newItemForm.sku,
+          category: newItemForm.category,
+          unitPrice: newItemForm.unitPrice,
+          location: newItemForm.location,
+          reorderPoint: newItemForm.reorderPoint,
+          supplier: newItemForm.supplier
+        };
+      }
+      return item;
+    });
+    
+    setInventoryItems(updatedItems);
+    setShowEditItemDialog(false);
+    
+    toast({
+      title: "Item Updated",
+      description: `${newItemForm.name} has been updated successfully.`,
+      variant: "default"
+    });
+  };
+
+  const [stockAdjustment, setStockAdjustment] = useState({
+    quantity: 0,
+    reason: '',
+    notes: ''
+  });
+
+  const handleStockAdjustment = () => {
+    if (!selectedItem) return;
+    
+    const updatedItems = inventoryItems.map(item => {
+      if (item.id === selectedItem.id) {
+        const newQuantity = item.quantity + stockAdjustment.quantity;
+        
+        // Check if stock is low after adjustment
+        if (newQuantity <= item.reorderPoint) {
+          toast({
+            title: "Low Stock Warning",
+            description: `${item.name} is below reorder point (${newQuantity} remaining)`,
+            variant: "warning"
+          });
+        }
+        
+        return {
+          ...item,
+          quantity: newQuantity
+        };
+      }
+      return item;
+    });
+    
+    setInventoryItems(updatedItems);
+    setShowAdjustStockDialog(false);
+    
+    // Reset adjustment form
+    setStockAdjustment({
+      quantity: 0,
+      reason: '',
+      notes: ''
+    });
+    
+    toast({
+      title: "Stock Adjusted",
+      description: `${selectedItem.name} stock has been adjusted by ${stockAdjustment.quantity}.`,
+      variant: "default"
+    });
+  };
+
+  const [supplierFormData, setSupplierFormData] = useState({
+    name: '',
+    contactPerson: '',
+    email: '',
+    phone: ''
+  } as SupplierInfo);
+
+  // Edit supplier handler
+  const editSupplier = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setSupplierFormData({
+      name: item.supplier?.name || '',
+      contactPerson: item.supplier?.contactPerson || '',
+      email: item.supplier?.email || '',
+      phone: item.supplier?.phone || ''
+    } as SupplierInfo);
     setShowSupplierDialog(true);
   };
+
+  // editItem function is already defined above
 
   return (
     <div className="space-y-6">
@@ -481,7 +723,7 @@ const Inventory = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
+              <div className="rounded-md border text-xs">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -491,8 +733,8 @@ const Inventory = () => {
                       <TableHead className="text-right">Quantity</TableHead>
                       <TableHead className="text-right">Unit Price</TableHead>
                       <TableHead>Location</TableHead>
-                      <TableHead>Supplier</TableHead>
-                      <TableHead className="text-right"></TableHead>
+                      <TableHead className="min-w-[200px]">Supplier</TableHead>
+                      <TableHead className="text-right w-[60px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -543,42 +785,44 @@ const Inventory = () => {
                             {formatCurrency(item.unitPrice, "ZAR")}
                           </TableCell>
                           <TableCell>{item.location}</TableCell>
-                          <TableCell>
-                            {item.supplier ? (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="px-2 h-7 text-xs flex items-center gap-1"
-                                onClick={() => editSupplier(item)}
-                              >
-                                <Building className="h-3 w-3" />
-                                {item.supplier.name}
-                              </Button>
-                            ) : (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="px-2 h-7 text-xs"
-                                onClick={() => editSupplier(item)}
-                              >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Add Supplier
-                              </Button>
-                            )}
+                          <TableCell className="min-w-[200px]">
+                            <div className="flex items-center gap-1">
+                              {item.supplier ? (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="px-2 h-7 text-xs flex items-center gap-1 w-full justify-start"
+                                  onClick={() => editSupplier(item)}
+                                >
+                                  <Building className="h-3 w-3 flex-shrink-0 mr-1" />
+                                  <span className="whitespace-normal text-left">{item.supplier.name}</span>
+                                </Button>
+                              ) : (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="px-2 h-7 text-xs"
+                                  onClick={() => editSupplier(item)}
+                                >
+                                  <Plus className="h-3 w-3 mr-1 flex-shrink-0" />
+                                  Add Supplier
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right w-[60px]">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" className="ml-auto">
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => editItem(item)}>
                                   <Edit className="mr-2 h-4 w-4" />
                                   Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => adjustStock(item)}>
                                   <Plus className="mr-2 h-4 w-4" />
                                   Adjust Stock
                                 </DropdownMenuItem>
@@ -590,7 +834,7 @@ const Inventory = () => {
                                   <Building className="mr-2 h-4 w-4" />
                                   Edit Supplier
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => viewHistory(item)}>
                                   <FileText className="mr-2 h-4 w-4" />
                                   View History
                                 </DropdownMenuItem>
@@ -660,6 +904,116 @@ const Inventory = () => {
         onOpenChange={setShowScannerDialog} 
         onScan={handleBarcodeScanned} 
       />
+
+      {/* Barcode Processing Dialog */}
+      <Dialog open={showBarcodeProcessDialog} onOpenChange={setShowBarcodeProcessDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {isExistingProduct ? 'Update Inventory' : 'Add New Product'}
+            </DialogTitle>
+            <DialogDescription>
+              {isExistingProduct 
+                ? `Update inventory for: ${foundItem?.name}` 
+                : `Add details for new product with barcode: ${scannedBarcode}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isExistingProduct && foundItem ? (
+            <div className="grid gap-4 py-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
+                  {foundItem.image ? (
+                    <img 
+                      src={foundItem.image} 
+                      alt={foundItem.name} 
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <Package className="h-8 w-8 text-gray-400" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-medium">{foundItem.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    SKU: {foundItem.sku} | Current Stock: {foundItem.quantity}
+                  </p>
+                  {foundItem.quantity <= foundItem.reorderPoint && (
+                    <Badge variant="destructive" className="mt-1">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Low Stock
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="quantity">Quantity to Add</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    value={quantityToAdd}
+                    onChange={(e) => setQuantityToAdd(parseInt(e.target.value) || 1)}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <div className="flex justify-between">
+                    <Label htmlFor="expiry-date">Expiry Date</Label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="not-applicable"
+                        checked={expiryDateNotApplicable}
+                        onChange={(e) => setExpiryDateNotApplicable(e.target.checked)}
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <Label htmlFor="not-applicable" className="text-xs cursor-pointer">
+                        Not Applicable
+                      </Label>
+                    </div>
+                  </div>
+                  <Input
+                    id="expiry-date"
+                    type="date"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                    disabled={expiryDateNotApplicable}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-4">
+              <p className="text-center mb-4">
+                Product with barcode <span className="font-medium">{scannedBarcode}</span> not found.
+              </p>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  setShowBarcodeProcessDialog(false);
+                  setShowAddItemDialog(true);
+                }}
+              >
+                Add New Product Details
+              </Button>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBarcodeProcessDialog(false)}>
+              Cancel
+            </Button>
+            {isExistingProduct && (
+              <Button onClick={handleProcessBarcodeComplete}>
+                Update Inventory
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Inventory Item Dialog */}
       <Dialog open={showAddItemDialog} onOpenChange={setShowAddItemDialog}>
@@ -863,12 +1217,14 @@ const Inventory = () => {
       <Dialog open={showImageUploadDialog} onOpenChange={setShowImageUploadDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Upload Product Image</DialogTitle>
+            <DialogTitle>
+              {selectedItem ? `Update Image: ${selectedItem.name}` : 'Add Product Image'}
+            </DialogTitle>
             <DialogDescription>
-              Select an image file to upload for this product.
+              Upload a new image for this product
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="grid gap-4 py-4">
             <div className="flex flex-col items-center justify-center gap-4">
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center">
                 <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
@@ -910,7 +1266,7 @@ const Inventory = () => {
         <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
             <DialogTitle>
-              {activeItem ? `Edit Supplier for ${activeItem.name}` : 'Add Supplier Information'}
+              {selectedItem ? `Edit Supplier for ${selectedItem.name}` : 'Add Supplier Information'}
             </DialogTitle>
             <DialogDescription>
               Enter the supplier details for this inventory item.
@@ -968,6 +1324,246 @@ const Inventory = () => {
               Cancel
             </Button>
             <Button onClick={handleUpdateSupplier}>Save Supplier</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Item Dialog */}
+      <Dialog open={showEditItemDialog} onOpenChange={setShowEditItemDialog}>
+        <DialogContent className="sm:max-w-[625px]">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedItem ? `Edit Item: ${selectedItem.name}` : 'Edit Item'}
+            </DialogTitle>
+            <DialogDescription>
+              Update the details of this inventory item
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="text-right">
+                Item Name
+              </Label>
+              <Input 
+                id="edit-name" 
+                name="name"
+                className="col-span-3" 
+                value={newItemForm.name}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-sku" className="text-right">
+                SKU / Barcode
+              </Label>
+              <Input 
+                id="edit-sku" 
+                name="sku"
+                className="col-span-3" 
+                value={newItemForm.sku}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-category" className="text-right">
+                Category
+              </Label>
+              <Input 
+                id="edit-category" 
+                name="category"
+                className="col-span-3" 
+                value={newItemForm.category}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-unitPrice" className="text-right">
+                Unit Price
+              </Label>
+              <Input 
+                id="edit-unitPrice" 
+                name="unitPrice"
+                type="number"
+                className="col-span-3" 
+                value={newItemForm.unitPrice}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-location" className="text-right">
+                Location
+              </Label>
+              <Input 
+                id="edit-location" 
+                name="location"
+                className="col-span-3" 
+                value={newItemForm.location}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-reorderPoint" className="text-right">
+                Reorder Point
+              </Label>
+              <Input 
+                id="edit-reorderPoint" 
+                name="reorderPoint"
+                type="number"
+                className="col-span-3" 
+                value={newItemForm.reorderPoint}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditItemDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEditedItem}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Adjust Stock Dialog */}
+      <Dialog open={showAdjustStockDialog} onOpenChange={setShowAdjustStockDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedItem ? `Adjust Stock: ${selectedItem.name}` : 'Adjust Stock'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedItem && `Current stock: ${selectedItem.quantity} units`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="adjustment-quantity">Quantity Adjustment</Label>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setStockAdjustment(prev => ({ ...prev, quantity: prev.quantity - 1 }))}
+                  disabled={stockAdjustment.quantity <= -selectedItem?.quantity!}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <Input 
+                  id="adjustment-quantity" 
+                  type="number"
+                  className="text-center" 
+                  value={stockAdjustment.quantity}
+                  onChange={(e) => setStockAdjustment(prev => ({ 
+                    ...prev, 
+                    quantity: parseInt(e.target.value) || 0 
+                  }))}
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setStockAdjustment(prev => ({ ...prev, quantity: prev.quantity + 1 }))}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {stockAdjustment.quantity > 0 
+                  ? `Adding ${stockAdjustment.quantity} units` 
+                  : stockAdjustment.quantity < 0 
+                    ? `Removing ${Math.abs(stockAdjustment.quantity)} units` 
+                    : 'No change'}
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="adjustment-reason">Reason</Label>
+              <select 
+                id="adjustment-reason"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={stockAdjustment.reason}
+                onChange={(e) => setStockAdjustment(prev => ({ ...prev, reason: e.target.value }))}
+              >
+                <option value="">Select a reason...</option>
+                <option value="New Stock">New Stock</option>
+                <option value="Damaged">Damaged</option>
+                <option value="Expired">Expired</option>
+                <option value="Stock Count">Stock Count</option>
+                <option value="Return">Return</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="adjustment-notes">Notes (Optional)</Label>
+              <textarea
+                id="adjustment-notes"
+                className="min-h-[80px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={stockAdjustment.notes}
+                onChange={(e) => setStockAdjustment(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Additional details about this adjustment..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAdjustStockDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleStockAdjustment}
+              disabled={stockAdjustment.quantity === 0 || !stockAdjustment.reason}
+            >
+              Confirm Adjustment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Item History Dialog */}
+      <Dialog open={showItemHistoryDialog} onOpenChange={setShowItemHistoryDialog}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedItem ? `History: ${selectedItem.name}` : 'Item History'}
+            </DialogTitle>
+            <DialogDescription>
+              View the transaction history for this item
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Quantity</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Notes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {itemHistory.map((record, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      {new Date(record.date).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={record.quantity >= 0 ? "default" : "destructive"}>
+                        {record.action}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className={record.quantity >= 0 ? "text-green-600" : "text-red-600"}>
+                      {record.quantity > 0 ? `+${record.quantity}` : record.quantity}
+                    </TableCell>
+                    <TableCell>{record.user}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{record.notes}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowItemHistoryDialog(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

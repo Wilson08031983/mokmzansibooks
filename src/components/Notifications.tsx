@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNotifications, Notification } from '@/contexts/NotificationsContext';
 import { Bell, Check, Calendar, FileText, Info, AlertTriangle, Clock, CreditCard, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,16 +19,63 @@ export const Notifications = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  
+  // Memoize expensive operations to prevent unnecessary recalculations
+  const categorizedNotifications = useMemo(() => {
+    return notifications.reduce((acc, notification) => {
+      const message = notification.message.toLowerCase();
+      
+      if (message.includes("overdue")) {
+        acc.overdue.push(notification);
+      } else if (message.includes("credit")) {
+        acc.credit.push(notification);
+      } else if (message.includes("client")) {
+        acc.clients.push(notification);
+      } else if (message.includes("deadline")) {
+        acc.deadlines.push(notification);
+      } else if (message.includes("document")) {
+        acc.documents.push(notification);
+      } else {
+        acc.other.push(notification);
+      }
+      
+      return acc;
+    }, { 
+      overdue: [] as Notification[], 
+      credit: [] as Notification[], 
+      clients: [] as Notification[], 
+      deadlines: [] as Notification[],
+      documents: [] as Notification[],
+      other: [] as Notification[] 
+    });
+  }, [notifications]);
+  
+  const overdueCount = useMemo(() => {
+    return categorizedNotifications.overdue.filter(n => !n.read).length;
+  }, [categorizedNotifications.overdue]);
 
-  const handleNotificationClick = (notification: Notification) => {
-    markAsRead(notification.id);
-    if (notification.link) {
-      navigate(notification.link);
-    }
-    setOpen(false);
-  };
+  // Stable event handlers
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    setOpen(newOpen);
+  }, []);
 
-  const getNotificationIcon = (type: Notification['type']) => {
+  const handleMarkAllAsRead = useCallback(() => {
+    markAllAsRead();
+  }, [markAllAsRead]);
+  
+  const handleNotificationClick = useCallback((notification: Notification) => {
+    // Use setTimeout to defer state updates until after the render is complete
+    setTimeout(() => {
+      markAsRead(notification.id);
+      if (notification.link) {
+        navigate(notification.link);
+      }
+      setOpen(false);
+    }, 0);
+  }, [markAsRead, navigate, setOpen]);
+  
+  // Notification icon helpers
+  const getNotificationIcon = useCallback((type: Notification['type']) => {
     switch (type) {
       case 'warning':
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
@@ -40,24 +87,25 @@ export const Notifications = () => {
       default:
         return <Info className="h-4 w-4 text-blue-500" />;
     }
-  };
+  }, []);
 
-  const getCategoryIcon = (message: string) => {
-    if (message.includes("credit") || message.includes("Credit"))
+  const getCategoryIcon = useCallback((message: string) => {
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes("credit"))
       return <CreditCard className="h-4 w-4 text-green-500" />;
-    if (message.includes("Overdue") || message.includes("overdue"))
+    if (lowerMessage.includes("overdue"))
       return <AlertTriangle className="h-4 w-4 text-red-500" />;
-    if (message.includes("client") || message.includes("Client"))
+    if (lowerMessage.includes("client"))
       return <Users className="h-4 w-4 text-blue-500" />;
-    if (message.includes("Deadline") || message.includes("calendar") || message.includes("due"))
+    if (lowerMessage.includes("deadline") || lowerMessage.includes("calendar") || lowerMessage.includes("due"))
       return <Calendar className="h-4 w-4 text-amber-500" />;
-    if (message.includes("document") || message.includes("Document"))
+    if (lowerMessage.includes("document"))
       return <FileText className="h-4 w-4 text-purple-500" />;
     
     return <Info className="h-4 w-4 text-blue-500" />;
-  };
+  }, []);
 
-  const getNotificationClass = (type: Notification['type'], read: boolean) => {
+  const getNotificationClass = useCallback((type: Notification['type'], read: boolean) => {
     let baseClass = "p-3 transition-colors rounded-md";
     
     if (!read) {
@@ -67,43 +115,47 @@ export const Notifications = () => {
     }
     
     return baseClass;
-  };
+  }, []);
 
-  const categorizedNotifications = notifications.reduce((acc, notification) => {
-    const isOverdue = notification.message.includes("overdue") || notification.message.includes("Overdue");
-    const isCredit = notification.message.includes("credit") || notification.message.includes("Credit");
-    const isClient = notification.message.includes("client") || notification.message.includes("Client");
-    const isDeadline = notification.message.includes("Deadline") || notification.message.includes("deadline");
-    const isDocument = notification.message.includes("document") || notification.message.includes("Document");
-    
-    if (isOverdue) {
-      acc.overdue.push(notification);
-    } else if (isCredit) {
-      acc.credit.push(notification);
-    } else if (isClient) {
-      acc.clients.push(notification);
-    } else if (isDeadline) {
-      acc.deadlines.push(notification);
-    } else if (isDocument) {
-      acc.documents.push(notification);
-    } else {
-      acc.other.push(notification);
-    }
-    
-    return acc;
-  }, { 
-    overdue: [] as Notification[], 
-    credit: [] as Notification[], 
-    clients: [] as Notification[], 
-    deadlines: [] as Notification[],
-    documents: [] as Notification[],
-    other: [] as Notification[] 
-  });
-
-  const overdueCount = categorizedNotifications.overdue.filter(n => !n.read).length;
+  // Render notification items
+  const renderNotificationItems = useCallback((notificationList: Notification[]) => {
+    return notificationList.map((notification) => (
+      <DropdownMenuItem
+        key={notification.id}
+        className={getNotificationClass(notification.type, notification.read)}
+        onSelect={(e) => {
+          e.preventDefault();
+          handleNotificationClick(notification);
+        }}
+      >
+        <div className="flex gap-3 w-full">
+          <div className="flex-shrink-0 mt-1">
+            {getCategoryIcon(notification.message)}
+          </div>
+          <div className="flex-1 space-y-1">
+            <div className="flex justify-between">
+              <p className={`text-sm font-medium ${!notification.read ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {notification.title}
+              </p>
+              {!notification.read && (
+                <span className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full"></span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {notification.message}
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+            </p>
+          </div>
+        </div>
+      </DropdownMenuItem>
+    ));
+  }, [getCategoryIcon, getNotificationClass, handleNotificationClick]);
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
@@ -125,7 +177,7 @@ export const Notifications = () => {
               variant="ghost" 
               size="sm" 
               className="h-8 text-xs"
-              onClick={() => markAllAsRead()}
+              onClick={handleMarkAllAsRead}
             >
               Mark all as read
             </Button>
@@ -141,79 +193,21 @@ export const Notifications = () => {
           ) : (
             <DropdownMenuGroup>
               {categorizedNotifications.overdue.length > 0 && (
-                <>
+                <div>
                   <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">
                     Overdue
                   </div>
-                  {categorizedNotifications.overdue.map((notification) => (
-                    <DropdownMenuItem
-                      key={notification.id}
-                      className={getNotificationClass(notification.type, notification.read)}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <div className="flex gap-3 w-full">
-                        <div className="flex-shrink-0 mt-1">
-                          {getCategoryIcon(notification.message)}
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex justify-between">
-                            <p className={`text-sm font-medium ${!notification.read ? 'text-foreground' : 'text-muted-foreground'}`}>
-                              {notification.title}
-                            </p>
-                            {!notification.read && (
-                              <span className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(notification.date), { addSuffix: true })}
-                          </p>
-                        </div>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </>
+                  {renderNotificationItems(categorizedNotifications.overdue)}
+                </div>
               )}
 
               {categorizedNotifications.credit.length > 0 && (
-                <>
+                <div>
                   <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">
-                    Credits
+                    Credit
                   </div>
-                  {categorizedNotifications.credit.map((notification) => (
-                    <DropdownMenuItem
-                      key={notification.id}
-                      className={getNotificationClass(notification.type, notification.read)}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <div className="flex gap-3 w-full">
-                        <div className="flex-shrink-0 mt-1">
-                          {getCategoryIcon(notification.message)}
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex justify-between">
-                            <p className={`text-sm font-medium ${!notification.read ? 'text-foreground' : 'text-muted-foreground'}`}>
-                              {notification.title}
-                            </p>
-                            {!notification.read && (
-                              <span className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full"></span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(notification.date), { addSuffix: true })}
-                          </p>
-                        </div>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </>
+                  {renderNotificationItems(categorizedNotifications.credit)}
+                </div>
               )}
 
               {Object.entries({
@@ -223,41 +217,12 @@ export const Notifications = () => {
                 "Other": categorizedNotifications.other
               }).map(([category, items]) => 
                 items.length > 0 ? (
-                  <React.Fragment key={category}>
+                  <div key={category}>
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">
                       {category}
                     </div>
-                    {items.map((notification) => (
-                      <DropdownMenuItem
-                        key={notification.id}
-                        className={getNotificationClass(notification.type, notification.read)}
-                        onClick={() => handleNotificationClick(notification)}
-                      >
-                        <div className="flex gap-3 w-full">
-                          <div className="flex-shrink-0 mt-1">
-                            {getCategoryIcon(notification.message)}
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            <div className="flex justify-between">
-                              <p className={`text-sm font-medium ${!notification.read ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                {notification.title}
-                              </p>
-                              {!notification.read && (
-                                <span className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full"></span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {formatDistanceToNow(new Date(notification.date), { addSuffix: true })}
-                            </p>
-                          </div>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </React.Fragment>
+                    {renderNotificationItems(items)}
+                  </div>
                 ) : null
               )}
             </DropdownMenuGroup>

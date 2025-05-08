@@ -1,101 +1,231 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ClientErrorBoundary } from "@/components/ClientErrorBoundary";
+import { getSafeClientData, setSafeClientData } from "@/utils/clientDataPersistence";
+import { Client, CompanyClient, IndividualClient, VendorClient, isCompanyClient, isVendorClient, isIndividualClient, hasContactPerson } from "@/types/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  Building2,
-  User,
-  Truck,
-  Search,
-  PlusCircle,
-  Mail,
-  Phone,
-  MapPin,
-  Clock,
-  CreditCard,
-  AlertCircle,
-  DollarSign,
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { 
+  Building2, 
+  User, 
+  Truck, 
+  Search, 
+  PlusCircle, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Clock, 
+  CreditCard, 
+  AlertCircle, 
+  DollarSign,
+  MoreVertical,
+  FileText,
+  Edit,
+  Trash,
+  Receipt
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useNotifications } from "@/contexts/NotificationsContext";
-import { useI18n } from "@/contexts/I18nContext";
 import { formatCurrency } from "@/utils/formatters";
+import { useToast } from "@/hooks/use-toast";
+import { useNotifications, Notification } from "@/contexts/NotificationsContext";
+import { useI18n } from "@/contexts/I18nContext";
+import ClientDataProtection from "@/components/clients/ClientDataProtection";
 
-const mockClients = {
-  companies: [
-    {
-      id: "c1",
-      name: "ABC Construction Ltd",
-      contactPerson: "John Smith",
-      email: "john@abcconstruction.co.za",
-      phone: "+27 82 123 4567",
-      address: "45 Main Road, Cape Town, 8001",
-      lastInteraction: "2023-03-25",
-      type: "company",
-      credit: 5000,
-      outstanding: 2500,
-      overdue: 0,
-    },
-    {
-      id: "c2",
-      name: "Durban Electronics",
-      contactPerson: "Sarah Johnson",
-      email: "sarah@durbanelectronics.co.za",
-      phone: "+27 83 987 6543",
-      address: "12 Beach Avenue, Durban, 4001",
-      lastInteraction: "2023-03-20",
-      type: "company",
-      credit: 3000,
-      outstanding: 3000,
-      overdue: 1500,
-    },
-  ],
-  individuals: [
-    {
-      id: "i1",
-      name: "Michael Ndlovu",
-      email: "michael@example.com",
-      phone: "+27 71 555 7890",
-      address: "78 Oak Street, Johannesburg, 2000",
-      lastInteraction: "2023-03-28",
-      type: "individual",
-      credit: 1000,
-      outstanding: 500,
-      overdue: 0,
-    },
-  ],
-  vendors: [
-    {
-      id: "v1",
-      name: "SA Office Supplies",
-      contactPerson: "David Wilson",
-      email: "david@saoffice.co.za",
-      phone: "+27 11 222 3344",
-      address: "56 Commerce Park, Pretoria, 0002",
-      lastInteraction: "2023-03-15",
-      type: "vendor",
-      credit: 0,
-      outstanding: 0,
-      overdue: 0,
-    },
-  ],
+// Type for client state management
+interface ClientsState {
+  companies: CompanyClient[];
+  individuals: IndividualClient[];
+  vendors: VendorClient[];
+}
+
+// Production: Empty initialization for client data structure
+const emptyClients = {
+  companies: [],
+  individuals: [],
+  vendors: []
+};
+
+// Client action buttons component for reuse across all client cards
+const ClientActions = ({ client, onEdit, onDelete, onCredit, onCreateInvoice }: { 
+  client: Client, 
+  onEdit?: (client: Client) => void, 
+  onDelete?: (client: Client) => void,
+  onCredit: (client: Client) => void,
+  onCreateInvoice?: (client: Client) => void
+}) => {
+  return (
+    <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-8 w-8 p-0" 
+        title="Edit Client"
+        onClick={() => onEdit?.(client)}
+      >
+        <Edit className="h-4 w-4 text-blue-500" />
+      </Button>
+      
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-8 w-8 p-0" 
+        title="Manage Credit"
+        onClick={() => onCredit(client)}
+      >
+        <CreditCard className="h-4 w-4 text-green-500" />
+      </Button>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0" 
+            title="More Options"
+          >
+            <MoreVertical className="h-4 w-4 text-gray-500" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem 
+            onClick={() => onCreateInvoice?.(client)}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <Receipt className="h-4 w-4 text-blue-500" />
+            <span>Create Invoice</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={() => onDelete?.(client)}
+            className="flex items-center gap-2 cursor-pointer text-red-500 focus:text-red-500"
+          >
+            <Trash className="h-4 w-4" />
+            <span>Delete Client</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 };
 
 const Clients = () => {
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
+  const { currency } = useI18n();
+  
+  // State for managing clients data - use the ref pattern to ensure we get fresh state in callbacks
+  const [clients, setClients] = useState<ClientsState>(() => {
+    // Use our safe data loading utility to ensure data integrity
+    return getSafeClientData();
+  });
+  
+  // Use a ref to keep track of the current clients state
+  const clientsRef = useRef(clients);
+  useEffect(() => {
+    clientsRef.current = clients;
+  }, [clients]);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("companies");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [creditAmount, setCreditAmount] = useState("");
-  const { currency } = useI18n();
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [editClientData, setEditClientData] = useState<Client | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   
-  const [newClientData, setNewClientData] = useState({
+  // Function to handle creating a new invoice for a client
+  const handleCreateInvoice = (client: Client) => {
+    // Store the selected client in localStorage for use in the invoice creation page
+    localStorage.setItem('selectedClientForInvoice', JSON.stringify(client));
+    
+    // Make sure Ryzen client is also added to the clients list if it doesn't exist
+    try {
+      const ryzenClient = {
+        id: "ryzen-client", 
+        name: "Ryzen (PTY) LTD", 
+        address: "12 Mark Str", 
+        email: "them@ryzen.com", 
+        phone: "0762458759", 
+        type: "company" as const,
+        city: "Tshwane",
+        province: "Gauteng",
+        postalCode: "0006",
+        credit: 3000,
+        outstanding: 0,
+        overdue: 0,
+        contactPerson: "Tom Mark"
+      };
+      
+      // Ensure Ryzen client exists in state and localStorage
+      if (!clients.companies.some(c => c.id === ryzenClient.id)) {
+        // Add to in-memory state
+        setClients(prev => ({
+          ...prev,
+          companies: [...prev.companies, ryzenClient]
+        }));
+      }
+    } catch (error) {
+      console.error('Error ensuring Ryzen client exists:', error);
+    }
+    
+    // Show success notification
+    toast({
+      title: "Client Selected",
+      description: `${client.name} selected for new invoice`,
+      variant: "default"
+    });
+    
+    // Add system notification
+    addNotification({
+      title: "New Invoice Started",
+      message: `Creating new invoice for ${client.name}`,
+      type: "info"
+    });
+    
+    // Redirect to Invoices page
+    window.location.href = '/dashboard/invoices/new';
+  };
+  const [clientCount, setClientCount] = useState({
+    companies: 0,
+    individuals: 0,
+    vendors: 0,
+    all: 0
+  });
+
+  // Type for new client form data including common fields and optional type-specific fields
+  type NewClientFormData = {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    addressLine2?: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    type: "company" | "individual" | "vendor";
+    credit: number;
+    outstanding: number;
+    overdue: number;
+    lastInteraction?: string;
+    contactPerson?: string; // Only required for company and vendor types
+  };
+  
+  const [newClientData, setNewClientData] = useState<NewClientFormData>({
     name: "",
     contactPerson: "",
     email: "",
@@ -107,52 +237,282 @@ const Clients = () => {
     postalCode: "",
     type: "company",
     credit: 0,
+    outstanding: 0,
+    overdue: 0,
+    lastInteraction: "",
   });
-  
-  const { addNotification } = useNotifications();
 
-  const clientCount = {
-    companies: mockClients.companies.length,
-    individuals: mockClients.individuals.length,
-    vendors: mockClients.vendors.length,
-    all: mockClients.companies.length + mockClients.individuals.length + mockClients.vendors.length,
+  useEffect(() => {
+    setClientCount({
+      companies: clients.companies.length,
+      individuals: clients.individuals.length,
+      vendors: clients.vendors.length,
+      all: clients.companies.length + clients.individuals.length + clients.vendors.length,
+    });
+  }, [clients]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewClientData({
+      ...newClientData,
+      [name]: value,
+    });
   };
 
-  const filteredClients = (type) => {
-    let clients = [];
+  const openCreditDialog = (client: Client) => {
+    setSelectedClient(client);
+    setCreditAmount("");
+    setIsCreditDialogOpen(true);
+  };
+  
+  const openEditDialog = (client: Client) => {
+    setEditClientData({...client});
+    setIsEditDialogOpen(true);
+  };
+  
+  const openDeleteDialog = (client: Client) => {
+    setClientToDelete(client);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const handleEditClientChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    if (editClientData) {
+      setEditClientData({
+        ...editClientData,
+        [name]: value,
+      });
+    }
+  };
+  
+  const handleEditClient = () => {
+    if (!editClientData) return;
+    
+    // Validation
+    if (!editClientData.name || !editClientData.email) {
+      toast({
+        title: "Missing information",
+        description: "Name and email are required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Update lastInteraction date
+    const updatedClient = {
+      ...editClientData,
+      lastInteraction: getCurrentFormattedDate()
+    };
+    
+    // Update the client in the appropriate category in the state
+    setClients(current => {
+      const updatedState = { ...current };
+      
+      if (updatedClient.type === 'company') {
+        updatedState.companies = current.companies.map(c => 
+          c.id === updatedClient.id ? updatedClient as CompanyClient : c
+        );
+      } else if (updatedClient.type === 'individual') {
+        updatedState.individuals = current.individuals.map(c => 
+          c.id === updatedClient.id ? updatedClient as IndividualClient : c
+        );
+      } else if (updatedClient.type === 'vendor') {
+        updatedState.vendors = current.vendors.map(c => 
+          c.id === updatedClient.id ? updatedClient as VendorClient : c
+        );
+      }
+      
+      return updatedState;
+    });
+    
+    // Close dialog and show success message
+    setIsEditDialogOpen(false);
+    
+    toast({
+      title: "Client updated",
+      description: `${editClientData.name} has been updated successfully.`,
+    });
+    
+    // Add notification
+    if (addNotification) {
+      addNotification({
+        title: "Client Updated",
+        message: `${editClientData.name} has been updated successfully.`,
+        type: "success",
+      } as Notification);
+    }
+  };
+
+  const handleDeleteClient = () => {
+    if (!clientToDelete) return;
+    
+    // Remove the client from the appropriate category in the state
+    setClients(current => {
+      const updatedState = { ...current };
+      
+      if (clientToDelete.type === 'company') {
+        updatedState.companies = current.companies.filter(c => c.id !== clientToDelete.id);
+      } else if (clientToDelete.type === 'individual') {
+        updatedState.individuals = current.individuals.filter(c => c.id !== clientToDelete.id);
+      } else if (clientToDelete.type === 'vendor') {
+        updatedState.vendors = current.vendors.filter(c => c.id !== clientToDelete.id);
+      }
+      
+      return updatedState;
+    });
+    
+    // Close dialog and show success message
+    setIsDeleteDialogOpen(false);
+    
+    toast({
+      title: "Client deleted",
+      description: `${clientToDelete.name} has been deleted successfully.`,
+    });
+    
+    // Add notification
+    if (addNotification) {
+      addNotification({
+        title: "Client Deleted",
+        message: `${clientToDelete.name} has been deleted successfully.`,
+        type: "info",
+      } as Notification);
+    }
+    
+    // Reset client to delete
+    setClientToDelete(null);
+  };
+
+  const handleCreditSubmit = () => {
+    const amount = parseFloat(creditAmount);
+    if (!creditAmount || amount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid credit amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!selectedClient) return;
+    
+    // Get current date for lastInteraction
+    const currentDate = getCurrentFormattedDate();
+    
+    // Update client credit in the state
+    setClients(current => {
+      const updatedState = { ...current };
+      
+      if (selectedClient.type === 'company') {
+        updatedState.companies = current.companies.map(c => 
+          c.id === selectedClient.id 
+            ? { ...c, credit: c.credit + amount, lastInteraction: currentDate } as CompanyClient 
+            : c
+        );
+      } else if (selectedClient.type === 'individual') {
+        updatedState.individuals = current.individuals.map(c => 
+          c.id === selectedClient.id 
+            ? { ...c, credit: c.credit + amount, lastInteraction: currentDate } as IndividualClient 
+            : c
+        );
+      } else if (selectedClient.type === 'vendor') {
+        updatedState.vendors = current.vendors.map(c => 
+          c.id === selectedClient.id 
+            ? { ...c, credit: c.credit + amount, lastInteraction: currentDate } as VendorClient 
+            : c
+        );
+      }
+      
+      return updatedState;
+    });
+
+    toast({
+      title: "Credit added",
+      description: `${currency}${amount} credit has been added to ${selectedClient.name}.`,
+    });
+
+    if (addNotification) {
+      addNotification({
+        title: "Credit Added",
+        message: `${currency}${amount} credit has been added to ${selectedClient.name}.`,
+        type: "success",
+      } as Notification);
+    }
+
+    setIsCreditDialogOpen(false);
+    setSelectedClient(null);
+    setCreditAmount("");
+  };
+
+  // Save client state 
+  useEffect(() => {
+    try {
+      setSafeClientData(clients);
+    } catch (error) {
+      console.error('Error saving clients to localStorage:', error);
+      toast({
+        title: "Error Saving",
+        description: "There was a problem saving your client data.",
+        variant: "destructive"
+      });
+    }
+  }, [clients]);
+
+  const filteredClients = useCallback((type: string) => {
+    // Always use the current clients ref to ensure we have the latest data
+    const currentClients = clientsRef.current;
+    let clientsList: Client[] = [];
+    console.log('Filtering clients for type:', type);
+    console.log('Current clients state from ref:', currentClients);
     
     switch (type) {
       case "companies":
-        clients = mockClients.companies;
+        clientsList = currentClients.companies;
         break;
       case "individuals":
-        clients = mockClients.individuals;
+        clientsList = currentClients.individuals;
         break;
       case "vendors":
-        clients = mockClients.vendors;
+        clientsList = currentClients.vendors;
         break;
       default:
-        clients = [
-          ...mockClients.companies,
-          ...mockClients.individuals,
-          ...mockClients.vendors,
+        clientsList = [
+          ...currentClients.companies,
+          ...currentClients.individuals,
+          ...currentClients.vendors,
         ];
     }
     
-    if (!searchTerm) return clients;
+    if (!searchTerm) return clientsList;
     
-    return clients.filter((client) =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (client.contactPerson && client.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return clientsList.filter(client => {
+      const baseMatch = (
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.phone.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      
+      // Only check contactPerson for company and vendor client types
+      let contactPersonMatch = false;
+      if (isCompanyClient(client) || isVendorClient(client)) {
+        contactPersonMatch = client.contactPerson && 
+          client.contactPerson.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      
+      return baseMatch || contactPersonMatch;
+    });
+  }, [searchTerm, clients]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-ZA");
+  const getCurrentFormattedDate = () => {
+    const date = new Date();
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD format
   };
 
-  const getClientIcon = (type) => {
+  const getClientIcon = (type: Client["type"]) => {
     switch (type) {
       case "company":
         return <Building2 className="h-10 w-10 text-blue-500" />;
@@ -166,11 +526,158 @@ const Clients = () => {
   };
 
   const handleAddClient = () => {
+    // Add debug console logs
+    console.log('handleAddClient called');
+    console.log('newClientData:', newClientData);
+    
+    // Basic form validation
+    if (!newClientData.name) {
+      toast({
+        title: "Error",
+        description: "Please enter a client name",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!newClientData.email) {
+      toast({
+        title: "Error",
+        description: "Please enter an email address",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Generate a unique ID and timestamp for the new client
+    const id = `client-${Date.now()}`;
+    const timestamp = new Date().toISOString();
+    const formattedDate = getCurrentFormattedDate();
+    
+    // Process client data based on type
+    if (newClientData.type === 'company') {
+      // Create a company client - requires contactPerson
+      if (!newClientData.contactPerson) {
+        toast({
+          title: "Error",
+          description: "Company clients require a contact person",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const companyClient: CompanyClient = {
+        id,
+        name: newClientData.name,
+        contactPerson: newClientData.contactPerson,
+        email: newClientData.email,
+        phone: newClientData.phone,
+        address: newClientData.address,
+        addressLine2: newClientData.addressLine2,
+        city: newClientData.city,
+        province: newClientData.province,
+        postalCode: newClientData.postalCode,
+        type: "company",
+        credit: newClientData.credit,
+        outstanding: newClientData.outstanding,
+        overdue: newClientData.overdue,
+        lastInteraction: formattedDate
+      };
+      
+      setClients(prev => ({
+        ...prev,
+        companies: [...prev.companies, companyClient]
+      }));
+    } else if (newClientData.type === 'individual') {
+      // Create an individual client - doesn't need contactPerson
+      const individualClient: IndividualClient = {
+        id,
+        name: newClientData.name,
+        email: newClientData.email,
+        phone: newClientData.phone,
+        address: newClientData.address,
+        addressLine2: newClientData.addressLine2,
+        city: newClientData.city,
+        province: newClientData.province,
+        postalCode: newClientData.postalCode,
+        type: "individual",
+        credit: newClientData.credit,
+        outstanding: newClientData.outstanding,
+        overdue: newClientData.overdue,
+        lastInteraction: formattedDate
+      };
+      
+      setClients(prev => ({
+        ...prev,
+        individuals: [...prev.individuals, individualClient]
+      }));
+    } else if (newClientData.type === 'vendor') {
+      // Create a vendor client - requires contactPerson
+      if (!newClientData.contactPerson) {
+        toast({
+          title: "Error",
+          description: "Vendor clients require a contact person",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const vendorClient: VendorClient = {
+        id,
+        name: newClientData.name,
+        contactPerson: newClientData.contactPerson,
+        email: newClientData.email,
+        phone: newClientData.phone,
+        address: newClientData.address,
+        addressLine2: newClientData.addressLine2,
+        city: newClientData.city,
+        province: newClientData.province,
+        postalCode: newClientData.postalCode,
+        type: "vendor",
+        credit: newClientData.credit,
+        outstanding: newClientData.outstanding,
+        overdue: newClientData.overdue,
+        lastInteraction: formattedDate
+      };
+      
+      setClients(prev => ({
+        ...prev,
+        vendors: [...prev.vendors, vendorClient]
+      }));
+    }
+    
+    // Update client count after adding a new client
+    setClientCount(prev => {
+      let updatedCount = {...prev};
+      
+      if (newClientData.type === 'company') {
+        updatedCount.companies += 1;
+      } else if (newClientData.type === 'individual') {
+        updatedCount.individuals += 1;
+      } else if (newClientData.type === 'vendor') {
+        updatedCount.vendors += 1;
+      }
+      
+      updatedCount.all = updatedCount.companies + updatedCount.individuals + updatedCount.vendors;
+      return updatedCount;
+    });
+    
+    // Show success notification
     toast({
       title: "Client added",
       description: `${newClientData.name} has been added successfully.`,
     });
     
+    // Add notification if available
+    if (addNotification) {
+      addNotification({
+        title: "New Client Added",
+        message: `${newClientData.name} has been added to your clients.`,
+        type: "success",
+      } as Notification);
+    }
+    
+    // Reset the form and close the dialog
     setIsDialogOpen(false);
     setNewClientData({
       name: "",
@@ -184,66 +691,36 @@ const Clients = () => {
       postalCode: "",
       type: "company",
       credit: 0,
+      outstanding: 0,
+      overdue: 0,
+      lastInteraction: ""
     });
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewClientData({
-      ...newClientData,
-      [name]: value,
-    });
+  const resetClients = () => {
+    const initialState = {
+      companies: [],
+      individuals: [],
+      vendors: []
+    };
+    setClients(initialState);
   };
 
-  const openCreditDialog = (client) => {
-    setSelectedClient(client);
-    setCreditAmount("");
-    setIsCreditDialogOpen(true);
-  };
-
-  const handleAddCredit = () => {
-    const amount = parseFloat(creditAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid credit amount.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Credit added",
-      description: `${formatCurrency(amount)} credit has been added to ${selectedClient.name}.`,
-    });
-
-    addNotification({
-      title: "Credit Added",
-      message: `${formatCurrency(amount)} credit has been added to ${selectedClient.name}.`,
-      type: "success",
-    });
-
-    setIsCreditDialogOpen(false);
-    setSelectedClient(null);
-    setCreditAmount("");
-  };
-
-  useState(() => {
+  useEffect(() => {
     const overdueClients = [
-      ...mockClients.companies,
-      ...mockClients.individuals,
-      ...mockClients.vendors,
-    ].filter(client => client.overdue > 0);
-    
-    overdueClients.forEach(client => {
+      ...clients.companies,
+      ...clients.individuals,
+      ...clients.vendors,
+    ].filter((client) => client.overdue > 0);
+
+    if (overdueClients.length > 0 && addNotification) {
       addNotification({
-        title: "Overdue Payment",
-        message: `${client.name} has an overdue payment of ${formatCurrency(client.overdue)}.`,
+        title: "Overdue Accounts",
+        message: `${overdueClients.length} clients have overdue payments.`,
         type: "warning",
-        link: "/clients",
-      });
-    });
-  });
+      } as Notification);
+    }
+  }, [addNotification]);
 
   return (
     <div className="space-y-6">
@@ -414,10 +891,36 @@ const Clients = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" onClick={handleAddClient}>Add Client</Button>
+              <Button variant="default" onClick={handleAddClient}>Add Client</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Client Data Protection Component */}
+      <div className="mb-4">
+        <ClientDataProtection 
+          clientCount={clientCount.all}
+          onDataRestored={() => {
+            // Refresh client data from storage when data is restored
+            const refreshedData = getSafeClientData();
+            setClients(refreshedData);
+            
+            // Update client counts
+            setClientCount({
+              companies: refreshedData.companies.length,
+              individuals: refreshedData.individuals.length,
+              vendors: refreshedData.vendors.length,
+              all: refreshedData.companies.length + refreshedData.individuals.length + refreshedData.vendors.length
+            });
+            
+            toast({
+              title: "Data Restored",
+              description: "Client data has been successfully restored from backup.",
+              variant: "default"
+            });
+          }}
+        />
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
@@ -439,18 +942,18 @@ const Clients = () => {
                 onValueChange={setActiveTab}
                 className="w-full"
               >
-                <TabsList className="grid grid-cols-1 mb-4">
-                  <TabsTrigger value="companies" className="justify-start px-2 py-1.5 h-9">
-                    <Building2 className="mr-2 h-4 w-4" />
-                    Companies ({clientCount.companies})
+                <TabsList className="flex flex-col gap-2 mb-4 h-auto">
+                  <TabsTrigger value="companies" className="flex items-center justify-start h-12 text-xs sm:text-sm w-full">
+                    <Building2 className="mr-1 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Companies ({clientCount.companies})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="individuals" className="justify-start px-2 py-1.5 h-9">
-                    <User className="mr-2 h-4 w-4" />
-                    Individuals ({clientCount.individuals})
+                  <TabsTrigger value="individuals" className="flex items-center justify-start h-12 text-xs sm:text-sm w-full">
+                    <User className="mr-1 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Individuals ({clientCount.individuals})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="vendors" className="justify-start px-2 py-1.5 h-9">
-                    <Truck className="mr-2 h-4 w-4" />
-                    Vendors ({clientCount.vendors})
+                  <TabsTrigger value="vendors" className="flex items-center justify-start h-12 text-xs sm:text-sm w-full">
+                    <Truck className="mr-1 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Vendors ({clientCount.vendors})</span>
                   </TabsTrigger>
                 </TabsList>
               
@@ -477,65 +980,75 @@ const Clients = () => {
                 <CardHeader>
                   <CardTitle className="text-lg">Companies ({clientCount.companies})</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-6">
                   <div className="space-y-4">
                     {filteredClients("companies").length > 0 ? (
                       filteredClients("companies").map((client) => (
                         <div
                           key={client.id}
-                          className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
+                          className="p-5 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors relative group"
                         >
-                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100">
-                            {getClientIcon(client.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                          <ClientActions 
+                            client={client}
+                            onCredit={openCreditDialog}
+                            onEdit={openEditDialog}
+                            onDelete={openDeleteDialog}
+                            onCreateInvoice={handleCreateInvoice}
+                          />
+                          <div className="flex items-start gap-4">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 flex-shrink-0">
+                              {getClientIcon(client.type)}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 className="text-lg font-medium">{client.name}</h3>
+                              </div>
+                              
+                              {hasContactPerson(client) && (
+                                <p className="text-sm text-gray-600 mb-3">
+                                  Contact: {isCompanyClient(client) || isVendorClient(client) ? client.contactPerson : ''}
+                                </p>
+                              )}
+                              
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Mail className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.email}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Phone className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span>{client.phone}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.address}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span>Last interaction: {client.lastInteraction ? formatDate(client.lastInteraction) : 'N/A'}</span>
+                                </div>
+                              </div>
+                              
+                              
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {client.credit > 0 && (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    <DollarSign className="mr-1 h-3 w-3" />
+                                    Credit: {formatCurrency(client.credit)}
+                                  </Badge>
+                                )}
                                 {client.overdue > 0 && (
-                                  <Badge variant="overdue">Overdue: {formatCurrency(client.overdue)}</Badge>
+                                  <Badge variant="destructive">
+                                    Overdue: {formatCurrency(client.overdue)}
+                                  </Badge>
                                 )}
                                 {client.outstanding > 0 && client.overdue === 0 && (
-                                  <Badge variant="outstanding">Outstanding: {formatCurrency(client.outstanding)}</Badge>
+                                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                    Outstanding: {formatCurrency(client.outstanding)}
+                                  </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center text-sm text-gray-500">
-                                  <Clock className="mr-1 h-4 w-4" />
-                                  Last interaction: {formatDate(client.lastInteraction)}
-                                </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={() => openCreditDialog(client)}
-                                  className="ml-2"
-                                >
-                                  <CreditCard className="mr-1 h-4 w-4" /> Add Credit
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              Contact: {client.contactPerson}
-                            </p>
-                            <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
-                              <div className="flex items-center">
-                                <Mail className="mr-1 h-4 w-4" />
-                                {client.email}
-                              </div>
-                              <div className="flex items-center">
-                                <Phone className="mr-1 h-4 w-4" />
-                                {client.phone}
-                              </div>
-                              <div className="flex items-center">
-                                <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
-                                <span className="truncate">{client.address}</span>
-                              </div>
-                            </div>
-                            <div className="mt-2 flex items-center gap-2">
-                              <Badge variant="credit" className="flex items-center">
-                                <DollarSign className="mr-1 h-3 w-3" /> 
-                                Credit: {formatCurrency(client.credit)}
-                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -555,62 +1068,71 @@ const Clients = () => {
                 <CardHeader>
                   <CardTitle className="text-lg">Individuals ({clientCount.individuals})</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-6">
                   <div className="space-y-4">
                     {filteredClients("individuals").length > 0 ? (
                       filteredClients("individuals").map((client) => (
                         <div
                           key={client.id}
-                          className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
+                          className="p-5 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors relative group"
                         >
-                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100">
-                            {getClientIcon(client.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-lg font-medium truncate">{client.name}</h3>
-                                {client.overdue > 0 && (
-                                  <Badge variant="overdue">Overdue: {formatCurrency(client.overdue)}</Badge>
-                                )}
-                                {client.outstanding > 0 && client.overdue === 0 && (
-                                  <Badge variant="outstanding">Outstanding: {formatCurrency(client.outstanding)}</Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center text-sm text-gray-500">
-                                  <Clock className="mr-1 h-4 w-4" />
-                                  Last interaction: {formatDate(client.lastInteraction)}
+                          <ClientActions 
+                            client={client}
+                            onCredit={openCreditDialog}
+                            onEdit={openEditDialog}
+                            onDelete={openDeleteDialog}
+                          />
+                          <div className="flex items-start gap-4">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 flex-shrink-0">
+                              {getClientIcon(client.type)}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                                  {client.overdue > 0 && (
+                                    <Badge variant="overdue">Overdue: {formatCurrency(client.overdue)}</Badge>
+                                  )}
+                                  {client.outstanding > 0 && client.overdue === 0 && (
+                                    <Badge variant="outstanding">Outstanding: {formatCurrency(client.outstanding)}</Badge>
+                                  )}
                                 </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={() => openCreditDialog(client)}
-                                  className="ml-2"
-                                >
-                                  <CreditCard className="mr-1 h-4 w-4" /> Add Credit
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center text-sm text-gray-500">
+                                    <Clock className="mr-1 h-4 w-4" />
+                                    Last interaction: {client.lastInteraction ? formatDate(client.lastInteraction) : 'N/A'}
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => openCreditDialog(client)}
+                                    className="ml-2"
+                                  >
+                                    <CreditCard className="mr-1 h-4 w-4" /> Add Credit
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                            <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
-                              <div className="flex items-center">
-                                <Mail className="mr-1 h-4 w-4" />
-                                {client.email}
+                              <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
+                                <div className="flex items-center">
+                                  <Mail className="mr-1 h-4 w-4" />
+                                  {client.email}
+                                </div>
+                                <div className="flex items-center">
+                                  <Phone className="mr-1 h-4 w-4" />
+                                  {client.phone}
+                                </div>
+                                <div className="flex items-center">
+                                  <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.address}</span>
+                                </div>
                               </div>
-                              <div className="flex items-center">
-                                <Phone className="mr-1 h-4 w-4" />
-                                {client.phone}
+                              <div className="mt-2 flex items-center gap-2">
+                                <Badge variant="credit" className="flex items-center">
+                                  <DollarSign className="mr-1 h-3 w-3" /> 
+                                  Credit: {formatCurrency(client.credit)}
+                                </Badge>
                               </div>
-                              <div className="flex items-center">
-                                <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
-                                <span className="truncate">{client.address}</span>
-                              </div>
-                            </div>
-                            <div className="mt-2 flex items-center gap-2">
-                              <Badge variant="credit" className="flex items-center">
-                                <DollarSign className="mr-1 h-3 w-3" /> 
-                                Credit: {formatCurrency(client.credit)}
-                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -636,59 +1158,68 @@ const Clients = () => {
                       filteredClients("vendors").map((client) => (
                         <div
                           key={client.id}
-                          className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
+                          className="p-5 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors relative group"
                         >
-                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100">
-                            {getClientIcon(client.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-lg font-medium truncate">{client.name}</h3>
+                          <ClientActions 
+                            client={client}
+                            onCredit={openCreditDialog}
+                            onEdit={openEditDialog}
+                            onDelete={openDeleteDialog}
+                          />
+                          <div className="flex items-start gap-4">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 flex-shrink-0">
+                              {getClientIcon(client.type)}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 className="text-lg font-medium">{client.name}</h3>
+                              </div>
+                              
+                              {hasContactPerson(client) && (
+                                <p className="text-sm text-gray-600">
+                                  Contact: {isCompanyClient(client) || isVendorClient(client) ? client.contactPerson : ''}
+                                </p>
+                              )}
+                              
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Mail className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.email}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Phone className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span>{client.phone}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{client.address}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                                  <span>Last interaction: {client.lastInteraction ? formatDate(client.lastInteraction) : 'N/A'}</span>
+                                </div>
+                              </div>
+                              
+                              
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {client.credit > 0 && (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    <DollarSign className="mr-1 h-3 w-3" />
+                                    Credit: {formatCurrency(client.credit)}
+                                  </Badge>
+                                )}
                                 {client.overdue > 0 && (
-                                  <Badge variant="overdue">Overdue: {formatCurrency(client.overdue)}</Badge>
+                                  <Badge variant="destructive">
+                                    Overdue: {formatCurrency(client.overdue)}
+                                  </Badge>
                                 )}
                                 {client.outstanding > 0 && client.overdue === 0 && (
-                                  <Badge variant="outstanding">Outstanding: {formatCurrency(client.outstanding)}</Badge>
+                                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                    Outstanding: {formatCurrency(client.outstanding)}
+                                  </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center text-sm text-gray-500">
-                                  <Clock className="mr-1 h-4 w-4" />
-                                  Last interaction: {formatDate(client.lastInteraction)}
-                                </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={() => openCreditDialog(client)}
-                                  className="ml-2"
-                                >
-                                  <CreditCard className="mr-1 h-4 w-4" /> Add Credit
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              Contact: {client.contactPerson}
-                            </p>
-                            <div className="mt-2 flex flex-col md:flex-row md:items-center gap-y-1 gap-x-4 text-sm text-gray-500">
-                              <div className="flex items-center">
-                                <Mail className="mr-1 h-4 w-4" />
-                                {client.email}
-                              </div>
-                              <div className="flex items-center">
-                                <Phone className="mr-1 h-4 w-4" />
-                                {client.phone}
-                              </div>
-                              <div className="flex items-center">
-                                <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
-                                <span className="truncate">{client.address}</span>
-                              </div>
-                            </div>
-                            <div className="mt-2 flex items-center gap-2">
-                              <Badge variant="credit" className="flex items-center">
-                                <DollarSign className="mr-1 h-3 w-3" /> 
-                                Credit: {formatCurrency(client.credit)}
-                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -751,8 +1282,198 @@ const Clients = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddCredit}>Add Credit</Button>
+            <Button type="button" variant="outline" onClick={() => setIsCreditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleCreditSubmit}>
+              Add Credit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Client Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Client</DialogTitle>
+            <DialogDescription>
+              Update the details of {editClientData?.name}
+            </DialogDescription>
+          </DialogHeader>
+          {editClientData && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-type" className="text-right">
+                  Type
+                </Label>
+                <select
+                  id="edit-type"
+                  name="type"
+                  className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={editClientData.type}
+                  onChange={handleEditClientChange}
+                >
+                  <option value="company">Company</option>
+                  <option value="individual">Individual</option>
+                  <option value="vendor">Vendor</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  className="col-span-3"
+                  value={editClientData.name}
+                  onChange={handleEditClientChange}
+                />
+              </div>
+              {editClientData.type !== "individual" && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-contactPerson" className="text-right">
+                    Contact Person
+                  </Label>
+                  <Input
+                    id="edit-contactPerson"
+                    name="contactPerson"
+                    className="col-span-3"
+                    value={(editClientData as CompanyClient | VendorClient).contactPerson || ''}
+                    onChange={handleEditClientChange}
+                  />
+                </div>
+              )}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="edit-email"
+                  name="email"
+                  type="email"
+                  className="col-span-3"
+                  value={editClientData.email}
+                  onChange={handleEditClientChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-phone" className="text-right">
+                  Phone
+                </Label>
+                <Input
+                  id="edit-phone"
+                  name="phone"
+                  className="col-span-3"
+                  value={editClientData.phone}
+                  onChange={handleEditClientChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-address" className="text-right">
+                  Address
+                </Label>
+                <Input
+                  id="edit-address"
+                  name="address"
+                  className="col-span-3"
+                  value={editClientData.address}
+                  onChange={handleEditClientChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-city" className="text-right">
+                  City
+                </Label>
+                <Input
+                  id="edit-city"
+                  name="city"
+                  className="col-span-3"
+                  value={editClientData.city}
+                  onChange={handleEditClientChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-province" className="text-right">
+                  Province
+                </Label>
+                <Input
+                  id="edit-province"
+                  name="province"
+                  className="col-span-3"
+                  value={editClientData.province}
+                  onChange={handleEditClientChange}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-postalCode" className="text-right">
+                  Postal Code
+                </Label>
+                <Input
+                  id="edit-postalCode"
+                  name="postalCode"
+                  className="col-span-3"
+                  value={editClientData.postalCode}
+                  onChange={handleEditClientChange}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleEditClient}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Client</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this client? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {clientToDelete && (
+            <div className="py-4">
+              <div className="p-4 border border-red-100 bg-red-50 rounded-md mb-4">
+                <h3 className="font-medium text-red-900">{clientToDelete.name}</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  Type: {clientToDelete.type.charAt(0).toUpperCase() + clientToDelete.type.slice(1)}
+                </p>
+                <p className="text-sm text-red-700">
+                  Email: {clientToDelete.email}
+                </p>
+                {clientToDelete.credit > 0 && (
+                  <p className="text-sm font-medium text-red-700 mt-2">
+                    Warning: This client has {formatCurrency(clientToDelete.credit)} in available credit.
+                  </p>
+                )}
+                {clientToDelete.outstanding > 0 && (
+                  <p className="text-sm font-medium text-red-700 mt-1">
+                    Warning: This client has {formatCurrency(clientToDelete.outstanding)} in outstanding balance.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={handleDeleteClient}
+            >
+              Delete Client
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -760,4 +1481,11 @@ const Clients = () => {
   );
 };
 
-export default Clients;
+// Wrap the component with the error boundary for production safety
+const ClientsWithErrorBoundary: React.FC = () => (
+  <ClientErrorBoundary>
+    <Clients />
+  </ClientErrorBoundary>
+);
+
+export default ClientsWithErrorBoundary;

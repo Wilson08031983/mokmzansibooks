@@ -1,0 +1,36 @@
+name: SuspenseFallback Component Check
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/SuspenseFallback.tsx'
+      - 'src/components/__tests__/SuspenseFallback.test.tsx'
+
+jobs:
+  check-suspense-fallback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run SuspenseFallback tests
+        run: npm test -- --testPathPattern=SuspenseFallback
+        
+      - name: Check for unauthorized modifications
+        run: |
+          # Get the base SHA of the PR
+          BASE_SHA=$(git merge-base ${{ github.event.pull_request.base.sha }} HEAD)
+          
+          # Check if SuspenseFallback.tsx was modified
+          if git diff $BASE_SHA..HEAD --name-only | grep -q "src/components/SuspenseFallback.tsx"; then
+            echo "Warning: SuspenseFallback.tsx was modified. Please ensure changes are authorized."
+            # This doesn't fail the check but provides a warning
+          fi

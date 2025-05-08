@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 
 // Example translation structure, extend as needed
 const translations = {
@@ -96,8 +97,8 @@ const translations = {
   },
 };
 
-type SupportedLanguage = "english" | "afrikaans";
-type SupportedCurrency = "ZAR" | "USD" | "EUR";
+export type SupportedLanguage = "english" | "afrikaans";
+export type SupportedCurrency = "ZAR" | "USD" | "EUR";
 
 interface I18nContextValue {
   language: SupportedLanguage;
@@ -105,6 +106,8 @@ interface I18nContextValue {
   t: (key: string) => string;
   currency: SupportedCurrency;
   setCurrency: (currency: SupportedCurrency) => void;
+  formatAmount: (amount: number) => string;
+  getCurrencySymbol: (currency?: SupportedCurrency) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);
@@ -123,6 +126,8 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     localStorage.setItem("currency", currency);
+    // Dispatch a custom event to notify other components about currency change
+    window.dispatchEvent(new CustomEvent('currencyChanged', { detail: currency }));
   }, [currency]);
 
   const setLanguage = (lang: SupportedLanguage) => {
@@ -138,7 +143,17 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <I18nContext.Provider value={{ language, setLanguage, t, currency, setCurrency }}>
+    <I18nContext.Provider 
+      value={{ 
+        language, 
+        setLanguage, 
+        t, 
+        currency, 
+        setCurrency,
+        formatAmount: (amount: number) => formatCurrency(amount, currency),
+        getCurrencySymbol: () => getCurrencySymbol(currency)
+      }}
+    >
       {children}
     </I18nContext.Provider>
   );
