@@ -1,179 +1,61 @@
-/**
- * Utility functions for managing invoices
- */
 
-import { InvoiceData, InvoiceItem } from "@/types/invoice";
-import { format } from "date-fns";
-import { safeJsonParse, safeJsonStringify } from "@/utils/errorHandling";
-import { supabase } from "@/integrations/supabase/client";
+import { InvoiceData } from "@/types/invoice";
+
+const INVOICE_STORAGE_KEY = 'mokmzansi_saved_invoices';
 
 /**
- * Generate a unique invoice number
+ * Save a new invoice to local storage
  */
-export const generateInvoiceNumber = (): string => {
-  const year = new Date().getFullYear();
-  const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
-  
-  // Get existing invoices to determine next sequence number
-  const existingInvoices = getSavedInvoices();
-  const sequenceNumbers = existingInvoices
-    .filter(inv => inv.invoiceNumber.startsWith(`INV-${year}-${month}`))
-    .map(inv => {
-      const parts = inv.invoiceNumber.split('-');
-      return parts.length > 2 ? parseInt(parts[3] || '0') : 0;
-    });
-  
-  // Find the highest sequence number and increment by 1, or start at 1
-  const nextSequence = sequenceNumbers.length > 0
-    ? Math.max(...sequenceNumbers) + 1
-    : 1;
-  
-  return `INV-${year}-${month}-${nextSequence.toString().padStart(3, '0')}`;
-};
-
-/**
- * Create a new invoice item
- */
-export const createNewInvoiceItem = (itemNo: number): InvoiceItem => {
-  return {
-    itemNo,
-    description: "",
-    quantity: 1,
-    unitPrice: 0,
-    discount: 0,
-    amount: 0
-  };
-};
-
-/**
- * Save invoice to localStorage and optionally to Supabase
- */
-export const saveInvoice = async (invoiceData: InvoiceData): Promise<{ success: boolean; message: string; invoice?: InvoiceData }> => {
+export const saveInvoice = (invoice: InvoiceData): string => {
   try {
-    // Generate ID if not provided
-    if (!invoiceData.id) {
-      invoiceData.id = crypto.randomUUID();
-    }
-    
-    // Set created date if not provided
-    if (!invoiceData.createdAt) {
-      invoiceData.createdAt = new Date().toISOString();
-    }
-    
-    // Update last modified date
-    invoiceData.updatedAt = new Date().toISOString();
-    
-    // Default status to draft if not provided
-    if (!invoiceData.status) {
-      invoiceData.status = 'draft';
-    }
+    // Generate an ID if one doesn't exist
+    const invoiceToSave: InvoiceData = {
+      ...invoice,
+      id: invoice.id || generateId(),
+      createdAt: invoice.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: invoice.status || 'draft'
+    };
     
     // Get existing invoices
     const existingInvoices = getSavedInvoices();
     
-    // Check if this is an update to an existing invoice
-    const existingIndex = existingInvoices.findIndex(inv => inv.id === invoiceData.id);
-    
-    if (existingIndex >= 0) {
-      // Update existing invoice
-      existingInvoices[existingIndex] = invoiceData;
-    } else {
-      // Add new invoice
-      existingInvoices.push(invoiceData);
-    }
+    // Add the new invoice
+    existingInvoices.unshift(invoiceToSave);
     
     // Save to localStorage
-    localStorage.setItem('savedInvoices', safeJsonStringify(existingInvoices));
+    localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(existingInvoices));
     
-    // Save to Supabase if authenticated (using custom RPC function to avoid table schema issues)
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        // Use a generic storage approach that doesn't rely on a specific table schema
-        // This allows us to store invoices even if the table isn't in our TypeScript definitions yet
-        const { error } = await supabase.rpc(
-          'store_json_data',
-          { 
-            collection_name: 'invoices',
-            record_id: invoiceData.id,
-            user_id: userData.user.id,
-            data_json: invoiceData,
-            metadata: {
-              invoice_number: invoiceData.invoiceNumber,
-              issue_date: invoiceData.issueDate,
-              due_date: invoiceData.dueDate,
-              client_name: invoiceData.client.name,
-              total_amount: invoiceData.total,
-              status: invoiceData.status || 'draft'
-            }
-          }
-        );
-        
-        if (error) {
-          // If the RPC function fails, try a more direct approach with REST API
-          console.log('Falling back to direct storage method for invoice');
-          
-          // Use the REST API directly as a fallback
-          const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/user_data`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': process.env.SUPABASE_ANON_KEY || '',
-              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-            },
-            body: JSON.stringify({
-              user_id: userData.user.id,
-              data_type: 'invoice',
-              data_id: invoiceData.id,
-              data: invoiceData
-            })
-          });
-          
-          if (!response.ok) {
-            console.error('Error using fallback storage:', await response.text());
-          }
-        }
-      }
-    } catch (supabaseError) {
-      console.error('Supabase save error:', supabaseError);
-      // Still return success since we saved to localStorage
-    }
-    
-    return { 
-      success: true, 
-      message: 'Invoice saved successfully',
-      invoice: invoiceData
-    };
+    return invoiceToSave.id as string;
   } catch (error) {
     console.error('Error saving invoice:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Failed to save invoice'
-    };
+    throw new Error('Failed to save invoice');
   }
 };
 
 /**
- * Get all saved invoices from localStorage
+ * Get all saved invoices from local storage
  */
 export const getSavedInvoices = (): InvoiceData[] => {
   try {
-    const savedInvoices = localStorage.getItem('savedInvoices');
-    return savedInvoices ? safeJsonParse(savedInvoices, []) : [];
+    const savedInvoices = localStorage.getItem(INVOICE_STORAGE_KEY);
+    if (!savedInvoices) {
+      return [];
+    }
+    return JSON.parse(savedInvoices);
   } catch (error) {
-    console.error('Error retrieving saved invoices:', error);
+    console.error('Error retrieving invoices:', error);
     return [];
   }
 };
 
 /**
- * Get an invoice by ID
+ * Get a single invoice by ID
  */
-export const getInvoiceById = (id: string): InvoiceData | null => {
+export const getInvoiceById = (invoiceId: string): InvoiceData | null => {
   try {
-    const savedInvoices = getSavedInvoices();
-    const invoice = savedInvoices.find(inv => inv.id === id);
-    return invoice || null;
+    const invoices = getSavedInvoices();
+    return invoices.find(invoice => invoice.id === invoiceId) || null;
   } catch (error) {
     console.error('Error retrieving invoice by ID:', error);
     return null;
@@ -181,111 +63,58 @@ export const getInvoiceById = (id: string): InvoiceData | null => {
 };
 
 /**
+ * Update an existing invoice
+ */
+export const updateInvoice = (updatedInvoice: InvoiceData): boolean => {
+  try {
+    if (!updatedInvoice.id) {
+      throw new Error('Invoice ID is required for update');
+    }
+    
+    const invoices = getSavedInvoices();
+    const index = invoices.findIndex(invoice => invoice.id === updatedInvoice.id);
+    
+    if (index === -1) {
+      return false;
+    }
+    
+    // Update the invoice with new timestamp
+    invoices[index] = {
+      ...updatedInvoice,
+      updatedAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(invoices));
+    return true;
+  } catch (error) {
+    console.error('Error updating invoice:', error);
+    return false;
+  }
+};
+
+/**
  * Delete an invoice by ID
  */
-export const deleteInvoice = async (id: string): Promise<{ success: boolean; message: string }> => {
+export const deleteInvoice = (invoiceId: string): boolean => {
   try {
-    const savedInvoices = getSavedInvoices();
-    const filteredInvoices = savedInvoices.filter(inv => inv.id !== id);
+    const invoices = getSavedInvoices();
+    const filteredInvoices = invoices.filter(invoice => invoice.id !== invoiceId);
     
-    // Save updated list to localStorage
-    localStorage.setItem('savedInvoices', safeJsonStringify(filteredInvoices));
-    
-    // Also delete from Supabase if user is authenticated
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        // Try generic RPC function first
-        const { error } = await supabase.rpc(
-          'delete_user_data',
-          { 
-            collection_name: 'invoices',
-            record_id: id,
-            user_id: userData.user.id 
-          }
-        );
-        
-        if (error) {
-          // Fallback to direct REST API
-          console.log('Falling back to direct deletion method for invoice');
-          
-          const response = await fetch(
-            `${process.env.SUPABASE_URL}/rest/v1/user_data?user_id=eq.${userData.user.id}&data_type=eq.invoice&data_id=eq.${id}`,
-            {
-              method: 'DELETE',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': process.env.SUPABASE_ANON_KEY || '',
-                'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-              }
-            }
-          );
-          
-          if (!response.ok) {
-            console.error('Error using fallback deletion:', await response.text());
-          }
-        }
-      }
-    } catch (supabaseError) {
-      console.error('Supabase delete error:', supabaseError);
-      // Still return success since we deleted from localStorage
+    if (filteredInvoices.length === invoices.length) {
+      return false; // No invoice was deleted
     }
     
-    return {
-      success: true,
-      message: 'Invoice deleted successfully'
-    };
+    localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(filteredInvoices));
+    return true;
   } catch (error) {
     console.error('Error deleting invoice:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Failed to delete invoice'
-    };
+    return false;
   }
 };
 
 /**
- * Update invoice status
+ * Generate a unique ID
  */
-export const updateInvoiceStatus = async (
-  id: string, 
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
-): Promise<{ success: boolean; message: string; invoice?: InvoiceData }> => {
-  try {
-    const invoice = getInvoiceById(id);
-    if (!invoice) {
-      return {
-        success: false,
-        message: 'Invoice not found'
-      };
-    }
-    
-    // Update status
-    invoice.status = status;
-    invoice.updatedAt = new Date().toISOString();
-    
-    // If marking as paid, set paid date
-    if (status === 'paid' && !invoice.paidDate) {
-      invoice.paidDate = format(new Date(), "yyyy-MM-dd");
-    }
-    
-    // Save updated invoice
-    return saveInvoice(invoice);
-  } catch (error) {
-    console.error('Error updating invoice status:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Failed to update invoice status'
-    };
-  }
-};
-
-/**
- * Format currency amount
- */
-export const formatInvoiceCurrency = (amount: number, currency: string = 'ZAR'): string => {
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency: currency,
-  }).format(amount);
+const generateId = (): string => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 };

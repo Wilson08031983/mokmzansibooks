@@ -17,6 +17,7 @@ import InvoiceItems from "./InvoiceItems";
 import QuoteSelector from "./QuoteSelector";
 import InvoiceFooter from "./InvoiceFooter";
 import InvoiceTotals from "./InvoiceTotals";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock client data
 const mockClients = [
@@ -40,6 +41,7 @@ const companyData = {
 };
 
 const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
+  const { toast } = useToast();
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [sourceType, setSourceType] = useState<'new' | 'quote'>('new');
   const [selectedQuote, setSelectedQuote] = useState<string | null>(null);
@@ -236,6 +238,23 @@ const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
     setInvoiceData({...invoiceData, vatRate: parseFloat(rate) || 0});
   };
 
+  // Handle saving the invoice
+  const handleSaveInvoice = () => {
+    // In a real app, this would save to a database or localStorage
+    console.log("Invoice saved:", invoiceData);
+    
+    // Show success message
+    toast({
+      title: "Invoice created",
+      description: "Your invoice has been saved successfully."
+    });
+    
+    // Call the onSaveSuccess callback provided by the parent
+    if (onSaveSuccess) {
+      onSaveSuccess();
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -331,7 +350,11 @@ const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
                   Select a template for your invoice
                 </DialogDescription>
               </DialogHeader>
-              <TemplateSelector data={invoiceData} type="invoice" />
+              <TemplateSelector 
+                data={invoiceData} 
+                type="invoice" 
+                onSave={handleSaveInvoice}
+              />
             </DialogContent>
           </Dialog>
         )}

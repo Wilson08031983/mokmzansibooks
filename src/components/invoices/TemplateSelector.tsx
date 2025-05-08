@@ -1,105 +1,150 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Download } from "lucide-react";
-import QuoteClassicTemplate from "@/components/invoices/templates/components/QuoteClassicTemplate";
-import QuoteModernTemplate from "@/components/invoices/templates/components/QuoteModernTemplate";
-import QuoteElegantTemplate from "@/components/invoices/templates/components/QuoteElegantTemplate";
-import QuoteMinimalTemplate from "@/components/invoices/templates/components/QuoteMinimalTemplate";
-import InvoiceClassicTemplate from "@/components/invoices/templates/components/InvoiceClassicTemplate";
-import InvoiceModernTemplate from "@/components/invoices/templates/components/InvoiceModernTemplate";
-import InvoiceElegantTemplate from "@/components/invoices/templates/components/InvoiceElegantTemplate";
-import InvoiceMinimalTemplate from "@/components/invoices/templates/components/InvoiceMinimalTemplate";
+import { InvoiceData } from "@/types/invoice";
+import { QuoteData } from "@/types/quote";
 
 interface TemplateSelectorProps {
-  data: any;
-  type: 'quote' | 'invoice';
+  data: InvoiceData | QuoteData;
+  type: "invoice" | "quote";
+  onSave?: () => void;
 }
 
-const TemplateSelector = ({ data, type }: TemplateSelectorProps) => {
-  const [selectedTemplate, setSelectedTemplate] = useState("classic");
-  const { toast } = useToast();
-  
-  const handleSelectTemplate = (template: string) => {
-    setSelectedTemplate(template);
-  };
-  
-  const handleDownload = () => {
-    // In a real app, this would download the document
-    toast({
-      title: `${type === 'quote' ? 'Quote' : 'Invoice'} downloaded successfully`,
-      description: `Your ${type} has been downloaded as a PDF.`,
-    });
+const TemplateSelector: React.FC<TemplateSelectorProps> = ({ data, type, onSave }) => {
+  const handleSelectTemplate = (templateId: string) => {
+    console.log(`Selected ${type} template: ${templateId}`);
+    // Here you would normally generate the PDF or whatever output format
+    // For now we'll just simulate it with a timeout
+    setTimeout(() => {
+      console.log(`${type} created with template ${templateId}`);
+      // Call the onSave callback if provided
+      if (onSave) {
+        onSave();
+      }
+    }, 500);
   };
 
-  // Template preview components
-  const getTemplatePreview = () => {
-    if (type === 'quote') {
-      switch (selectedTemplate) {
-        case "classic":
-          return <QuoteClassicTemplate data={data} preview={true} />;
-        case "modern":
-          return <QuoteModernTemplate data={data} preview={true} />;
-        case "elegant":
-          return <QuoteElegantTemplate data={data} preview={true} />;
-        case "minimal":
-          return <QuoteMinimalTemplate data={data} preview={true} />;
-        default:
-          return <QuoteClassicTemplate data={data} preview={true} />;
-      }
-    } else {
-      switch (selectedTemplate) {
-        case "classic":
-          return <InvoiceClassicTemplate data={data} preview={true} />;
-        case "modern":
-          return <InvoiceModernTemplate data={data} preview={true} />;
-        case "elegant":
-          return <InvoiceElegantTemplate data={data} preview={true} />;
-        case "minimal":
-          return <InvoiceMinimalTemplate data={data} preview={true} />;
-        default:
-          return <InvoiceClassicTemplate data={data} preview={true} />;
-      }
-    }
-  };
-  
   return (
-    <div className="space-y-6">
-      <Tabs value={selectedTemplate} onValueChange={handleSelectTemplate}>
-        <TabsList className="grid grid-cols-4 w-full">
-          <TabsTrigger value="classic">Classic</TabsTrigger>
-          <TabsTrigger value="modern">Modern</TabsTrigger>
-          <TabsTrigger value="elegant">Elegant</TabsTrigger>
-          <TabsTrigger value="minimal">Minimal</TabsTrigger>
-        </TabsList>
-        
-        {/* Template Preview */}
-        <TabsContent value={selectedTemplate} className="mt-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="border rounded-lg overflow-hidden">
-                <div className="max-h-[500px] overflow-y-auto p-4">
-                  {getTemplatePreview()}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+    <Tabs defaultValue="modern" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="modern">Modern</TabsTrigger>
+        <TabsTrigger value="classic">Classic</TabsTrigger>
+        <TabsTrigger value="minimal">Minimal</TabsTrigger>
+      </TabsList>
       
-      <div className="flex justify-end gap-4">
-        <Button 
-          onClick={handleDownload} 
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Download as PDF
-        </Button>
-      </div>
-    </div>
+      <TabsContent value="modern">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <img 
+                  src={`/assets/templates/${type}-modern-preview.jpg`} 
+                  alt="Modern template" 
+                  className="w-full h-auto"
+                  onError={(e) => {
+                    // Fallback if image doesn't exist
+                    e.currentTarget.src = "/assets/templates/placeholder.jpg";
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex flex-col justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Modern Template</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                A sleek, contemporary design with a clean layout and modern typography.
+              </p>
+              <ul className="text-sm space-y-1 mb-6">
+                <li>• Professional header with logo placement</li>
+                <li>• Clean, organized line items</li>
+                <li>• Subtle color accents</li>
+                <li>• Space for digital signature</li>
+              </ul>
+            </div>
+            <Button onClick={() => handleSelectTemplate("modern")} className="w-full md:w-auto">
+              Use Modern Template
+            </Button>
+          </div>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="classic">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <img 
+                  src={`/assets/templates/${type}-classic-preview.jpg`} 
+                  alt="Classic template" 
+                  className="w-full h-auto"
+                  onError={(e) => {
+                    // Fallback if image doesn't exist
+                    e.currentTarget.src = "/assets/templates/placeholder.jpg";
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex flex-col justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Classic Template</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                A traditional, formal design suitable for established businesses.
+              </p>
+              <ul className="text-sm space-y-1 mb-6">
+                <li>• Traditional letterhead style</li>
+                <li>• Formal typography</li>
+                <li>• Detailed footer with terms</li>
+                <li>• Space for company stamp</li>
+              </ul>
+            </div>
+            <Button onClick={() => handleSelectTemplate("classic")} className="w-full md:w-auto">
+              Use Classic Template
+            </Button>
+          </div>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="minimal">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <img 
+                  src={`/assets/templates/${type}-minimal-preview.jpg`} 
+                  alt="Minimal template" 
+                  className="w-full h-auto"
+                  onError={(e) => {
+                    // Fallback if image doesn't exist
+                    e.currentTarget.src = "/assets/templates/placeholder.jpg";
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex flex-col justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Minimal Template</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                A minimalist, essentials-only design that focuses on clarity.
+              </p>
+              <ul className="text-sm space-y-1 mb-6">
+                <li>• Streamlined, distraction-free layout</li>
+                <li>• Optimized for digital viewing</li>
+                <li>• Focused on key information</li>
+                <li>• Perfect for frequent invoicing</li>
+              </ul>
+            </div>
+            <Button onClick={() => handleSelectTemplate("minimal")} className="w-full md:w-auto">
+              Use Minimal Template
+            </Button>
+          </div>
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 };
 

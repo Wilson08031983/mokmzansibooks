@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,6 +72,13 @@ const Invoices: React.FC = () => {
     }
   }, [invoicesView]);  // Refresh count when view changes
   
+  // Handle creating new invoice
+  const handleCreateNewInvoice = () => {
+    setInvoicesView("create");
+    setActiveTab("invoices");
+    navigate('?tab=invoices&action=create', { replace: true });
+  };
+
   return (
     <div className="container mx-auto p-4">
       {/* We now only use real clients from localStorage */}
@@ -152,7 +160,7 @@ const Invoices: React.FC = () => {
               <div className="flex space-x-2">
                 {invoicesView === "list" ? (
                   <Button 
-                    onClick={() => setInvoicesView("create")}
+                    onClick={handleCreateNewInvoice}
                   >
                     <Plus className="h-4 w-4 mr-2" /> 
                     New Invoice
