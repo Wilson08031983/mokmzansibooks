@@ -18,6 +18,7 @@ import { UserBehaviorProvider } from "@/contexts/UserBehaviorContext";
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { testPersistence } from './utils/testPersistence';
 
+// Import DashboardLayout after fixing it
 import DashboardLayout from "@/layouts/DashboardLayout";
 import PublicLayout from "@/layouts/PublicLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -132,11 +133,11 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AuthProvider>
+        <Router>
           <I18nProvider>
-            <FinancialDataProvider>
-              <NotificationsProvider>
-                <Router>
+            <AuthProvider>
+              <FinancialDataProvider>
+                <NotificationsProvider>
                   <UserBehaviorProvider>
                     <CompanyProvider>
                       <AIAssistantProvider>
@@ -209,14 +210,15 @@ function App() {
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                         </Suspense>
+                        <Toaster />
                       </AIAssistantProvider>
                     </CompanyProvider>
                   </UserBehaviorProvider>
-                </Router>
-              </NotificationsProvider>
-            </FinancialDataProvider>
+                </NotificationsProvider>
+              </FinancialDataProvider>
+            </AuthProvider>
           </I18nProvider>
-        </AuthProvider>
+        </Router>
       </ThemeProvider>
     </ErrorBoundary>
   );
