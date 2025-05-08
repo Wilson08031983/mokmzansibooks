@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 
-import { useEffect } from "react";
-=======
 import { useEffect, useState } from "react";
->>>>>>> 273628c (Sync project changes: Multiple component updates, new features, and bug fixes across HR, Accounting, Invoicing, and Client management modules)
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -85,42 +81,12 @@ const DashboardLayout = () => {
       );
     }
 
-<<<<<<< HEAD
-    if (location.pathname.includes('/dashboard/hr')) {
-      const currentPath = location.pathname;
-      let defaultValue = "overview";
-      if (currentPath.includes("/dashboard/hr/employees")) {
-        defaultValue = "employees";
-      } else if (currentPath.includes("/dashboard/hr/payroll")) {
-        defaultValue = "payroll";
-      } else if (currentPath.includes("/dashboard/hr/attendance")) {
-        defaultValue = "attendance";
-      } else if (currentPath.includes("/dashboard/hr/leaves")) {
-        defaultValue = "leaves";
-      } else if (currentPath.includes("/dashboard/hr/benefits")) {
-        defaultValue = "benefits";
-      }
-      
-      return (
-        <Tabs defaultValue={defaultValue} className="mb-4" onValueChange={value => {
-          navigate(`/dashboard/hr${value !== 'overview' ? '/' + value : ''}`);
-        }}>
-          <TabsList className="inline-flex h-12 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto">
-            <TabsTrigger value="overview" className="px-4">Overview</TabsTrigger>
-            <TabsTrigger value="employees" className="px-4">Employees</TabsTrigger>
-            <TabsTrigger value="payroll" className="px-4">Payroll</TabsTrigger>
-            <TabsTrigger value="attendance" className="px-4">Attendance</TabsTrigger>
-            <TabsTrigger value="leaves" className="px-4">Leaves</TabsTrigger>
-            <TabsTrigger value="benefits" className="px-4">Benefits</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      );
-=======
+    // Choosing the newer version from the merge conflict
     // HR tabs have been moved to the HR.tsx component
     if (location.pathname.includes('/hr')) {
       return null;
->>>>>>> 273628c (Sync project changes: Multiple component updates, new features, and bug fixes across HR, Accounting, Invoicing, and Client management modules)
     }
+    
     return null;
   };
 
