@@ -11,6 +11,23 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Supabase
+supabase/functions/node_modules
+supabase/.branches
+supabase/.temp
+supabase/seed.sql
+
+# Secrets and tokens
+*.pem
+*.key
+*.token
+.supabase-token
 
 # Editor directories and files
 .vscode/*
