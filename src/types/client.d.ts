@@ -11,7 +11,7 @@ export interface BaseClient {
 
 export interface CompanyClient extends BaseClient {
   type: 'company';
-  contactPerson?: string; // Adding contactPerson here
+  contactPerson?: string;
   vatNumber?: string;
   registrationNumber?: string;
 }
@@ -24,13 +24,20 @@ export interface IndividualClient extends BaseClient {
 
 export interface VendorClient extends BaseClient {
   type: 'vendor';
-  contactPerson?: string; // Adding contactPerson here
+  contactPerson?: string;
   category?: string;
 }
 
 export type Client = CompanyClient | IndividualClient | VendorClient;
 
 export interface ClientsData {
+  companies: CompanyClient[];
+  individuals: IndividualClient[];
+  vendors: VendorClient[];
+}
+
+// Add this for the client context
+export interface ClientsState {
   companies: CompanyClient[];
   individuals: IndividualClient[];
   vendors: VendorClient[];
