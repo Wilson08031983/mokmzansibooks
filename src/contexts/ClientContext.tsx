@@ -1,88 +1,157 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ClientsData, ClientsState } from '@/types/client';
-import { syncClientData, loadClientsFromSupabase } from '@/integrations/supabase/clientOperations';
+import { Client, ClientsData, ClientsState } from '@/types/client';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ClientContextType {
   clients: ClientsState;
+  addClient: (client: Partial<Client>) => void;
+  updateClient: (id: string, client: Partial<Client>) => void;
+  deleteClient: (id: string) => void;
+  getClientById: (id: string) => Client | undefined;
   loading: boolean;
-  error: Error | null;
-  refreshClients: () => Promise<void>;
 }
 
 const defaultState: ClientsState = {
   companies: [],
   individuals: [],
-  vendors: [],
+  vendors: []
 };
 
-const ClientContext = createContext<ClientContextType>({
-  clients: defaultState,
-  loading: true,
-  error: null,
-  refreshClients: async () => {},
-});
+const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
-export const useClients = () => useContext(ClientContext);
-
-export const ClientProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [clients, setClients] = useState<ClientsState>(defaultState);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load clients on mount
-  const loadClients = async () => {
+  // Load clients from localStorage on mount
+  useEffect(() => {
     try {
-      setLoading(true);
-      
-      // Try to load from Supabase (falls back to localStorage)
-      const loadedClients = await loadClientsFromSupabase();
-      
-      // If clients were found, use them
-      if (loadedClients) {
-        console.log('Clients loaded:', {
-          companies: loadedClients.companies.length,
-          individuals: loadedClients.individuals.length,
-          vendors: loadedClients.vendors.length
-        });
-        setClients(loadedClients);
-      } else {
-        console.log('No clients found, using default state');
-        setClients(defaultState);
+      const savedClients = localStorage.getItem('mokClients');
+      if (savedClients) {
+        setClients(JSON.parse(savedClients));
       }
-      
-      setError(null);
-    } catch (err) {
-      console.error('Error loading clients:', err);
-      setError(err instanceof Error ? err : new Error('Failed to load clients'));
+    } catch (error) {
+      console.error('Error loading clients:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Sync client data
-  const syncClients = async () => {
-    try {
-      await syncClientData();
-      await loadClients();
-    } catch (err) {
-      console.error('Error syncing clients:', err);
-      setError(err instanceof Error ? err : new Error('Failed to sync clients'));
-    }
-  };
-
-  useEffect(() => {
-    loadClients();
   }, []);
+
+  // Save clients to localStorage whenever they change
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem('mokClients', JSON.stringify(clients));
+    }
+  }, [clients, loading]);
+
+  // Add a new client
+  const addClient = (client: Partial<Client>) => {
+    if (!client.type) return;
+
+    const newClient = {
+      ...client,
+      id: client.id || uuidv4(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    } as Client;
+
+    setClients(prev => {
+      const newClients = { ...prev };
+      
+      switch (client.type) {
+        case 'company':
+          newClients.companies = [...prev.companies, newClient as any];
+          break;
+        case 'individual':
+          newClients.individuals = [...prev.individuals, newClient as any];
+          break;
+        case 'vendor':
+          newClients.vendors = [...prev.vendors, newClient as any];
+          break;
+      }
+      
+      return newClients;
+    });
+  };
+
+  // Update an existing client
+  const updateClient = (id: string, clientUpdate: Partial<Client>) => {
+    setClients(prev => {
+      const newClients = { ...prev };
+      
+      // Check in all client types
+      let clientType: 'companies' | 'individuals' | 'vendors' | null = null;
+      
+      if (prev.companies.some(c => c.id === id)) {
+        clientType = 'companies';
+      } else if (prev.individuals.some(c => c.id === id)) {
+        clientType = 'individuals';
+      } else if (prev.vendors.some(c => c.id === id)) {
+        clientType = 'vendors';
+      }
+      
+      if (clientType) {
+        newClients[clientType] = prev[clientType].map(c => 
+          c.id === id 
+          ? { ...c, ...clientUpdate, updatedAt: new Date().toISOString() } 
+          : c
+        );
+      }
+      
+      return newClients;
+    });
+  };
+
+  // Delete a client
+  const deleteClient = (id: string) => {
+    setClients(prev => {
+      const newClients = { ...prev };
+      
+      newClients.companies = prev.companies.filter(c => c.id !== id);
+      newClients.individuals = prev.individuals.filter(c => c.id !== id);
+      newClients.vendors = prev.vendors.filter(c => c.id !== id);
+      
+      return newClients;
+    });
+  };
+
+  // Get a client by ID
+  const getClientById = (id: string): Client | undefined => {
+    // First check companies
+    const companyClient = clients.companies.find(c => c.id === id);
+    if (companyClient) return companyClient;
+    
+    // Then check individuals
+    const individualClient = clients.individuals.find(c => c.id === id);
+    if (individualClient) return individualClient;
+    
+    // Finally check vendors
+    const vendorClient = clients.vendors.find(c => c.id === id);
+    if (vendorClient) return vendorClient;
+    
+    // Not found
+    return undefined;
+  };
 
   return (
     <ClientContext.Provider value={{
       clients,
-      loading,
-      error,
-      refreshClients: syncClients
+      addClient,
+      updateClient,
+      deleteClient,
+      getClientById,
+      loading
     }}>
       {children}
     </ClientContext.Provider>
   );
+};
+
+export const useClient = (): ClientContextType => {
+  const context = useContext(ClientContext);
+  if (!context) {
+    throw new Error('useClient must be used within a ClientProvider');
+  }
+  return context;
 };

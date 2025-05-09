@@ -2,41 +2,28 @@
 import { useState, useEffect } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useNavigate } from 'react-router-dom';
-import { useNotifications } from '@/contexts/NotificationsContext';
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  actionLabel?: string;
-  action?: () => void;
-  timestamp: number;
-  read: boolean;
-}
+import { useToast } from '@/hooks/use-toast';
 
 export const useCompanySafeguards = () => {
   const { companyDetails } = useCompany();
   const navigate = useNavigate();
-  const { add: addNotification } = useNotifications();
+  const { toast } = useToast();
   const [safeguardChecksComplete, setSafeguardChecksComplete] = useState(false);
 
   useEffect(() => {
     if (companyDetails !== undefined) {
       if (!companyDetails?.name || !companyDetails?.address) {
-        // Add a notification
-        addNotification({
+        // Add a notification using toast instead of add
+        toast({
           title: 'Company details missing',
-          message: 'Please complete your company profile to enable full functionality.',
-          type: 'warning',
-          actionLabel: 'Update Profile',
-          action: () => navigate('/settings/company')
+          description: 'Please complete your company profile to enable full functionality.',
+          variant: 'warning'
         });
       }
 
       setSafeguardChecksComplete(true);
     }
-  }, [companyDetails, navigate, addNotification]);
+  }, [companyDetails, navigate, toast]);
 
   return { safeguardChecksComplete };
 };

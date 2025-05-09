@@ -1,70 +1,28 @@
-
-import { supabase } from '@/integrations/supabase/client';
+// Import the ClientsState from the client types file
 import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from '@/types/client';
-import { getSafeClientData, setSafeClientData } from '@/utils/clientDataPersistence';
+import { supabase } from './client';
 
-/**
- * Save all clients to storage (currently using localStorage)
- * @param clients The client state to save
- * @returns Promise that resolves when save is complete
- */
-export const saveClientsToSupabase = async (clients: ClientsState): Promise<void> => {
+// Function to fetch clients from Supabase (placeholder for now)
+export async function fetchClients(): Promise<ClientsState> {
   try {
-    // Get the current user info
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      console.log('No authenticated user found, saving locally only');
-    } else {
-      console.log('User authenticated, would sync to Supabase if table existed');
+    // This is a placeholder - in a real implementation, this would fetch from Supabase
+    // For now, we'll just return the data from localStorage
+    const localData = localStorage.getItem('mokClients');
+    if (localData) {
+      return JSON.parse(localData) as ClientsState;
     }
     
-    // For now, just save to localStorage
-    setSafeClientData(clients);
-    
-    return Promise.resolve();
+    return { companies: [], individuals: [], vendors: [] };
   } catch (error) {
-    console.error('Error saving clients:', error);
-    throw error;
+    console.error('Error fetching clients:', error);
+    return { companies: [], individuals: [], vendors: [] };
   }
-};
+}
 
-/**
- * Load client data from storage (currently using localStorage)
- * @returns Promise resolving to the client state
- */
-export const loadClientsFromSupabase = async (): Promise<ClientsState | null> => {
-  try {
-    // Get the current user
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      console.log('No authenticated user found, loading from localStorage only');
-    }
-    
-    // Get clients from localStorage
-    const clientsData = getSafeClientData();
-    return clientsData || null;
-  } catch (error) {
-    console.error('Error loading clients:', error);
-    return null;
-  }
-};
-
-/**
- * Sync local client data with storage
- * This will push local data to storage and then pull the latest data back
- */
-export const syncClientData = async (): Promise<void> => {
-  try {
-    // Get current client data from localStorage
-    const clientData = getSafeClientData();
-    
-    // Save to storage
-    await saveClientsToSupabase(clientData);
-    
-    // No need to fetch from Supabase as we're just using localStorage for now
-  } catch (error) {
-    console.error('Error syncing client data:', error);
-  }
-};
+// Additional functions for client operations would go here
+// For example:
+// - createClient
+// - updateClient
+// - deleteClient
+// - getClientById
+// etc.

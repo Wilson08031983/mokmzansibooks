@@ -1,3 +1,4 @@
+
 /**
  * Hook for accessing client data throughout the application
  * This provides a consistent way to access client information
@@ -5,8 +6,34 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Client, CompanyClient, IndividualClient, VendorClient } from '@/types/client';
-import { ClientsState, getSafeClientData } from '@/utils/clientDataPersistence';
+import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from '@/types/client';
+
+// Default empty state
+const defaultClientsState: ClientsState = {
+  companies: [],
+  individuals: [],
+  vendors: []
+};
+
+/**
+ * Safe getter for client data 
+ */
+function getSafeClientData(): ClientsState {
+  try {
+    const clientData = localStorage.getItem('mokClients');
+    if (!clientData) return defaultClientsState;
+    
+    const parsedData = JSON.parse(clientData) as ClientsState;
+    return {
+      companies: Array.isArray(parsedData.companies) ? parsedData.companies : [],
+      individuals: Array.isArray(parsedData.individuals) ? parsedData.individuals : [],
+      vendors: Array.isArray(parsedData.vendors) ? parsedData.vendors : []
+    };
+  } catch (error) {
+    console.error('Error getting safe client data:', error);
+    return defaultClientsState;
+  }
+}
 
 /**
  * Hook to access client data throughout the application
