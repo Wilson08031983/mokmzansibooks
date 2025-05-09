@@ -61,15 +61,12 @@ export function hasContactPerson(client: Client): boolean {
   return isCompanyClient(client) || isVendorClient(client);
 }
 
-// Add these for the client context - explicitly exported
-export interface ClientsData {
-  companies: CompanyClient[];
-  individuals: IndividualClient[];
-  vendors: VendorClient[];
-}
-
+// Interface for client data organization
 export interface ClientsState {
   companies: CompanyClient[];
   individuals: IndividualClient[];
   vendors: VendorClient[];
 }
+
+// Alias for ClientsState for backward compatibility
+export interface ClientsData extends ClientsState {}

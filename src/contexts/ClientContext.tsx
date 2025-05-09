@@ -54,7 +54,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       id: client.id || uuidv4(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    };
+    } as Client;
 
     setClients(prev => {
       const newClients = { ...prev };

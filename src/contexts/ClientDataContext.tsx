@@ -1,36 +1,44 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from '@/types/client';
-import { getSafeClientData, setSafeClientData } from '@/utils/clientDataPersistence';
+import { Client, ClientsState } from '@/types/client';
+import { getSafeClientData, setSafeClientData, restoreClientDataFromBackup } from '@/utils/clientDataPersistence';
 
-interface ClientContextType {
+// Define the context shape
+interface ClientDataContextType {
   clients: ClientsState;
-  addClient: (client: Client) => boolean;
-  updateClient: (client: Client) => boolean;
-  deleteClient: (id: string, type: 'company' | 'individual' | 'vendor') => boolean;
-  getClientById: (id: string) => Client | undefined;
+  setClients: React.Dispatch<React.SetStateAction<ClientsState>>;
   loading: boolean;
+  restoreFromBackup: () => boolean;
 }
 
-const ClientContext = createContext<ClientContextType | undefined>(undefined);
+// Create the context
+const ClientDataContext = createContext<ClientDataContextType | undefined>(undefined);
 
-export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [clients, setClients] = useState<ClientsState>({ companies: [], individuals: [], vendors: [] });
+// Default state for clients
+const defaultState: ClientsState = {
+  companies: [],
+  individuals: [],
+  vendors: []
+};
+
+export const ClientDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Initialize state
+  const [clients, setClients] = useState<ClientsState>(defaultState);
   const [loading, setLoading] = useState(true);
 
-  // Load clients from localStorage on mount
+  // Load clients on mount
   useEffect(() => {
     try {
-      const savedClients = getSafeClientData();
-      setClients(savedClients);
+      const data = getSafeClientData();
+      setClients(data);
     } catch (error) {
-      console.error('Error loading clients:', error);
+      console.error('Error loading client data:', error);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Save clients to localStorage whenever they change
+  // Save clients when they change
   useEffect(() => {
     if (!loading) {
       try {
@@ -44,135 +52,41 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [clients, loading]);
 
-  // Add a new client
-  const addClient = (client: Client): boolean => {
+  // Function to restore from backup
+  const restoreFromBackup = (): boolean => {
     try {
-      setClients(prevClients => {
-        const newClients = { ...prevClients };
-        
-        switch (client.type) {
-          case 'company':
-            newClients.companies = [...prevClients.companies, client as CompanyClient];
-            break;
-          case 'individual':
-            newClients.individuals = [...prevClients.individuals, client as IndividualClient];
-            break;
-          case 'vendor':
-            newClients.vendors = [...prevClients.vendors, client as VendorClient];
-            break;
-          default:
-            return prevClients; // No changes if invalid type
-        }
-        
-        return newClients;
-      });
-      return true;
+      const restored = restoreClientDataFromBackup();
+      if (restored) {
+        // Reload the data
+        const data = getSafeClientData();
+        setClients(data);
+        return true;
+      }
+      return false;
     } catch (error) {
-      console.error('Error adding client:', error);
+      console.error('Error in restore operation:', error);
       return false;
     }
-  };
-
-  // Update an existing client
-  const updateClient = (updatedClient: Client): boolean => {
-    try {
-      setClients(prevClients => {
-        const newClients = { ...prevClients };
-        
-        switch (updatedClient.type) {
-          case 'company':
-            newClients.companies = prevClients.companies.map(c => 
-              c.id === updatedClient.id ? updatedClient as CompanyClient : c
-            );
-            break;
-          case 'individual':
-            newClients.individuals = prevClients.individuals.map(c => 
-              c.id === updatedClient.id ? updatedClient as IndividualClient : c
-            );
-            break;
-          case 'vendor':
-            newClients.vendors = prevClients.vendors.map(c => 
-              c.id === updatedClient.id ? updatedClient as VendorClient : c
-            );
-            break;
-          default:
-            return prevClients; // No changes if invalid type
-        }
-        
-        return newClients;
-      });
-      return true;
-    } catch (error) {
-      console.error('Error updating client:', error);
-      return false;
-    }
-  };
-
-  // Delete a client
-  const deleteClient = (id: string, type: 'company' | 'individual' | 'vendor'): boolean => {
-    try {
-      setClients(prevClients => {
-        const newClients = { ...prevClients };
-        
-        switch (type) {
-          case 'company':
-            newClients.companies = prevClients.companies.filter(c => c.id !== id);
-            break;
-          case 'individual':
-            newClients.individuals = prevClients.individuals.filter(c => c.id !== id);
-            break;
-          case 'vendor':
-            newClients.vendors = prevClients.vendors.filter(c => c.id !== id);
-            break;
-          default:
-            return prevClients; // No changes if invalid type
-        }
-        
-        return newClients;
-      });
-      return true;
-    } catch (error) {
-      console.error('Error deleting client:', error);
-      return false;
-    }
-  };
-
-  // Get a client by ID
-  const getClientById = (id: string): Client | undefined => {
-    // First check companies
-    const companyClient = clients.companies.find(c => c.id === id);
-    if (companyClient) return companyClient;
-    
-    // Then check individuals
-    const individualClient = clients.individuals.find(c => c.id === id);
-    if (individualClient) return individualClient;
-    
-    // Finally check vendors
-    const vendorClient = clients.vendors.find(c => c.id === id);
-    if (vendorClient) return vendorClient;
-    
-    // Not found
-    return undefined;
   };
 
   return (
-    <ClientContext.Provider value={{
-      clients,
-      addClient,
-      updateClient,
-      deleteClient,
-      getClientById,
-      loading
-    }}>
+    <ClientDataContext.Provider
+      value={{
+        clients,
+        setClients,
+        loading,
+        restoreFromBackup
+      }}
+    >
       {children}
-    </ClientContext.Provider>
+    </ClientDataContext.Provider>
   );
 };
 
-export const useClientData = (): ClientContextType => {
-  const context = useContext(ClientContext);
+export const useClientData = (): ClientDataContextType => {
+  const context = useContext(ClientDataContext);
   if (!context) {
-    throw new Error('useClientData must be used within a ClientProvider');
+    throw new Error('useClientData must be used within a ClientDataProvider');
   }
   return context;
 };
