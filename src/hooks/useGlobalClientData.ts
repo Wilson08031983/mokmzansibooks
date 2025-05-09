@@ -1,3 +1,4 @@
+
 /**
  * Hook for accessing client data throughout the application
  * This provides a consistent way to access client information
@@ -5,7 +6,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from '@/types/client';
+import { Client, CompanyClient, IndividualClient, VendorClient } from '@/types/client';
+
+// Define ClientsState interface here to avoid import issues
+export interface ClientsState {
+  companies: CompanyClient[];
+  individuals: IndividualClient[];
+  vendors: VendorClient[];
+}
 
 // Default empty state
 const defaultClientsState: ClientsState = {

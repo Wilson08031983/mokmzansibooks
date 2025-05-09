@@ -1,6 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Client, ClientsState } from '@/types/client';
+import { Client } from '@/types/client';
+
+// Define the ClientsState interface here
+export interface ClientsState {
+  companies: any[];
+  individuals: any[];
+  vendors: any[];
+}
 
 // Define the context shape
 interface ClientDataContextType {
