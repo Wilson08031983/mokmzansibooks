@@ -1,15 +1,13 @@
 
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Client, CompanyClient, IndividualClient, VendorClient } from '@/types/client';
+import { 
+  Client, 
+  CompanyClient, 
+  IndividualClient, 
+  VendorClient, 
+  ClientsState 
+} from '@/types/client';
 import { v4 as uuidv4 } from 'uuid';
-
-// Define ClientsState interface here to avoid import issues
-interface ClientsState {
-  companies: CompanyClient[];
-  individuals: IndividualClient[];
-  vendors: VendorClient[];
-}
 
 interface ClientContextType {
   clients: ClientsState;
@@ -94,15 +92,12 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       newClient = {
         ...commonProperties,
         type: 'individual',
-        firstName: (client as Partial<IndividualClient>).firstName || '',
-        lastName: (client as Partial<IndividualClient>).lastName || ''
       } as IndividualClient;
     } else {
       newClient = {
         ...commonProperties,
         type: 'vendor',
         contactPerson: (client as Partial<VendorClient>).contactPerson || '',
-        category: (client as Partial<VendorClient>).category || ''
       } as VendorClient;
     }
     

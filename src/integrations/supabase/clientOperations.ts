@@ -1,6 +1,6 @@
+
 // Import the ClientsState from the client types file
-import { Client } from '@/types/client';
-import { ClientsState } from '@/hooks/useGlobalClientData';
+import { Client, ClientsState } from '@/types/client';
 
 // Function to fetch clients from Supabase (placeholder for now)
 export async function fetchClients(): Promise<ClientsState> {
