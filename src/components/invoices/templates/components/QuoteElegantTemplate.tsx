@@ -1,157 +1,175 @@
-
 import React from "react";
+import { formatCurrency, formatPercentage } from "@/utils/formatters";
+import { format } from "date-fns";
 import { QuoteData } from "@/types/quote";
-import { formatDate, formatCurrency, renderCompanyLogo, renderSignature, renderCompanyStamp } from "@/utils/formatters";
 
-interface TemplateProps {
+interface Props {
   data: QuoteData;
-  preview?: boolean;
 }
 
-const QuoteElegantTemplate = ({ data, preview }: TemplateProps) => {
+const QuoteElegantTemplate: React.FC<Props> = ({ data }) => {
+  const items = data.items || [];
+  const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+  const tax = data.vatRate ? subtotal * (data.vatRate / 100) : 0;
+  const total = subtotal + tax;
+
+  // Helper functions for rendering conditional elements
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd MMM yyyy");
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const renderCompanyLogo = (logoUrl?: string) => {
+    if (!logoUrl) return null;
+    return <img src={logoUrl} alt="Company Logo" className="max-h-20 max-w-full object-contain mb-4" />;
+  };
+
+  const renderCompanyStamp = (stampUrl?: string) => {
+    if (!stampUrl) return null;
+    return <img src={stampUrl} alt="Company Stamp" className="max-h-24 max-w-full object-contain" />;
+  };
+
+  const renderSignature = (signatureUrl?: string) => {
+    if (!signatureUrl) return null;
+    return <img src={signatureUrl} alt="Signature" className="max-h-16 max-w-full object-contain" />;
+  };
+
   return (
-    <div className="bg-white text-black font-serif">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-10">
-        <div className="w-28 h-28">
-          {renderCompanyLogo(data.company.logo)}
+    <div className="w-[210mm] min-h-[297mm] bg-white p-8 mx-auto shadow-lg font-serif">
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          {renderCompanyLogo(data.company?.logo)}
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">QUOTE</h1>
+          <p className="text-sm text-gray-500">{data.quoteNumber}</p>
         </div>
+
         <div className="text-right">
-          <h1 className="text-4xl font-light text-gray-800">QUOTE</h1>
-          <div className="w-16 h-1 bg-gray-300 ml-auto mt-1 mb-2"></div>
-          <p className="text-gray-500">REF: {data.quoteNumber}</p>
+          <h2 className="font-bold text-xl text-gray-800">{data.company?.name}</h2>
+          <p className="text-gray-600 whitespace-pre-line">{data.company?.address}</p>
+          <p className="text-gray-600">{data.company?.email}</p>
+          <p className="text-gray-600">{data.company?.phone}</p>
         </div>
       </div>
-      
-      {/* Company and Client Info */}
-      <div className="grid grid-cols-2 gap-16 mb-10">
+
+      <hr className="border-gray-300 my-6" />
+
+      <div className="grid grid-cols-2 gap-8 mb-8">
         <div>
-          <h3 className="text-lg font-light border-b border-gray-200 pb-1 mb-3">FROM</h3>
-          <h4 className="font-medium text-lg">{data.company.name}</h4>
-          <p className="whitespace-pre-line text-gray-600">{data.company.address}</p>
-          <p className="text-gray-600">{data.company.email}</p>
-          <p className="text-gray-600">{data.company.phone}</p>
-        </div>
-        <div>
-          <h3 className="text-lg font-light border-b border-gray-200 pb-1 mb-3">FOR</h3>
-          <h4 className="font-medium text-lg">{data.client.name}</h4>
-          <p className="whitespace-pre-line text-gray-600">{data.client.address}</p>
+          <h3 className="font-semibold text-gray-600 mb-2">BILL TO:</h3>
+          <h4 className="font-bold text-gray-800">{data.client.name}</h4>
+          <p className="text-gray-600 whitespace-pre-line">{data.client.address}</p>
           <p className="text-gray-600">{data.client.email}</p>
           <p className="text-gray-600">{data.client.phone}</p>
         </div>
+
+        <div>
+          <div className="flex justify-between mb-2">
+            <span className="font-semibold text-gray-600">Issue Date:</span>
+            <span className="text-gray-800">{formatDate(data.issueDate)}</span>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className="font-semibold text-gray-600">Expiry Date:</span>
+            <span className="text-gray-800">{formatDate(data.expiryDate)}</span>
+          </div>
+          {data.shortDescription && (
+            <div className="mt-4">
+              <span className="font-semibold text-gray-600 block mb-1">Description:</span>
+              <p className="text-gray-800">{data.shortDescription}</p>
+            </div>
+          )}
+        </div>
       </div>
-      
-      {/* Quote Details */}
-      <div className="grid grid-cols-3 gap-6 mb-10">
-        <div>
-          <h3 className="text-sm font-light text-gray-500">QUOTE DATE</h3>
-          <p className="font-medium">{formatDate(data.issueDate)}</p>
-        </div>
-        <div>
-          <h3 className="text-sm font-light text-gray-500">EXPIRY DATE</h3>
-          <p className="font-medium">{formatDate(data.expiryDate)}</p>
-        </div>
-        <div>
-          <h3 className="text-sm font-light text-gray-500">REFERENCE</h3>
-          <p className="font-medium">{data.quoteNumber}</p>
-        </div>
-      </div>
-      
-      {/* Description */}
-      {data.shortDescription && (
-        <div className="mb-8">
-          <h3 className="text-lg font-light border-b border-gray-200 pb-1 mb-3">DESCRIPTION</h3>
-          <p className="text-gray-700">{data.shortDescription}</p>
-        </div>
-      )}
-      
-      {/* Items Table */}
-      <div className="mb-8">
-        <h3 className="text-lg font-light border-b border-gray-200 pb-1 mb-3">DETAILS</h3>
+
+      <div className="mb-8 overflow-x-auto">
         <table className="w-full">
-          <thead>
-            <tr className="text-left text-gray-600">
-              <th className="py-3">Item</th>
-              <th className="py-3">Description</th>
-              <th className="py-3 text-right">Qty</th>
-              <th className="py-3 text-right">Unit Price (R)</th>
-              <th className="py-3 text-right">Mark Up %</th>
-              <th className="py-3 text-right">Discount</th>
-              <th className="py-3 text-right">Amount (R)</th>
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-4 py-2 text-left text-gray-700">#</th>
+              <th className="px-4 py-2 text-left text-gray-700">Description</th>
+              <th className="px-4 py-2 text-right text-gray-700">Qty</th>
+              <th className="px-4 py-2 text-right text-gray-700">Unit Price</th>
+              <th className="px-4 py-2 text-right text-gray-700">Discount</th>
+              <th className="px-4 py-2 text-right text-gray-700">Amount</th>
             </tr>
           </thead>
           <tbody>
-            {data.items.map((item, index) => (
-              <tr key={index} className="border-b border-gray-100">
-                <td className="py-4">{item.itemNo}</td>
-                <td className="py-4">{item.description}</td>
-                <td className="py-4 text-right">{item.quantity}</td>
-                <td className="py-4 text-right">{formatCurrency(item.unitPrice, "ZAR")}</td>
-                <td className="py-4 text-right">{item.markupPercentage || 0}%</td>
-                <td className="py-4 text-right">{item.discount}%</td>
-                <td className="py-4 text-right font-medium">{formatCurrency(item.amount, "ZAR")}</td>
+            {items.map((item, i) => (
+              <tr key={i} className="border-b border-gray-200">
+                <td className="px-4 py-3 text-gray-800">{item.itemNo}</td>
+                <td className="px-4 py-3 text-gray-800">{item.description}</td>
+                <td className="px-4 py-3 text-gray-800 text-right">{item.quantity}</td>
+                <td className="px-4 py-3 text-gray-800 text-right">{formatCurrency(item.unitPrice)}</td>
+                <td className="px-4 py-3 text-gray-800 text-right">{formatPercentage(item.discount)}</td>
+                <td className="px-4 py-3 text-gray-800 text-right font-semibold">{formatCurrency(item.amount)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      
-      {/* Totals */}
+
       <div className="flex justify-end mb-8">
-        <div className="w-80">
-          <div className="flex justify-between py-2">
+        <div className="w-1/3">
+          <div className="flex justify-between border-b border-gray-200 py-2">
             <span className="text-gray-600">Subtotal:</span>
-            <span className="font-medium">{formatCurrency(data.subtotal, "ZAR")}</span>
+            <span className="text-gray-800">{formatCurrency(subtotal)}</span>
           </div>
-          <div className="flex justify-between py-2">
-            <span className="text-gray-600">VAT ({data.vatRate}%):</span>
-            <span className="font-medium">{formatCurrency(data.tax, "ZAR")}</span>
+          <div className="flex justify-between border-b border-gray-200 py-2">
+            <span className="text-gray-600">Tax ({data.vatRate || 0}%):</span>
+            <span className="text-gray-800">{formatCurrency(tax)}</span>
           </div>
-          <div className="h-px bg-gray-200 my-2"></div>
-          <div className="flex justify-between py-2 text-xl font-light">
+          <div className="flex justify-between py-2 font-bold">
             <span>Total:</span>
-            <span className="font-medium">{formatCurrency(data.total, "ZAR")}</span>
+            <span>{formatCurrency(total)}</span>
           </div>
         </div>
       </div>
-      
-      <div className="grid grid-cols-2 gap-10 mb-10">
-        {/* Terms and Notes */}
+
+      <div className="grid grid-cols-2 gap-8 mb-8">
+        {data.notes && (
+          <div>
+            <h4 className="font-semibold text-gray-700 mb-2">Notes</h4>
+            <p className="text-gray-600 whitespace-pre-line">{data.notes}</p>
+          </div>
+        )}
+
+        {data.terms && (
+          <div>
+            <h4 className="font-semibold text-gray-700 mb-2">Terms & Conditions</h4>
+            <p className="text-gray-600 whitespace-pre-line">{data.terms}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-8 mt-12">
         <div>
-          <h3 className="text-lg font-light border-b border-gray-200 pb-1 mb-3">TERMS & CONDITIONS</h3>
-          <p className="text-gray-600 whitespace-pre-line">{data.terms}</p>
-          
-          {data.notes && (
-            <>
-              <h3 className="text-lg font-light border-b border-gray-200 pb-1 mb-3 mt-6">NOTES</h3>
-              <p className="text-gray-600 whitespace-pre-line">{data.notes}</p>
-            </>
-          )}
+          <div className="border-t border-gray-300 pt-2 mt-8">
+            {renderSignature(data.signature)}
+            <p className="text-gray-600 text-sm mt-2">Authorized Signature</p>
+          </div>
         </div>
-        
-        {/* Banking Details and Signature */}
-        <div>
-          <h3 className="text-lg font-light border-b border-gray-200 pb-1 mb-3">BANKING DETAILS</h3>
-          <pre className="whitespace-pre-wrap text-gray-600 font-serif">{data.bankingDetails}</pre>
-          
-          <div className="mt-8 flex items-end justify-between">
-            <div>
-              <h3 className="text-sm font-light text-gray-500 mb-2">AUTHORIZED SIGNATURE</h3>
-              <div className="border-b border-gray-300 w-48 h-12">
-                {renderSignature(data.signature)}
-              </div>
-            </div>
-            <div className="border border-gray-200 w-24 h-24 flex items-center justify-center">
-              {renderCompanyStamp(data.company.stamp)}
-            </div>
+        <div className="text-right">
+          <div className="border-t border-gray-300 pt-2 mt-8 inline-block">
+            {renderCompanyStamp(data.company?.stamp)}
+            <p className="text-gray-600 text-sm mt-2">Company Stamp</p>
           </div>
         </div>
       </div>
-      
-      {/* Footer */}
-      <div className="text-center text-gray-500 text-sm pt-6 border-t border-gray-200">
-        <p>Thank you for your business</p>
-      </div>
+
+      {data.bankAccount && (
+        <div className="mt-8 border-t border-gray-300 pt-4">
+          <h4 className="font-semibold text-gray-700 mb-2">Banking Details</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <p className="text-gray-600"><span className="font-medium">Bank:</span> {data.bankAccount.bankName}</p>
+            <p className="text-gray-600"><span className="font-medium">Account Name:</span> {data.bankAccount.accountName}</p>
+            <p className="text-gray-600"><span className="font-medium">Account Number:</span> {data.bankAccount.accountNumber}</p>
+            <p className="text-gray-600"><span className="font-medium">Branch Code:</span> {data.bankAccount.branchCode}</p>
+            {data.bankAccount.swiftCode && <p className="text-gray-600"><span className="font-medium">SWIFT Code:</span> {data.bankAccount.swiftCode}</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

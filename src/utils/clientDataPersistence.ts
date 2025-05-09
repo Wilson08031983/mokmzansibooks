@@ -1,12 +1,5 @@
 
-import { Client, CompanyClient, IndividualClient, VendorClient } from '@/types/client';
-
-// Define and export the ClientsState interface
-export interface ClientsState {
-  companies: CompanyClient[];
-  individuals: IndividualClient[];
-  vendors: VendorClient[];
-}
+import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from '@/types/client';
 
 /**
  * Safely retrieves client data from localStorage

@@ -1,4 +1,5 @@
 
+
 export interface QuoteItem {
   itemNo: number | string;
   description: string;
@@ -71,3 +72,4 @@ export interface TemplateProps {
     swiftCode?: string;
   };
 }
+

@@ -1,11 +1,6 @@
 
-/**
- * Mock Supabase operations for client data
- * This file contains functions for client-related operations, currently using localStorage
- */
-
-import { supabase } from './client';
-import { Client, ClientsState } from "@/types/client";
+import { supabase } from '@/integrations/supabase/client';
+import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from '@/types/client';
 import { getSafeClientData, setSafeClientData } from '@/utils/clientDataPersistence';
 
 /**

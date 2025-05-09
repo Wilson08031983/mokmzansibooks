@@ -1,134 +1,175 @@
-
 import React from "react";
+import { formatCurrency, formatPercentage } from "@/utils/formatters";
+import { format } from "date-fns";
 import { QuoteData } from "@/types/quote";
-import { formatDate, formatCurrency, renderCompanyLogo, renderSignature, renderCompanyStamp } from "@/utils/formatters";
 
-interface TemplateProps {
+interface Props {
   data: QuoteData;
-  preview?: boolean;
 }
 
-const QuoteClassicTemplate = ({ data, preview }: TemplateProps) => {
+const QuoteClassicTemplate: React.FC<Props> = ({ data }) => {
+  const items = data.items || [];
+  const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+  const tax = data.vatRate ? subtotal * (data.vatRate / 100) : 0;
+  const total = subtotal + tax;
+
+  // Helper functions for rendering conditional elements
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd MMM yyyy");
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const renderCompanyLogo = (logoUrl?: string) => {
+    if (!logoUrl) return null;
+    return <img src={logoUrl} alt="Company Logo" className="max-h-16 max-w-full object-contain mb-4" />;
+  };
+
+  const renderCompanyStamp = (stampUrl?: string) => {
+    if (!stampUrl) return null;
+    return <img src={stampUrl} alt="Company Stamp" className="max-h-24 max-w-full object-contain" />;
+  };
+
+  const renderSignature = (signatureUrl?: string) => {
+    if (!signatureUrl) return null;
+    return <img src={signatureUrl} alt="Signature" className="max-h-16 max-w-full object-contain" />;
+  };
+
   return (
-    <div className="bg-white text-black font-serif">
-      {/* Header with Company Info */}
+    <div className="w-[210mm] min-h-[297mm] bg-white p-8 mx-auto shadow-lg">
       <div className="flex justify-between items-start mb-8">
-        <div className="flex items-start space-x-4">
-          <div className="w-20 h-20">
-            {renderCompanyLogo(data.company.logo)}
-          </div>
-          <div>
-            <h2 className="font-bold text-xl mb-1">{data.company.name}</h2>
-            <p className="whitespace-pre-line text-sm text-gray-700">{data.company.address}</p>
-            <p className="text-sm text-gray-700">{data.company.email}</p>
-            <p className="text-sm text-gray-700">{data.company.phone}</p>
-          </div>
+        <div>
+          {renderCompanyLogo(data.company?.logo)}
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">QUOTE</h1>
+          <p className="text-sm text-gray-500">{data.quoteNumber}</p>
         </div>
+
         <div className="text-right">
-          <h1 className="text-3xl font-bold text-gray-800">QUOTE</h1>
-          <p className="text-sm mt-2"><span className="font-semibold">Quote #:</span> {data.quoteNumber}</p>
-          <p className="text-sm"><span className="font-semibold">Date:</span> {formatDate(data.issueDate)}</p>
-          <p className="text-sm"><span className="font-semibold">Expires:</span> {formatDate(data.expiryDate)}</p>
+          <h2 className="font-bold text-xl text-gray-800">{data.company?.name}</h2>
+          <p className="text-gray-600 whitespace-pre-line">{data.company?.address}</p>
+          <p className="text-gray-600">{data.company?.email}</p>
+          <p className="text-gray-600">{data.company?.phone}</p>
+        </div>
+      </div>
+
+      <hr className="border-gray-300 my-6" />
+
+      <div className="grid grid-cols-2 gap-8 mb-8">
+        <div>
+          <h3 className="font-semibold text-gray-600 mb-2">BILL TO:</h3>
+          <h4 className="font-bold text-gray-800">{data.client.name}</h4>
+          <p className="text-gray-600 whitespace-pre-line">{data.client.address}</p>
+          <p className="text-gray-600">{data.client.email}</p>
+          <p className="text-gray-600">{data.client.phone}</p>
+        </div>
+
+        <div>
+          <div className="flex justify-between mb-2">
+            <span className="font-semibold text-gray-600">Issue Date:</span>
+            <span className="text-gray-800">{formatDate(data.issueDate)}</span>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className="font-semibold text-gray-600">Expiry Date:</span>
+            <span className="text-gray-800">{formatDate(data.expiryDate)}</span>
+          </div>
           {data.shortDescription && (
-            <p className="text-sm mt-2 max-w-xs">{data.shortDescription}</p>
+            <div className="mt-4">
+              <span className="font-semibold text-gray-600 block mb-1">Description:</span>
+              <p className="text-gray-800">{data.shortDescription}</p>
+            </div>
           )}
         </div>
       </div>
-      
-      {/* Horizontal Line */}
-      <div className="border-t border-gray-300 mb-6"></div>
-      
-      {/* Client Information */}
-      <div className="mb-6">
-        <h3 className="font-bold text-gray-700 mb-2">Quote To:</h3>
-        <h4 className="font-bold">{data.client.name}</h4>
-        <p className="whitespace-pre-line">{data.client.address}</p>
-        <p>{data.client.email}</p>
-        <p>{data.client.phone}</p>
-      </div>
-      
-      {/* Items Table */}
-      <table className="w-full mb-6">
-        <thead>
-          <tr className="text-left text-gray-800 border-b-2 border-gray-300">
-            <th className="py-2">Item No.</th>
-            <th className="py-2">Description</th>
-            <th className="py-2 text-right">Qty</th>
-            <th className="py-2 text-right">Unit Price (R)</th>
-            <th className="py-2 text-right">Mark Up %</th>
-            <th className="py-2 text-right">Discount %</th>
-            <th className="py-2 text-right">Total (R)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.items.map((item, index) => (
-            <tr key={index} className="border-b border-gray-200">
-              <td className="py-3">{item.itemNo}</td>
-              <td className="py-3">{item.description}</td>
-              <td className="py-3 text-right">{item.quantity}</td>
-              <td className="py-3 text-right">{formatCurrency(item.unitPrice, "ZAR")}</td>
-              <td className="py-3 text-right">{item.markupPercentage || 0}%</td>
-              <td className="py-3 text-right">{item.discount}%</td>
-              <td className="py-3 text-right font-semibold">{formatCurrency(item.amount, "ZAR")}</td>
+
+      <div className="mb-8 overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-4 py-2 text-left text-gray-700">#</th>
+              <th className="px-4 py-2 text-left text-gray-700">Description</th>
+              <th className="px-4 py-2 text-right text-gray-700">Qty</th>
+              <th className="px-4 py-2 text-right text-gray-700">Unit Price</th>
+              <th className="px-4 py-2 text-right text-gray-700">Discount</th>
+              <th className="px-4 py-2 text-right text-gray-700">Amount</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      
-      {/* Totals */}
+          </thead>
+          <tbody>
+            {items.map((item, i) => (
+              <tr key={i} className="border-b border-gray-200">
+                <td className="px-4 py-3 text-gray-800">{item.itemNo}</td>
+                <td className="px-4 py-3 text-gray-800">{item.description}</td>
+                <td className="px-4 py-3 text-gray-800 text-right">{item.quantity}</td>
+                <td className="px-4 py-3 text-gray-800 text-right">{formatCurrency(item.unitPrice)}</td>
+                <td className="px-4 py-3 text-gray-800 text-right">{formatPercentage(item.discount)}</td>
+                <td className="px-4 py-3 text-gray-800 text-right font-semibold">{formatCurrency(item.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       <div className="flex justify-end mb-8">
-        <div className="w-64">
-          <div className="flex justify-between py-1 border-b">
-            <span>Subtotal:</span>
-            <span className="font-medium">{formatCurrency(data.subtotal, "ZAR")}</span>
+        <div className="w-1/3">
+          <div className="flex justify-between border-b border-gray-200 py-2">
+            <span className="text-gray-600">Subtotal:</span>
+            <span className="text-gray-800">{formatCurrency(subtotal)}</span>
           </div>
-          <div className="flex justify-between py-1 border-b">
-            <span>VAT ({data.vatRate}%):</span>
-            <span className="font-medium">{formatCurrency(data.tax, "ZAR")}</span>
+          <div className="flex justify-between border-b border-gray-200 py-2">
+            <span className="text-gray-600">Tax ({data.vatRate || 0}%):</span>
+            <span className="text-gray-800">{formatCurrency(tax)}</span>
           </div>
-          <div className="flex justify-between py-2 font-bold text-lg">
+          <div className="flex justify-between py-2 font-bold">
             <span>Total:</span>
-            <span>{formatCurrency(data.total, "ZAR")}</span>
+            <span>{formatCurrency(total)}</span>
           </div>
         </div>
       </div>
-      
-      {/* Notes and Terms */}
-      <div className="grid grid-cols-2 gap-6 mb-8">
+
+      <div className="grid grid-cols-2 gap-8 mb-8">
+        {data.notes && (
+          <div>
+            <h4 className="font-semibold text-gray-700 mb-2">Notes</h4>
+            <p className="text-gray-600 whitespace-pre-line">{data.notes}</p>
+          </div>
+        )}
+
+        {data.terms && (
+          <div>
+            <h4 className="font-semibold text-gray-700 mb-2">Terms & Conditions</h4>
+            <p className="text-gray-600 whitespace-pre-line">{data.terms}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-8 mt-12">
         <div>
-          <h3 className="font-bold text-gray-700 mb-2">Notes</h3>
-          <p className="text-sm text-gray-600">{data.notes}</p>
+          <div className="border-t border-gray-300 pt-2 mt-8">
+            {renderSignature(data.signature)}
+            <p className="text-gray-600 text-sm mt-2">Authorized Signature</p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-bold text-gray-700 mb-2">Terms & Conditions</h3>
-          <p className="text-sm text-gray-600">{data.terms}</p>
+        <div className="text-right">
+          <div className="border-t border-gray-300 pt-2 mt-8 inline-block">
+            {renderCompanyStamp(data.company?.stamp)}
+            <p className="text-gray-600 text-sm mt-2">Company Stamp</p>
+          </div>
         </div>
       </div>
-      
-      {/* Banking Details */}
-      {data.bankingDetails && (
-        <div className="mb-8">
-          <h3 className="font-bold text-gray-700 mb-2">Banking Details</h3>
-          <pre className="whitespace-pre-wrap text-sm text-gray-600 font-serif">{data.bankingDetails}</pre>
+
+      {data.bankAccount && (
+        <div className="mt-8 border-t border-gray-300 pt-4">
+          <h4 className="font-semibold text-gray-700 mb-2">Banking Details</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <p className="text-gray-600"><span className="font-medium">Bank:</span> {data.bankAccount.bankName}</p>
+            <p className="text-gray-600"><span className="font-medium">Account Name:</span> {data.bankAccount.accountName}</p>
+            <p className="text-gray-600"><span className="font-medium">Account Number:</span> {data.bankAccount.accountNumber}</p>
+            <p className="text-gray-600"><span className="font-medium">Branch Code:</span> {data.bankAccount.branchCode}</p>
+            {data.bankAccount.swiftCode && <p className="text-gray-600"><span className="font-medium">SWIFT Code:</span> {data.bankAccount.swiftCode}</p>}
+          </div>
         </div>
       )}
-      
-      {/* Signature and Stamp */}
-      <div className="flex justify-between items-end pt-6 border-t border-gray-300">
-        <div>
-          <h3 className="font-medium text-gray-700 mb-4">Authorized Signature</h3>
-          <div className="border-b border-gray-400 w-48 h-10 mb-1">
-            {renderSignature(data.signature)}
-          </div>
-          <p className="text-xs text-gray-500">Signature</p>
-        </div>
-        <div className="flex items-end">
-          <p className="text-sm mr-4">Initials: _________</p>
-          <div className="border border-dashed border-gray-400 w-20 h-20 flex items-center justify-center">
-            {renderCompanyStamp(data.company.stamp)}
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

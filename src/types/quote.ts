@@ -53,6 +53,8 @@ export interface QuoteItem {
   unitPrice: number;
   discount: number;
   total: number;
+  amount: number;
+  websiteUrl?: string;
 }
 
 export interface TemplateProps {
