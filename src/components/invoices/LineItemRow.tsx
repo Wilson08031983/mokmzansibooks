@@ -22,7 +22,7 @@ const LineItemRow: React.FC<LineItemRowProps> = ({
   canDelete
 }) => {
   return (
-    <div className="grid grid-cols-6 gap-4 mb-2">
+    <div className="grid grid-cols-7 gap-4 mb-2">
       <Input
         type="text"
         value={item.itemNo}
@@ -44,6 +44,13 @@ const LineItemRow: React.FC<LineItemRowProps> = ({
         min="0"
         value={item.unitPrice}
         onChange={(e) => onUpdateItem(index, 'unitPrice', parseFloat(e.target.value))}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="100"
+        value={item.markupPercentage || 0}
+        onChange={(e) => onUpdateItem(index, 'markupPercentage' as keyof InvoiceItem, parseFloat(e.target.value) || 0)}
       />
       <Input
         type="number"

@@ -10,7 +10,7 @@ export interface InvoiceItem {
   description: string;
   quantity: number;
   amount: number;
-  markupPercent?: number;
+  markupPercentage: number;
   discount: number;
   total: number;
 }
@@ -97,13 +97,13 @@ const ItemTable: React.FC<ItemTableProps> = ({
               
               <td className="p-2">
                 {readOnly ? (
-                  <span>{item.markupPercent}%</span>
+                  <span>{item.markupPercentage}%</span>
                 ) : (
                   <Input
                     type="number"
                     min="0"
-                    value={item.markupPercent || 0}
-                    onChange={(e) => handleNumberChange(index, "markupPercent", e.target.value)}
+                    value={item.markupPercentage || 0}
+                    onChange={(e) => handleNumberChange(index, "markupPercentage", e.target.value)}
                     className="w-16"
                   />
                 )}

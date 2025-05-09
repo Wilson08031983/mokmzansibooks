@@ -81,7 +81,7 @@ const InvoiceItems: React.FC<InvoiceItemsProps> = ({
                     min="0"
                     max="100"
                     value={item.markupPercentage || 0}
-                    onChange={(e) => onUpdateItem(index, 'markupPercentage', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => onUpdateItem(index, 'markupPercentage' as keyof InvoiceItem, parseFloat(e.target.value) || 0)}
                   />
                 </TableCell>
                 <TableCell>

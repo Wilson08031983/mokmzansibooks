@@ -56,6 +56,7 @@ export interface InvoiceItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  markupPercentage?: number;  // Added markup percentage
   discount: number;
   amount: number;
 }
