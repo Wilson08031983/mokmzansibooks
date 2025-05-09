@@ -86,18 +86,23 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       newClient = {
         ...commonProperties,
         type: 'company',
-        contactPerson: (client as Partial<CompanyClient>).contactPerson || ''
+        contactPerson: (client as Partial<CompanyClient>).contactPerson || '',
+        vatNumber: (client as Partial<CompanyClient>).vatNumber || '',
+        registrationNumber: (client as Partial<CompanyClient>).registrationNumber || ''
       } as CompanyClient;
     } else if (client.type === 'individual') {
       newClient = {
         ...commonProperties,
         type: 'individual',
+        firstName: (client as Partial<IndividualClient>).firstName || '',
+        lastName: (client as Partial<IndividualClient>).lastName || ''
       } as IndividualClient;
     } else {
       newClient = {
         ...commonProperties,
         type: 'vendor',
         contactPerson: (client as Partial<VendorClient>).contactPerson || '',
+        category: (client as Partial<VendorClient>).category || ''
       } as VendorClient;
     }
     
