@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -84,11 +85,18 @@ const EditQuoteForm: React.FC<EditQuoteFormProps> = ({
     };
 
     // Recalculate total for this line item
-    if (field === 'quantity' || field === 'unitPrice') {
+    if (field === 'quantity' || field === 'unitPrice' || field === 'markupPercentage' || field === 'discount') {
       const quantity = field === 'quantity' ? parseFloat(String(value)) : parseFloat(String(updatedItems[index].quantity));
       const unitPrice = field === 'unitPrice' ? parseFloat(String(value)) : parseFloat(String(updatedItems[index].unitPrice));
+      const markupPercentage = field === 'markupPercentage' ? parseFloat(String(value)) : parseFloat(String(updatedItems[index].markupPercentage || 0));
+      const discount = field === 'discount' ? parseFloat(String(value)) : parseFloat(String(updatedItems[index].discount || 0));
       
-      updatedItems[index].total = calculateLineItemTotal(quantity, unitPrice);
+      const priceWithMarkup = unitPrice * (1 + markupPercentage / 100);
+      const amountBeforeDiscount = priceWithMarkup * quantity;
+      const discountAmount = amountBeforeDiscount * (discount / 100);
+      
+      updatedItems[index].amount = parseFloat((amountBeforeDiscount - discountAmount).toFixed(2));
+      updatedItems[index].total = updatedItems[index].amount;
     }
 
     setQuote(prev => ({
@@ -100,7 +108,16 @@ const EditQuoteForm: React.FC<EditQuoteFormProps> = ({
   // Add a new item
   const addNewItem = () => {
     const nextItemNo = quote.items.length + 1;
-    const newItem = createNewQuoteItem(nextItemNo);
+    const newItem: QuoteItem = {
+      itemNo: nextItemNo,
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+      markupPercentage: 0,
+      discount: 0,
+      total: 0,
+      amount: 0
+    };
     
     setQuote(prev => ({
       ...prev,
@@ -228,6 +245,8 @@ const EditQuoteForm: React.FC<EditQuoteFormProps> = ({
                   <TableHead className="w-full">Description</TableHead>
                   <TableHead className="w-32">Quantity</TableHead>
                   <TableHead className="w-32">Price</TableHead>
+                  <TableHead className="w-32">Mark Up %</TableHead>
+                  <TableHead className="w-32">Discount %</TableHead>
                   <TableHead className="w-32 text-right">Total</TableHead>
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
@@ -259,6 +278,24 @@ const EditQuoteForm: React.FC<EditQuoteFormProps> = ({
                         step="0.01"
                         value={item.unitPrice || ''} 
                         onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01"
+                        value={item.markupPercentage || 0} 
+                        onChange={(e) => handleItemChange(index, 'markupPercentage', e.target.value)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100"
+                        value={item.discount || 0} 
+                        onChange={(e) => handleItemChange(index, 'discount', e.target.value)}
                       />
                     </TableCell>
                     <TableCell className="text-right font-medium">

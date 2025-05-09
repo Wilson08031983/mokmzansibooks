@@ -26,7 +26,8 @@ const QuoteTable = ({ items }: QuoteTableProps) => {
           <th className="pb-2">Description</th>
           <th className="pb-2 text-right">Qty</th>
           <th className="pb-2 text-right">Unit Price (R)</th>
-          <th className="pb-2 text-right">Mark Up % / Discount</th>
+          <th className="pb-2 text-right">Mark Up %</th>
+          <th className="pb-2 text-right">Discount %</th>
           <th className="pb-2 text-right">Total (R)</th>
         </tr>
       </thead>
@@ -38,9 +39,10 @@ const QuoteTable = ({ items }: QuoteTableProps) => {
             <td className="py-3 text-right">{item.quantity}</td>
             <td className="py-3 text-right">{formatCurrency(item.unitPrice)}</td>
             <td className="py-3 text-right">
-              {item.markupPercentage > 0 ? `+${formatPercentage(item.markupPercentage)}` : ''} 
-              {item.discount > 0 ? `${item.markupPercentage > 0 ? ' / ' : ''}-${formatPercentage(item.discount)}` : ''}
-              {!item.markupPercentage && !item.discount && '0%'}
+              {item.markupPercentage > 0 ? `${formatPercentage(item.markupPercentage)}` : '0%'}
+            </td>
+            <td className="py-3 text-right">
+              {item.discount > 0 ? `${formatPercentage(item.discount)}` : '0%'}
             </td>
             <td className="py-3 text-right font-medium">{formatCurrency(item.amount)}</td>
           </tr>

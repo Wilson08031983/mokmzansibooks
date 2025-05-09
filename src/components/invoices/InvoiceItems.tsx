@@ -43,6 +43,7 @@ const InvoiceItems: React.FC<InvoiceItemsProps> = ({
               <TableHead>Description</TableHead>
               <TableHead className="w-[100px]">Quantity</TableHead>
               <TableHead className="w-[120px]">Amount (R)</TableHead>
+              <TableHead className="w-[120px]">Mark Up %</TableHead>
               <TableHead className="w-[100px]">Discount %</TableHead>
               <TableHead className="w-[120px]">Total (R)</TableHead>
               <TableHead className="w-[60px]"></TableHead>
@@ -72,6 +73,15 @@ const InvoiceItems: React.FC<InvoiceItemsProps> = ({
                     min="0"
                     value={item.unitPrice}
                     onChange={(e) => onUpdateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={item.markupPercentage || 0}
+                    onChange={(e) => onUpdateItem(index, 'markupPercentage', parseFloat(e.target.value) || 0)}
                   />
                 </TableCell>
                 <TableCell>

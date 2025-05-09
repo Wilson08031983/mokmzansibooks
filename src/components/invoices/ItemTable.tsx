@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,7 @@ const ItemTable: React.FC<ItemTableProps> = ({
   items, 
   updateItem, 
   removeItem, 
-  showMarkup = false,
+  showMarkup = true,
   readOnly = false 
 }) => {
   const handleNumberChange = (index: number, field: keyof InvoiceItem, value: string) => {
@@ -45,7 +46,7 @@ const ItemTable: React.FC<ItemTableProps> = ({
             <th className="p-2 text-left">Description</th>
             <th className="p-2 text-left">Quantity</th>
             <th className="p-2 text-left">Amount</th>
-            {showMarkup && <th className="p-2 text-left">Mark Up %</th>}
+            <th className="p-2 text-left">Mark Up %</th>
             <th className="p-2 text-left">Discount %</th>
             <th className="p-2 text-left">Total</th>
             {!readOnly && <th className="p-2 text-left">Actions</th>}
@@ -94,21 +95,19 @@ const ItemTable: React.FC<ItemTableProps> = ({
                 )}
               </td>
               
-              {showMarkup && (
-                <td className="p-2">
-                  {readOnly ? (
-                    <span>{item.markupPercent}%</span>
-                  ) : (
-                    <Input
-                      type="number"
-                      min="0"
-                      value={item.markupPercent || 0}
-                      onChange={(e) => handleNumberChange(index, "markupPercent", e.target.value)}
-                      className="w-16"
-                    />
-                  )}
-                </td>
-              )}
+              <td className="p-2">
+                {readOnly ? (
+                  <span>{item.markupPercent}%</span>
+                ) : (
+                  <Input
+                    type="number"
+                    min="0"
+                    value={item.markupPercent || 0}
+                    onChange={(e) => handleNumberChange(index, "markupPercent", e.target.value)}
+                    className="w-16"
+                  />
+                )}
+              </td>
               
               <td className="p-2">
                 {readOnly ? (
