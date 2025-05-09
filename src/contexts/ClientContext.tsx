@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Client, ClientsData, ClientsState } from '@/types/client';
+import { Client, ClientsState } from '@/types/client';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ClientContextType {
@@ -54,7 +54,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       id: client.id || uuidv4(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    } as Client;
+    };
 
     setClients(prev => {
       const newClients = { ...prev };

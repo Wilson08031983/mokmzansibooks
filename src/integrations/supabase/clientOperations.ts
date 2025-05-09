@@ -1,3 +1,4 @@
+
 // Import the ClientsState from the client types file
 import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from '@/types/client';
 import { supabase } from './client';

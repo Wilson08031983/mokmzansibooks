@@ -13,7 +13,7 @@ export const useCompanySafeguards = () => {
   useEffect(() => {
     if (companyDetails !== undefined) {
       if (!companyDetails?.name || !companyDetails?.address) {
-        // Add a notification using toast instead of add
+        // Add a notification using toast
         toast({
           title: 'Company details missing',
           description: 'Please complete your company profile to enable full functionality.',

@@ -6,6 +6,13 @@
 
 import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from "@/types/client";
 
+// Default empty state
+const defaultClientsState: ClientsState = {
+  companies: [],
+  individuals: [],
+  vendors: []
+};
+
 /**
  * Initialize client data persistence mechanisms
  * This should be called early in the application lifecycle

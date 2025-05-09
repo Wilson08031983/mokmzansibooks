@@ -34,7 +34,10 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     if (!loading) {
       try {
-        setSafeClientData(clients);
+        const result = setSafeClientData(clients);
+        if (!result) {
+          console.error('Error saving clients to localStorage');
+        }
       } catch (error) {
         console.error('Error saving clients:', error);
       }
