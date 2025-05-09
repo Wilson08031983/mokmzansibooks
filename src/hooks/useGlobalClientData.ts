@@ -1,4 +1,3 @@
-
 /**
  * Hook for accessing client data throughout the application
  * This provides a consistent way to access client information

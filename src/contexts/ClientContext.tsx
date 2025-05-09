@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Client, ClientsState } from '@/types/client';
+import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from '@/types/client';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ClientContextType {
@@ -49,25 +49,53 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addClient = (client: Partial<Client>) => {
     if (!client.type) return;
 
-    const newClient = {
-      ...client,
+    // Create the new client with proper typing based on client type
+    let newClient: Client;
+    
+    const commonProperties = {
       id: client.id || uuidv4(),
+      name: client.name || '',
+      email: client.email || '',
+      phone: client.phone || '',
+      address: client.address || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    } as Client;
-
+    };
+    
+    if (client.type === 'company') {
+      newClient = {
+        ...commonProperties,
+        type: 'company',
+        contactPerson: (client as Partial<CompanyClient>).contactPerson
+      } as CompanyClient;
+    } else if (client.type === 'individual') {
+      newClient = {
+        ...commonProperties,
+        type: 'individual',
+        firstName: (client as Partial<IndividualClient>).firstName,
+        lastName: (client as Partial<IndividualClient>).lastName
+      } as IndividualClient;
+    } else {
+      newClient = {
+        ...commonProperties,
+        type: 'vendor',
+        contactPerson: (client as Partial<VendorClient>).contactPerson,
+        category: (client as Partial<VendorClient>).category
+      } as VendorClient;
+    }
+    
     setClients(prev => {
       const newClients = { ...prev };
       
       switch (client.type) {
         case 'company':
-          newClients.companies = [...prev.companies, newClient as any];
+          newClients.companies = [...prev.companies, newClient as CompanyClient];
           break;
         case 'individual':
-          newClients.individuals = [...prev.individuals, newClient as any];
+          newClients.individuals = [...prev.individuals, newClient as IndividualClient];
           break;
         case 'vendor':
-          newClients.vendors = [...prev.vendors, newClient as any];
+          newClients.vendors = [...prev.vendors, newClient as VendorClient];
           break;
       }
       
