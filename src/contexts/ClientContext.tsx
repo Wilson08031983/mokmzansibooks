@@ -148,26 +148,29 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
     
     if (client.type === 'company') {
+      const companyClient = client as Partial<CompanyClient>;
       newClient = {
         ...commonProperties,
         type: 'company',
-        contactPerson: (client as CompanyClient).contactPerson || '',
-        vatNumber: (client as CompanyClient).vatNumber || '',
-        registrationNumber: (client as CompanyClient).registrationNumber || ''
+        contactPerson: companyClient.contactPerson || '',
+        vatNumber: companyClient.vatNumber || '',
+        registrationNumber: companyClient.registrationNumber || ''
       } as CompanyClient;
     } else if (client.type === 'individual') {
+      const individualClient = client as Partial<IndividualClient>;
       newClient = {
         ...commonProperties,
         type: 'individual',
-        firstName: (client as IndividualClient).firstName || '',
-        lastName: (client as IndividualClient).lastName || ''
+        firstName: individualClient.firstName || '',
+        lastName: individualClient.lastName || ''
       } as IndividualClient;
     } else {
+      const vendorClient = client as Partial<VendorClient>;
       newClient = {
         ...commonProperties,
         type: 'vendor',
-        contactPerson: (client as VendorClient).contactPerson || '',
-        category: (client as VendorClient).category || ''
+        contactPerson: vendorClient.contactPerson || '',
+        category: vendorClient.category || ''
       } as VendorClient;
     }
     
