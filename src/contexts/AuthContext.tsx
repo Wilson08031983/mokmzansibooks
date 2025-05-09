@@ -1,192 +1,152 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { backupCompanyData, restoreCompanyDataFromBackup } from "@/utils/companyDataPersistence";
-
-interface UserProfile {
-  id: string;
-  email: string;
-  name?: string;
-  subscriptionStatus?: "trial" | "active" | "inactive";
-  trialEndsAt?: Date;
-  provider?: "email" | "google";
-}
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { auth } from '@/lib/firebase';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  User,
+  sendPasswordResetEmail,
+  updateProfile,
+  updateEmail,
+  updatePassword,
+} from 'firebase/auth';
 
 interface AuthContextType {
-  currentUser: UserProfile | null;
-  session: Session | null;
-  isLoading: boolean;
+  currentUser: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updateUserProfile: (displayName: string) => Promise<void>;
+  updateUserEmail: (email: string) => Promise<void>;
+  updateUserPassword: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const { toast } = useToast();
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up the auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        setSession(currentSession);
-        setIsAuthenticated(!!currentSession);
-        
-        if (currentSession?.user) {
-          const user = currentSession.user;
-          
-          // Create user profile from Supabase user
-          const userProfile: UserProfile = {
-            id: user.id,
-            email: user.email || "",
-            name: user.user_metadata?.name || user.email?.split('@')[0] || "",
-            subscriptionStatus: "active", // Setting this to "active" to enable premium features
-            trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-            provider: "email"
-          };
-          
-          setCurrentUser(userProfile);
-        } else {
-          setCurrentUser(null);
-        }
-        
-        setIsLoading(false);
-      }
-    );
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsLoading(false);
+    });
 
-    // Then check for existing session
-    const checkSession = async () => {
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
-      if (!existingSession) {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    return unsubscribe;
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    setIsLoading(true);
+  const signIn = async (email: string, password: string): Promise<void> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) {
-        throw error;
-      }
-    } catch (error: any) {
-      toast({
-        title: "Sign in failed",
-        description: error.message || "Failed to sign in. Please try again.",
-        variant: "destructive",
-      });
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('Error signing in:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
-    setIsLoading(true);
+  const signUp = async (email: string, password: string, displayName: string): Promise<void> => {
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-          },
-        },
-      });
-      
-      if (error) {
-        throw error;
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, { displayName });
       }
-      
-      toast({
-        title: "Account created",
-        description: "Please check your email to confirm your account.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Sign up failed",
-        description: error.message || "Failed to create account. Please try again.",
-        variant: "destructive",
-      });
+    } catch (error) {
+      console.error('Error signing up:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const signOut = async () => {
-    setIsLoading(true);
+  const signOut = async (): Promise<void> => {
     try {
-      // First, create a comprehensive backup of all company data
-      // This stores data in both localStorage and sessionStorage for redundancy
-      backupCompanyData();
+      // Before signing out, ensure client data is backed up
+      const { createClientDataBackup } = await import('@/utils/clientDataPersistence');
+      createClientDataBackup();
       
-      // Proceed with sign out
-      const { error } = await supabase.auth.signOut();
+      await firebaseSignOut(auth);
+      navigate('/signin');
       
-      if (error) {
-        throw error;
-      }
-      
-      // Restore all company data from our backups
-      // This ensures persistence across logout and application restarts
-      restoreCompanyDataFromBackup();
-      
-      // Add a permanent flag to indicate this is preserved data
-      localStorage.setItem('companyDataPreserved', 'true');
-      
-      // Double-check to make sure the public company info is definitely available
-      const publicData = localStorage.getItem('publicCompanyDetails');
-      if (!publicData) {
-        console.error('Failed to restore public company details after logout');
-      } else {
-        console.log('Successfully preserved company data across logout');
-      }
-    } catch (error: any) {
-      toast({
-        title: "Sign out failed",
-        description: error.message || "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
+      // After signing out, reinitialize app to ensure data is still available
+      const { reinitializeAfterLogout } = await import('@/utils/initApp');
+      reinitializeAfterLogout();
+    } catch (error) {
+      console.error('Error signing out:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string): Promise<void> => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw error;
+    }
+  };
+
+  const updateUserProfile = async (displayName: string): Promise<void> => {
+    try {
+      if (currentUser) {
+        await updateProfile(currentUser, { displayName });
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  };
+
+  const updateUserEmail = async (email: string): Promise<void> => {
+    try {
+      if (currentUser) {
+        await updateEmail(currentUser, email);
+      }
+    } catch (error) {
+      console.error('Error updating email:', error);
+      throw error;
+    }
+  };
+
+  const updateUserPassword = async (password: string): Promise<void> => {
+    try {
+      if (currentUser) {
+        await updatePassword(currentUser, password);
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      throw error;
     }
   };
 
   const value = {
     currentUser,
-    session,
+    isAuthenticated: !!currentUser,
     isLoading,
-    isAuthenticated,
     signIn,
     signUp,
     signOut,
+    resetPassword,
+    updateUserProfile,
+    updateUserEmail,
+    updateUserPassword,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!isLoading && children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

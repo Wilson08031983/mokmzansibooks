@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   Client, 
@@ -23,36 +24,101 @@ const defaultState: ClientsState = {
   vendors: []
 };
 
+// Storage key constants
+const STORAGE_KEY = 'mokClients';
+const BACKUP_KEY = 'mokClientsBackup';
+const SESSION_BACKUP_KEY = 'mokClientsBackup';
+
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [clients, setClients] = useState<ClientsState>(defaultState);
   const [loading, setLoading] = useState(true);
 
-  // Load clients from localStorage on mount
+  // Load clients from localStorage on mount with enhanced persistence
   useEffect(() => {
     try {
-      const savedClients = localStorage.getItem('mokClients');
+      setLoading(true);
+      
+      // First try to get from localStorage
+      const savedClients = localStorage.getItem(STORAGE_KEY);
+      
       if (savedClients) {
-        setClients(JSON.parse(savedClients));
+        const parsedClients = JSON.parse(savedClients);
+        setClients(parsedClients);
+        console.log('Client data loaded from localStorage');
+        
+        // Create backup immediately after loading
+        createClientBackup(parsedClients);
+      } else {
+        // If not in localStorage, try to restore from backups
+        const restored = restoreFromBackup();
+        if (restored) {
+          console.log('Client data restored from backup');
+        } else {
+          console.log('No client data found, starting with empty state');
+        }
       }
     } catch (error) {
       console.error('Error loading clients:', error);
+      // Attempt to restore from backup on error
+      restoreFromBackup();
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Create a backup of client data
+  const createClientBackup = (clientData: ClientsState) => {
+    try {
+      // Store in both localStorage and sessionStorage for redundancy
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(clientData));
+      sessionStorage.setItem(SESSION_BACKUP_KEY, JSON.stringify(clientData));
+      return true;
+    } catch (error) {
+      console.error('Error creating client backup:', error);
+      return false;
+    }
+  };
+
+  // Restore client data from backup
+  const restoreFromBackup = (): boolean => {
+    try {
+      // Try localStorage backup first
+      let backup = localStorage.getItem(BACKUP_KEY);
+      
+      // If not found, try sessionStorage
+      if (!backup) {
+        backup = sessionStorage.getItem(SESSION_BACKUP_KEY);
+      }
+      
+      if (!backup) return false;
+      
+      // Validate backup data
+      const parsedBackup = JSON.parse(backup);
+      if (!parsedBackup || typeof parsedBackup !== 'object') return false;
+      
+      // Restore from backup
+      setClients(parsedBackup);
+      localStorage.setItem(STORAGE_KEY, backup);
+      
+      return true;
+    } catch (error) {
+      console.error('Error restoring client data from backup:', error);
+      return false;
+    }
+  };
+
   // Save clients to localStorage whenever they change
   useEffect(() => {
     if (!loading) {
-      localStorage.setItem('mokClients', JSON.stringify(clients));
-      
-      // Also store to sessionStorage as backup
       try {
-        sessionStorage.setItem('mokClientsBackup', JSON.stringify(clients));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+        
+        // Also create a backup whenever clients change
+        createClientBackup(clients);
       } catch (error) {
-        console.error('Error creating backup in sessionStorage:', error);
+        console.error('Error saving clients:', error);
       }
     }
   }, [clients, loading]);
