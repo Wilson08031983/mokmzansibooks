@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   Client, 
@@ -86,23 +85,23 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       newClient = {
         ...commonProperties,
         type: 'company',
-        contactPerson: (client as Partial<CompanyClient>).contactPerson || '',
-        vatNumber: (client as Partial<CompanyClient>).vatNumber || '',
-        registrationNumber: (client as Partial<CompanyClient>).registrationNumber || ''
+        contactPerson: (client as CompanyClient).contactPerson || '',
+        vatNumber: (client as CompanyClient).vatNumber || '',
+        registrationNumber: (client as CompanyClient).registrationNumber || ''
       } as CompanyClient;
     } else if (client.type === 'individual') {
       newClient = {
         ...commonProperties,
         type: 'individual',
-        firstName: (client as Partial<IndividualClient>).firstName || '',
-        lastName: (client as Partial<IndividualClient>).lastName || ''
+        firstName: (client as IndividualClient).firstName || '',
+        lastName: (client as IndividualClient).lastName || ''
       } as IndividualClient;
     } else {
       newClient = {
         ...commonProperties,
         type: 'vendor',
-        contactPerson: (client as Partial<VendorClient>).contactPerson || '',
-        category: (client as Partial<VendorClient>).category || ''
+        contactPerson: (client as VendorClient).contactPerson || '',
+        category: (client as VendorClient).category || ''
       } as VendorClient;
     }
     

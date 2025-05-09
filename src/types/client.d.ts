@@ -69,4 +69,4 @@ export interface ClientsState {
 }
 
 // Alias for ClientsState for backward compatibility
-export interface ClientsData extends ClientsState {}
+export type ClientsData = ClientsState;
