@@ -9,7 +9,7 @@ import { Save } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
 import TemplateSelector from "./TemplateSelector";
 import InvoiceDetails from "./InvoiceDetails";
-import ClientSelector from "./ClientSelector";
+import ClientSelector from "./ClientDropdownFix";
 import ClientDisplay from "./ClientDisplay";
 import CompanyDisplay from "./CompanyDisplay";
 import InvoiceItems from "./InvoiceItems";
@@ -17,15 +17,10 @@ import QuoteSelector from "./QuoteSelector";
 import InvoiceFooter from "./InvoiceFooter";
 import InvoiceTotals from "./InvoiceTotals";
 import { useToast } from "@/hooks/use-toast";
+import { Client } from "@/types/client";
+import useGlobalClientData from "@/hooks/useGlobalClientData";
 
-// Mock client data
-const mockClients = [
-  { id: "client1", name: "ABC Construction Ltd", address: "123 Builder St, Cape Town, 8001", email: "info@abcconstruction.co.za", phone: "021 234 5678" },
-  { id: "client2", name: "Cape Town Retailers", address: "54 Shop Ave, Cape Town, 8002", email: "orders@ctretailers.co.za", phone: "021 876 5432" },
-  { id: "client3", name: "Durban Services Co", address: "78 Beach Rd, Durban, 4001", email: "contact@durbanservices.co.za", phone: "031 345 6789" },
-];
-
-// Mock saved quotes
+// Mock saved quotes (we'll keep these as an example until quotes functionality is fully implemented)
 const mockSavedQuotes = [
   { id: "quote1", quoteNumber: "Q-2025-001", clientName: "ABC Construction Ltd", dateCreated: "2025-01-15", total: 4500 },
   { id: "quote2", quoteNumber: "Q-2025-002", clientName: "Cape Town Retailers", dateCreated: "2025-01-20", total: 2750 },
@@ -41,9 +36,11 @@ const companyData = {
 
 const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
   const { toast } = useToast();
+  const { allClients } = useGlobalClientData(); // Get clients from the global store
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [sourceType, setSourceType] = useState<'new' | 'quote'>('new');
   const [selectedQuote, setSelectedQuote] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
   
   // Define createNewItem function before using it
   function createNewItem(): InvoiceItem {
@@ -106,24 +103,29 @@ const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
         bankingDetails: ""
       });
       setSelectedQuote(null);
+      setSelectedClientId("");
     }
   }, [sourceType]);
 
   // Handle client selection
-  const handleClientSelect = (clientId: string) => {
-    const selectedClient = mockClients.find(c => c.id === clientId);
-    if (selectedClient) {
-      setInvoiceData({
-        ...invoiceData,
-        client: {
-          name: selectedClient.name,
-          address: selectedClient.address,
-          email: selectedClient.email,
-          phone: selectedClient.phone
-        }
-      });
+  useEffect(() => {
+    if (selectedClientId) {
+      // Find the selected client from all available clients
+      const selectedClient = allClients.find(c => c.id === selectedClientId);
+      
+      if (selectedClient) {
+        setInvoiceData({
+          ...invoiceData,
+          client: {
+            name: selectedClient.name || "",
+            address: selectedClient.address || "",
+            email: selectedClient.email || "",
+            phone: selectedClient.phone || ""
+          }
+        });
+      }
     }
-  };
+  }, [selectedClientId, allClients]);
 
   // Handle quote selection
   const handleQuoteSelect = (quoteId: string) => {
@@ -132,7 +134,12 @@ const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
     console.log(`Selected quote: ${quoteId}`);
     // This is just a mock implementation
     const mockQuoteData = {
-      client: mockClients[0],
+      client: allClients[0] || {
+        name: "Example Client",
+        address: "123 Example St",
+        email: "client@example.com",
+        phone: "123-456-7890"
+      },
       shortDescription: "Services for January 2025",
       items: [
         { itemNo: 1, description: "Web Development", quantity: 40, unitPrice: 75, discount: 10, amount: 2700 },
@@ -146,6 +153,12 @@ const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
       terms: "Payment due within 14 days of invoice receipt.",
       bankingDetails: "Bank: First National Bank\nAccount: 1234 5678 9012\nBranch: 123456"
     };
+    
+    // Set client ID if the quote has an associated client
+    const quoteClient = allClients.find(c => c.name === mockQuoteData.client.name);
+    if (quoteClient) {
+      setSelectedClientId(quoteClient.id);
+    }
     
     setInvoiceData({
       ...invoiceData,
@@ -229,6 +242,17 @@ const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate that a client is selected
+    if (!selectedClientId) {
+      toast({
+        title: "Client Required",
+        description: "Please select a client for this invoice.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     console.log("Invoice data submitted:", invoiceData);
     setShowTemplateSelector(true);
   };
@@ -289,10 +313,12 @@ const InvoiceForm = ({ onSaveSuccess, onCancel, isEditing = false }) => {
 
           {/* Client Selection (only if not coming from a quote) */}
           {sourceType === 'new' && (
-            <ClientSelector 
-              clients={mockClients}
-              onClientSelect={handleClientSelect}
-            />
+            <div className="space-y-4">
+              <ClientSelector 
+                onSelectClient={setSelectedClientId}
+                selectedClientId={selectedClientId}
+              />
+            </div>
           )}
 
           {/* Display Client Info */}
