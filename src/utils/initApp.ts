@@ -62,3 +62,9 @@ export const reinitializeAfterLogout = () => {
     return false;
   }
 };
+
+// For debug.tsx usage
+export const debugHelpers = {
+  getClientData: () => getSafeClientData(),
+  reinitialize: reinitializeAfterLogout
+};

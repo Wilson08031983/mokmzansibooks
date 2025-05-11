@@ -157,6 +157,57 @@ export const createClientDataBackup = (): void => {
 };
 
 /**
+ * Restore client data from backup
+ * @returns boolean indicating if restore was successful
+ */
+export const restoreClientDataFromBackup = (): boolean => {
+  try {
+    // Try sessionStorage backup first
+    let backup = sessionStorage.getItem(STORAGE_KEYS.SESSION_CLIENTS);
+    
+    // If not found, try most recent localStorage backup
+    if (!backup) {
+      // Look for backups with the pattern client_backup_*
+      const backupKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith('client_backup_')
+      ).sort().reverse(); // Most recent first
+      
+      if (backupKeys.length > 0) {
+        backup = localStorage.getItem(backupKeys[0]);
+      }
+    }
+    
+    // If still not found, try regular backup
+    if (!backup) {
+      backup = localStorage.getItem(STORAGE_KEYS.CLIENTS_BACKUP);
+    }
+    
+    if (!backup) return false;
+    
+    try {
+      const parsed = JSON.parse(backup);
+      
+      // Check if data has the expected structure
+      if (parsed && (Array.isArray(parsed.companies) || Array.isArray(parsed.individuals) || Array.isArray(parsed.vendors))) {
+        // Save to all storage locations
+        localStorage.setItem(STORAGE_KEYS.CLIENTS, backup);
+        localStorage.setItem(STORAGE_KEYS.MOK_CLIENTS, backup);
+        localStorage.setItem(STORAGE_KEYS.MOK_MZANSI_CLIENTS, backup);
+        console.log('Client data restored successfully from backup');
+        return true;
+      }
+    } catch (e) {
+      console.error('Invalid backup data format:', e);
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error restoring client data from backup:', error);
+    return false;
+  }
+};
+
+/**
  * Check if any client data exists in storage
  */
 export const hasAnyClientData = (): boolean => {
@@ -185,6 +236,7 @@ export const clientStorageAdapter = {
   getClients: getSafeClientData,
   saveClients: saveClientData,
   createBackup: createClientDataBackup,
+  restoreFromBackup: restoreClientDataFromBackup,
   hasData: hasAnyClientData,
   toArray: clientStateToArray
 };

@@ -4,12 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, FileUp, AlertCircle, File, Link as LinkIcon, X } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -70,25 +64,13 @@ export const TransactionDocumentUploader = ({
       // Determine file type category
       const fileType = file.type.split('/')[1] || 'unknown';
       
-      // First, create a record in the bank_statements table
-      // We'll use the bank_statements table for all document types
-      // since transaction_receipts doesn't exist in our schema
-      const { data: documentRecord, error: dbError } = await supabase
-        .from('bank_statements')
-        .insert([
-          { 
-            file_name: file.name,
-            status: documentType === 'bank_statement' ? 'pending' : 'receipt',
-            upload_date: new Date().toISOString()
-          }
-        ])
-        .select()
-        .single();
-
-      if (dbError) throw dbError;
-
-      // Create a storage bucket dynamically if needed
-      const storageBucket = 'bank-statements'; // Use one bucket for all documents
+      // Mock Supabase - Create a record
+      const documentRecord = {
+        id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        file_name: file.name,
+        status: documentType === 'bank_statement' ? 'pending' : 'receipt',
+        upload_date: new Date().toISOString()
+      };
 
       // Track upload progress
       const filePath = `${documentType}/${documentRecord.id}/${file.name}`;
@@ -109,7 +91,7 @@ export const TransactionDocumentUploader = ({
         console.error("Error storing document metadata", metaError);
       }
 
-      // Simulated progress for now since onUploadProgress isn't available
+      // Simulated progress
       const updateProgress = () => {
         let progress = 0;
         const interval = setInterval(() => {
@@ -122,28 +104,17 @@ export const TransactionDocumentUploader = ({
       
       const progressInterval = updateProgress();
       
-      // Upload to storage (simulate for now if actual storage isn't available)
-      try {
-        // Try to use storage if available
-        const { data, error: uploadError } = await supabase.storage
-          .from(storageBucket)
-          .upload(filePath, file);
-          
-        if (uploadError) throw uploadError;
-      } catch (storageError) {
-        console.log("Storage upload failed, simulating instead", storageError);
-        // Simulate successful upload
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      // Simulate upload
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      // Update status to completed
-      await supabase
-        .from('bank_statements')
-        .update({ status: 'completed' })
-        .eq('id', documentRecord.id);
+      // Mock successful update
+      const updatedRecord = {
+        ...documentRecord,
+        status: 'completed'
+      };
 
       // Add to our local list
       const newDocument: DocumentFile = {
@@ -186,7 +157,7 @@ export const TransactionDocumentUploader = ({
     }
   };
 
-  // Use localStorage to maintain document-transaction links since we don't have a dedicated table
+  // Use localStorage to maintain document-transaction links
   const linkDocumentToTransaction = async (documentId: string, transactionId: string) => {
     try {
       // Store the link in localStorage
@@ -261,24 +232,20 @@ export const TransactionDocumentUploader = ({
     }
   };
 
-  // Load documents from bank_statements table
+  // Load documents from localStorage instead of Supabase
   const loadDocuments = async () => {
     try {
-      // Load bank statements from database
-      const { data: bankStatements, error: bankError } = await supabase
-        .from('bank_statements')
-        .select('*')
-        .order('upload_date', { ascending: false });
-
-      if (bankError) throw bankError;
+      // Load from localStorage
+      const storedDocuments = localStorage.getItem('uploaded_documents');
+      const bankStatements = storedDocuments ? JSON.parse(storedDocuments) : [];
 
       // Load document-transaction links from localStorage
       const documentLinks = JSON.parse(localStorage.getItem('document_transaction_links') || '{}');
       const documentMeta = JSON.parse(localStorage.getItem('document_metadata') || '[]');
 
       // Format the results
-      const formattedDocuments: DocumentFile[] = (bankStatements || []).map(bs => {
-        // Determine document type from status or metadata
+      const formattedDocuments: DocumentFile[] = bankStatements.map((bs: any) => {
+        // Determine document type from metadata or default to receipt
         const meta = documentMeta.find((m: any) => m.id === bs.id);
         const docType: 'bank_statement' | 'receipt' = 
           meta?.type || (bs.status === 'receipt' ? 'receipt' : 'bank_statement');
@@ -287,8 +254,8 @@ export const TransactionDocumentUploader = ({
           id: bs.id,
           filename: bs.file_name || 'Unnamed Document',
           fileType: bs.file_name ? bs.file_name.split('.').pop() || 'unknown' : 'unknown',
-          uploadDate: bs.upload_date || bs.created_at,
-          fileSize: 0, // Size not stored in database
+          uploadDate: bs.upload_date || bs.created_at || new Date().toISOString(),
+          fileSize: 0, // Size not stored
           documentType: docType,
           linkedTransactionId: documentLinks[bs.id]
         };
@@ -371,11 +338,13 @@ export const TransactionDocumentUploader = ({
             </div>
 
             {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div className="bg-destructive/15 p-3 rounded-md text-destructive text-sm flex items-start space-x-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-medium">Error</div>
+                  <div>{error}</div>
+                </div>
+              </div>
             )}
             
             <div className="flex flex-col items-center justify-center">
