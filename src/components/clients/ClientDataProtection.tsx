@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Shield, RefreshCw, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createClientDataBackup } from '@/utils/clientDataPersistence';
+import { createClientDataBackup, restoreClientDataFromBackup } from '@/utils/clientDataPersistence';
 import { clientStorageAdapter } from '@/utils/clientDataPersistence';
 
 /**
@@ -33,20 +33,29 @@ export const ClientDataProtection = () => {
   const handleCreateBackup = async () => {
     try {
       // Create backup
-      createClientDataBackup();
+      const success = createClientDataBackup();
       
-      // Update local state
-      const currentTime = new Date().toISOString();
-      setLastBackupTime(currentTime);
-      setIsBackupSuccessful(true);
-      
-      // Store timestamp in localStorage
-      localStorage.setItem('last_client_backup_time', currentTime);
-      
-      toast({
-        title: "Backup created",
-        description: "Your client data has been backed up successfully.",
-      });
+      if (success) {
+        // Update local state
+        const currentTime = new Date().toISOString();
+        setLastBackupTime(currentTime);
+        setIsBackupSuccessful(true);
+        
+        // Store timestamp in localStorage
+        localStorage.setItem('last_client_backup_time', currentTime);
+        
+        toast({
+          title: "Backup created",
+          description: "Your client data has been backed up successfully.",
+        });
+      } else {
+        setIsBackupSuccessful(false);
+        toast({
+          variant: "destructive",
+          title: "Backup failed",
+          description: "There was an error backing up your client data. Please try again.",
+        });
+      }
     } catch (error) {
       console.error('Error creating backup:', error);
       setIsBackupSuccessful(false);
@@ -62,9 +71,8 @@ export const ClientDataProtection = () => {
   // Function to restore data from backup
   const handleRestoreFromBackup = async () => {
     try {
-      // Use the adapter to restore - this returns a boolean, not void
-      const success = clientStorageAdapter.restoreFromBackup ? 
-        clientStorageAdapter.restoreFromBackup() : false;
+      // Use direct restore function or fallback to adapter
+      const success = restoreClientDataFromBackup();
       
       if (success) {
         toast({
@@ -75,11 +83,25 @@ export const ClientDataProtection = () => {
         // Force refresh to show restored data
         window.location.reload();
       } else {
-        toast({
-          variant: "destructive",
-          title: "Restore failed",
-          description: "No backup found or the backup is invalid.",
-        });
+        // Try using the adapter as fallback if available
+        const adapterSuccess = clientStorageAdapter.restoreFromBackup ? 
+          clientStorageAdapter.restoreFromBackup() : false;
+          
+        if (adapterSuccess) {
+          toast({
+            title: "Data restored",
+            description: "Your client data has been restored using the adapter backup.",
+          });
+          
+          // Force refresh to show restored data
+          window.location.reload();
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Restore failed",
+            description: "No backup found or the backup is invalid.",
+          });
+        }
       }
     } catch (error) {
       console.error('Error restoring from backup:', error);
