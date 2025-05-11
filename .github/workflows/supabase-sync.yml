@@ -28,18 +28,18 @@ jobs:
     
     - name: Setup Supabase CLI
       uses: supabase/setup-cli@v1
-      env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      with:
+        version: latest
     
     - name: Verify Supabase Project
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || '' }}
       run: |
         supabase projects list
     
     - name: Link and Sync Migrations
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || '' }}
         SUPABASE_PROJECT_REF: bazbbweawubxqfebliil
       run: |
         # Validate required environment variables
@@ -66,4 +66,16 @@ jobs:
       with:
         status: ${{ job.status }}
         text: Supabase migration sync failed for project
+        fields: repo,message,action,eventName
         webhook_url: ${{ secrets.SLACK_WEBHOOK || '' }}
+        
+    - name: Notify Slack on Success
+      if: success()
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        payload: |
+          {
+            "text": "✅ Supabase migrations synced successfully!\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Triggered by:* ${{ github.actor }}"
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK || '' }}

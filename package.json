@@ -8,7 +8,10 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "analyze:supabase": "node scripts/analyze-supabase-imports.js",
+    "fix:supabase": "scripts/fix-supabase-imports.sh",
+    "deprecate:supabase": "scripts/deprecate-old-clients.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
