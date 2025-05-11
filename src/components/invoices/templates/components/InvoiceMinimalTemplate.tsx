@@ -1,3 +1,4 @@
+
 import React from "react";
 import { InvoiceData } from "@/types/invoice";
 import { formatDate, formatCurrency, renderCompanyLogo, renderSignature, renderCompanyStamp } from "@/utils/formatters";
@@ -69,12 +70,12 @@ const InvoiceMinimalTemplate = ({ data, preview }: TemplateProps) => {
           <tbody>
             {data.items.map((item, index) => (
               <tr key={index} className="border-b border-gray-100">
-                <td className="py-2">{item.itemNo}</td>
+                <td className="py-2">{item.itemNo || index + 1}</td>
                 <td className="py-2">{item.description}</td>
                 <td className="py-2 text-right">{item.quantity}</td>
-                <td className="py-2 text-right">{formatCurrency(item.unitPrice, "ZAR")}</td>
-                <td className="py-2 text-right">{item.discount}%</td>
-                <td className="py-2 text-right font-medium">{formatCurrency(item.amount, "ZAR")}</td>
+                <td className="py-2 text-right">{formatCurrency(item.unitPrice)}</td>
+                <td className="py-2 text-right">{item.discount ? formatCurrency(item.discount) : '-'}</td>
+                <td className="py-2 text-right">{formatCurrency(item.amount)}</td>
               </tr>
             ))}
           </tbody>
@@ -82,57 +83,48 @@ const InvoiceMinimalTemplate = ({ data, preview }: TemplateProps) => {
       </div>
       
       {/* Totals */}
-      <div className="flex justify-end mb-8">
-        <div className="w-60 text-sm">
-          <div className="flex justify-between pb-1">
-            <span className="text-gray-500">Subtotal:</span>
-            <span>{formatCurrency(data.subtotal, "ZAR")}</span>
+      <div className="mb-6 flex justify-end">
+        <div className="w-1/3">
+          <div className="flex justify-between text-sm mb-1">
+            <span>Subtotal:</span>
+            <span>{formatCurrency(data.subtotal)}</span>
           </div>
-          <div className="flex justify-between pb-1">
-            <span className="text-gray-500">VAT ({data.vatRate}%):</span>
-            <span>{formatCurrency(data.tax, "ZAR")}</span>
+          <div className="flex justify-between text-sm mb-1">
+            <span>VAT ({data.vatRate}%):</span>
+            <span>{formatCurrency(data.tax || data.taxAmount || 0)}</span>
           </div>
-          <div className="border-t border-gray-200 mt-1 pt-1 flex justify-between font-medium">
+          <div className="flex justify-between font-bold text-sm pt-2 border-t border-gray-200">
             <span>Total:</span>
-            <span>{formatCurrency(data.total, "ZAR")}</span>
+            <span>{formatCurrency(data.total)}</span>
           </div>
         </div>
       </div>
       
-      {/* Notes, Terms, and Banking Details in a clean grid */}
-      <div className="grid grid-cols-2 gap-6 mb-8">
-        <div className="text-sm">
-          <h3 className="font-medium mb-2">Notes</h3>
-          <p className="text-gray-600 whitespace-pre-line">{data.notes}</p>
-        </div>
-        <div className="text-sm">
-          <h3 className="font-medium mb-2">Terms & Conditions</h3>
-          <p className="text-gray-600 whitespace-pre-line">{data.terms}</p>
-        </div>
-      </div>
-      
-      {data.bankingDetails && (
-        <div className="text-sm mb-8">
-          <h3 className="font-medium mb-2">Banking Details</h3>
-          <pre className="whitespace-pre-wrap text-gray-600 font-sans">{data.bankingDetails}</pre>
+      {/* Notes */}
+      {data.notes && (
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold mb-1">Notes</h4>
+          <p className="text-sm whitespace-pre-line">{data.notes}</p>
         </div>
       )}
       
-      {/* Footer with Signature and Stamp */}
-      <div className="flex justify-between items-end pt-4 border-t border-gray-100">
-        <div className="text-sm">
-          <p className="text-gray-500 mb-1">Authorized By:</p>
-          <div className="h-10 w-40 mb-1">
-            {renderSignature(data.signature)}
-          </div>
-          <p className="text-xs text-gray-400">{data.company.name}</p>
+      {/* Terms */}
+      {data.terms && (
+        <div className="mb-6">
+          <h4 className="text-sm font-semibold mb-1">Terms & Conditions</h4>
+          <p className="text-sm whitespace-pre-line">{data.terms}</p>
         </div>
-        {data.company.stamp && (
-          <div className="w-16 h-16">
-            {renderCompanyStamp(data.company.stamp)}
+      )}
+      
+      {/* Signature */}
+      {(data.company.signature || data.signature) && (
+        <div className="mt-8 text-center">
+          <div className="inline-block border-b border-gray-300 pb-1">
+            {renderSignature(data.company.signature || data.signature)}
           </div>
-        )}
-      </div>
+          <p className="text-xs text-gray-500 mt-1">Authorized Signature</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -8,6 +8,7 @@ export interface InvoiceData {
   
   // Client information
   client: {
+    id?: string;              // Client ID added
     name: string;
     address: string;
     email: string;
@@ -62,6 +63,9 @@ export interface InvoiceData {
   // Template selection
   template?: number;          // Template number (1-8)
   hideMarkup?: boolean;       // Whether to hide markup percentages
+  
+  // Added signature property at the top level for compatibility
+  signature?: string;         // Digital signature image (for backward compatibility)
 }
 
 export interface InvoiceItem {

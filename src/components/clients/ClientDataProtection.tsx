@@ -62,8 +62,9 @@ export const ClientDataProtection = () => {
   // Function to restore data from backup
   const handleRestoreFromBackup = async () => {
     try {
-      // Use the adapter to restore
-      const success = clientStorageAdapter.restoreFromBackup?.();
+      // Use the adapter to restore - this returns a boolean, not void
+      const success = clientStorageAdapter.restoreFromBackup ? 
+        clientStorageAdapter.restoreFromBackup() : false;
       
       if (success) {
         toast({
