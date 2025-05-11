@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useFinancialData } from '@/contexts/FinancialDataContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Notification {
@@ -35,7 +35,7 @@ export const useNotifications = () => {
 export const NotificationsProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { vatReturns, payeReturns, taxDeadlines, taxDocuments } = useFinancialData();
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   const { toast } = useToast();
 
   const unreadCount = notifications.filter(notification => !notification.read).length;
@@ -239,8 +239,13 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
       }
 
       // Check for trial expiration if user is on trial
-      if (currentUser?.subscriptionStatus === 'trial' && currentUser?.trialEndsAt) {
-        const trialEndDate = new Date(currentUser.trialEndsAt);
+      const subscriptionStatus = currentUser?.user_metadata?.subscription_status || 
+                               currentUser?.app_metadata?.subscription_status;
+      const trialEndsAt = currentUser?.user_metadata?.trial_ends_at || 
+                        currentUser?.app_metadata?.trial_ends_at;
+                        
+      if (subscriptionStatus === 'trial' && trialEndsAt) {
+        const trialEndDate = new Date(trialEndsAt);
         const daysLeft = Math.ceil((trialEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         
         if (daysLeft <= 7 && daysLeft > 0) {

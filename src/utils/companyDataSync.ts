@@ -92,23 +92,45 @@ export const getLastUpdateTimestamp = (): number => {
  */
 export const syncCompanyData = (companyDetails: CompanyDetails | any): void => {
   try {
-    // Immediately synchronize - used for both forms as a direct bridge
-    // Force a direct sync with a special key
-    localStorage.setItem('DIRECT_COMPANY_SYNC', JSON.stringify({
-      timestamp: new Date().toISOString(),
-      data: {
-        name: companyDetails.name || '',
-        address: companyDetails.address || '',
-        email: companyDetails.contactEmail || companyDetails.email || '',
-        phone: companyDetails.contactPhone || companyDetails.phone || '',
-        logo: companyDetails.logo || null,
-        stamp: companyDetails.stamp || null,
-        signature: companyDetails.signature || null
-      }
+    // Format address for display
+    const formattedAddress = [
+      companyDetails.address,
+      companyDetails.addressLine2,
+      companyDetails.city,
+      companyDetails.province,
+      companyDetails.postalCode
+    ].filter(Boolean).join('\n');
+    
+    // First update the shared data storage
+    storeSharedCompanyData(companyDetails);
+    
+    // Create standardized data for all components
+    const standardizedData = {
+      name: companyDetails.name || '',
+      address: formattedAddress || companyDetails.address || '',
+      email: companyDetails.contactEmail || companyDetails.email || '',
+      phone: companyDetails.contactPhone || companyDetails.phone || '',
+      logo: companyDetails.logo || null,
+      stamp: companyDetails.stamp || null,
+      signature: companyDetails.signature || null,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    // Then force a direct sync by updating a special key
+    localStorage.setItem(
+      COMPANY_DATA_FORCE_UPDATE_KEY, 
+      JSON.stringify({
+        timestamp: Date.now(),
+        data: standardizedData
+      })
+    );
+    
+    // Broadcast via localStorage event for cross-tab synchronization
+    window.dispatchEvent(new CustomEvent('company-data-changed', {
+      detail: standardizedData
     }));
     
-    // Also update the regular storage
-    storeSharedCompanyData(companyDetails);
+    console.log('Company data sync triggered with immediate update');
   } catch (error) {
     console.error('Failed to sync company data:', error);
   }

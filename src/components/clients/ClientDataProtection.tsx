@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Shield, AlertTriangle, Save, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, AlertTriangle, Save, CheckCircle, EyeOff, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   createClientDataBackup, 
@@ -27,9 +27,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+// Key for permanent hide setting
+const PERMANENT_HIDE_KEY = 'clientDataProtectionPermanentlyHidden';
+
 interface ClientDataProtectionProps {
   clientCount: number;
   onDataRestored: () => void;
+  forceHide?: boolean;
 }
 
 /**
@@ -37,11 +41,52 @@ interface ClientDataProtectionProps {
  */
 const ClientDataProtection: React.FC<ClientDataProtectionProps> = ({ 
   clientCount,
-  onDataRestored
+  onDataRestored,
+  forceHide = false
 }) => {
   const { toast } = useToast();
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isVisible, setIsVisible] = useState(false); // Default to hidden
+  const [isPermanentlyHidden, setIsPermanentlyHidden] = useState(false);
+  
+  // Load visibility preference from localStorage - check for permanent hide first
+  useEffect(() => {
+    // Check if component should be permanently hidden
+    const permanentlyHidden = localStorage.getItem(PERMANENT_HIDE_KEY) === 'true';
+    setIsPermanentlyHidden(permanentlyHidden);
+    
+    // Only check regular visibility if not permanently hidden
+    if (!permanentlyHidden && !forceHide) {
+      const savedVisibility = localStorage.getItem('clientDataProtectionVisible');
+      setIsVisible(savedVisibility === 'true');
+    } else {
+      setIsVisible(false);
+    }
+  }, [forceHide]);
+  
+  // Save visibility preference when it changes
+  useEffect(() => {
+    localStorage.setItem('clientDataProtectionVisible', String(isVisible));
+  }, [isVisible]);
+  
+  // Toggle visibility (regular toggle)
+  const toggleVisibility = () => {
+    setIsVisible(prev => !prev);
+  };
+  
+  // Hide permanently
+  const hidePermanently = () => {
+    localStorage.setItem(PERMANENT_HIDE_KEY, 'true');
+    setIsPermanentlyHidden(true);
+    setIsVisible(false);
+    
+    toast({
+      title: "Data Protection Panel Hidden",
+      description: "The data protection panel has been permanently hidden.",
+      variant: "default"
+    });
+  };
   
   // Create a manual backup of client data
   const handleCreateBackup = async () => {
@@ -115,8 +160,53 @@ const ClientDataProtection: React.FC<ClientDataProtectionProps> = ({
     }
   };
   
+  // Don't render anything if the component is hidden (permanently or temporarily) or force-hidden
+  if (isPermanentlyHidden || forceHide || !isVisible) {
+    return null;
+  }
+  
   return (
-    <Card className="border-2 border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+    <Card className="border-2 border-blue-200 bg-blue-50 dark:bg-blue-950/20 relative">
+      {/* Hide buttons in top-right corner */}
+      <div className="absolute top-2 right-2 flex gap-1">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100"
+              title="Permanently Hide Data Protection"
+            >
+              <EyeOff className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Permanently Hide Data Protection</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently hide the data protection panel. You won't see this panel again unless you manually clear your browser data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={hidePermanently} className="bg-red-500 hover:bg-red-600">
+                Permanently Hide
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-muted-foreground hover:text-blue-600"
+          onClick={toggleVisibility}
+          title="Hide Data Protection"
+        >
+          <EyeOff className="h-4 w-4" />
+        </Button>
+      </div>
+      
       <CardHeader>
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-blue-600" />

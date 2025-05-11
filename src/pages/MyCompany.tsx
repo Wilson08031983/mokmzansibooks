@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CompanyErrorBoundary } from '@/components/CompanyErrorBoundary';
 import { useCompany } from '@/contexts/CompanyContext';
+import { syncCompanyData } from '@/utils/companyDataSync';
 // Import UI components
 import { 
   Card, CardContent, CardHeader, CardTitle, CardDescription 

@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { useSidebar } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/contexts/NotificationsContext";
 
 const DashboardHeader = () => {
-  const { currentUser, signOut } = useAuth();
+  const { currentUser, signOut } = useSupabaseAuth();
   const { state, setOpen } = useSidebar();
   const navigate = useNavigate();
   const { notifications } = useNotifications();
@@ -98,14 +98,14 @@ const DashboardHeader = () => {
               <Avatar>
                 <AvatarImage src="" />
                 <AvatarFallback>
-                  {getInitials(currentUser?.name || "User")}
+                  {getInitials(currentUser?.displayName || currentUser?.user_metadata?.display_name || "User")}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
-              {currentUser?.name || "User"}
+              {currentUser?.displayName || currentUser?.user_metadata?.display_name || "User"}
               <p className="text-xs font-normal text-muted-foreground truncate max-w-[12rem]">
                 {currentUser?.email || "user@example.com"}
               </p>

@@ -15,6 +15,8 @@ import { Building2, User, Truck } from "lucide-react";
 interface ClientDropdownFixProps {
   onSelectClient: (clientId: string) => void;
   selectedClientId?: string;
+  /** When true, company clients won't be shown in the dropdown (for quotes) */
+  excludeCompanies?: boolean;
 }
 
 /**
@@ -23,7 +25,8 @@ interface ClientDropdownFixProps {
  */
 const ClientDropdownFix: React.FC<ClientDropdownFixProps> = ({ 
   onSelectClient,
-  selectedClientId = ""
+  selectedClientId = "",
+  excludeCompanies = false
 }) => {
   const [clients, setClients] = useState<{
     companies: Client[];
@@ -35,47 +38,150 @@ const ClientDropdownFix: React.FC<ClientDropdownFixProps> = ({
     vendors: []
   });
   
-  // Load clients from localStorage
+  // Load clients from multiple storage locations with comprehensive fallback
   useEffect(() => {
     const loadClients = () => {
       try {
-        // Try to get clients from localStorage
-        const savedClients = localStorage.getItem('mokClients');
-        if (savedClients) {
-          const parsedClients = JSON.parse(savedClients);
-          setClients({
-            companies: Array.isArray(parsedClients.companies) ? parsedClients.companies : [],
-            individuals: Array.isArray(parsedClients.individuals) ? parsedClients.individuals : [],
-            vendors: Array.isArray(parsedClients.vendors) ? parsedClients.vendors : []
-          });
-          console.log('Loaded clients from localStorage:', {
-            companies: parsedClients.companies?.length || 0,
-            individuals: parsedClients.individuals?.length || 0,
-            vendors: parsedClients.vendors?.length || 0
-          });
+        // Try multiple possible storage keys to find client data
+        const possibleKeys = [
+          'clients',                  // Main key used by clientStorageAdapter
+          'CLIENTS',                  // Alternative key
+          'clients_backup',           // Backup key used by clientStorageAdapter
+          'mok-mzansi-books-clients', // Original key used by this component
+          'savedClients',             // Another possible legacy key
+          'clientsData'               // Another possible legacy key
+        ];
+        
+        // First try to load structured client state (with companies, individuals, vendors)
+        for (const key of possibleKeys) {
+          const savedData = localStorage.getItem(key);
+          if (savedData) {
+            try {
+              const parsedData = JSON.parse(savedData);
+              
+              // Check if data has the expected structure with companies, individuals, vendors
+              if (parsedData && 
+                  (Array.isArray(parsedData.companies) || 
+                   Array.isArray(parsedData.individuals) || 
+                   Array.isArray(parsedData.vendors))) {
+                
+                // Set up default empty arrays to avoid undefined errors
+                const companiesArray = Array.isArray(parsedData.companies) ? parsedData.companies : [];
+                const individualsArray = Array.isArray(parsedData.individuals) ? parsedData.individuals : [];
+                const vendorsArray = Array.isArray(parsedData.vendors) ? parsedData.vendors : [];
+                
+                // Ensure we're not setting undefined values
+                setClients({
+                  companies: companiesArray,
+                  individuals: individualsArray,
+                  vendors: vendorsArray
+                });
+                
+                console.log(`Loaded clients from localStorage key '${key}':`, {
+                  companies: companiesArray.length,
+                  individuals: individualsArray.length,
+                  vendors: vendorsArray.length
+                });
+                
+                // Successfully loaded data, no need to check other keys
+                return;
+              }
+              
+              // Check if data is an array of clients (old format)
+              if (Array.isArray(parsedData) && parsedData.length > 0) {
+                // Categorize clients by type
+                const companies: Client[] = [];
+                const individuals: Client[] = [];
+                const vendors: Client[] = [];
+                
+                parsedData.forEach((client: any) => {
+                  if (client.type === 'company') {
+                    companies.push(client);
+                  } else if (client.type === 'individual') {
+                    individuals.push(client);
+                  } else if (client.type === 'vendor') {
+                    vendors.push(client);
+                  }
+                });
+                
+                setClients({
+                  companies,
+                  individuals,
+                  vendors
+                });
+                
+                console.log(`Loaded clients from flat array in localStorage key '${key}':`, {
+                  companies: companies.length,
+                  individuals: individuals.length,
+                  vendors: vendors.length
+                });
+                
+                // Successfully loaded data, no need to check other keys
+                return;
+              }
+            } catch (parseError) {
+              console.error(`Error parsing client data from key '${key}':`, parseError);
+              // Continue to next key
+            }
+          }
         }
+        
+        // If we get here, no valid client data was found
+        console.log('No valid client data found in any storage location');
+        setClients({
+          companies: [],
+          individuals: [],
+          vendors: []
+        });
       } catch (e) {
         console.error('Error loading clients:', e);
+        // On error, ensure we have empty arrays rather than undefined
+        setClients({
+          companies: [],
+          individuals: [],
+          vendors: []
+        });
       }
     };
     
     // Load initially
     loadClients();
     
-    // Set up interval for periodic reloading
-    const intervalId = setInterval(loadClients, 2000);
+    // Set up interval for periodic reloading (every 3 seconds rather than 2)
+    const intervalId = setInterval(loadClients, 3000);
     
     // Clean up
     return () => clearInterval(intervalId);
   }, []);
   
   const handleSelectChange = (value: string) => {
-    onSelectClient(value);
+    console.log('ClientDropdownFix: Selected client ID:', value);
+    // Ensure we're passing a valid client ID
+    if (value && typeof value === 'string') {
+      // Find the client in our local state to verify it exists
+      const allClients = [
+        ...clients.companies,
+        ...clients.individuals,
+        ...clients.vendors
+      ];
+      
+      const selectedClient = allClients.find(client => client.id === value);
+      if (selectedClient) {
+        console.log('ClientDropdownFix: Found client:', selectedClient.name);
+      } else {
+        console.warn('ClientDropdownFix: Selected client ID not found in local state:', value);
+      }
+      
+      // Call the parent component's handler with the selected client ID
+      onSelectClient(value);
+    } else {
+      console.error('ClientDropdownFix: Invalid client ID selected:', value);
+    }
   };
   
-  // Count total clients
+  // Count total clients - exclude companies if needed
   const totalClients = 
-    (clients.companies?.length || 0) + 
+    (excludeCompanies ? 0 : (clients.companies?.length || 0)) + 
     (clients.individuals?.length || 0) + 
     (clients.vendors?.length || 0);
   
@@ -91,7 +197,7 @@ const ClientDropdownFix: React.FC<ClientDropdownFixProps> = ({
         <SelectContent>
           {totalClients > 0 ? (
             <>
-              {clients.companies.length > 0 && (
+              {!excludeCompanies && clients.companies.length > 0 && (
                 <SelectGroup>
                   <SelectLabel>Companies</SelectLabel>
                   {clients.companies.map(client => (

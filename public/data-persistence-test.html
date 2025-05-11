@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MokMzansi Books - Data Persistence Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.5;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #1e40af;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        .instructions {
+            background-color: #f9fafb;
+            border-left: 4px solid #3b82f6;
+            padding: 12px;
+            margin: 20px 0;
+        }
+        .test-button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        .test-button:hover {
+            background-color: #1d4ed8;
+        }
+        .results {
+            background-color: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .emoji {
+            font-size: 24px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        #closeApp {
+            background-color: #dc2626;
+            margin-right: 10px;
+        }
+        #reloadApp {
+            background-color: #16a34a;
+        }
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1><span class="emoji">🧪</span> MokMzansi Books - Data Persistence Test</h1>
+    
+    <div class="instructions">
+        <p><strong>This page tests whether your data will be properly saved and not lost.</strong></p>
+        <p>The test will:</p>
+        <ol>
+            <li>Save test company data across multiple storage mechanisms</li>
+            <li>Save test client data across multiple storage mechanisms</li>
+            <li>Test IndexedDB storage and retrieval</li>
+            <li>Verify that all data is properly saved and can be retrieved</li>
+        </ol>
+    </div>
+    
+    <button id="runTest" class="test-button">Run Data Persistence Test</button>
+    
+    <div class="results" id="results">
+        Test results will appear here...
+    </div>
+    
+    <div class="instructions">
+        <p><strong>Testing Persistence Across Browser Sessions:</strong></p>
+        <p>To fully test data persistence:</p>
+        <ol>
+            <li>Run the test by clicking the button above</li>
+            <li>After the test completes, close this browser tab completely</li>
+            <li>Re-open this test page</li>
+            <li>Run the test again - if data persists, your changes to the system are working!</li>
+        </ol>
+    </div>
+    
+    <div class="actions">
+        <button id="closeApp" class="test-button">Close Tab (Step 1)</button>
+        <button id="reloadApp" class="test-button">Reload Page (Step 2)</button>
+    </div>
+    
+    <script src="data-persistence-test.js"></script>
+    <script>
+        document.getElementById('runTest').addEventListener('click', function() {
+            const resultsElement = document.getElementById('results');
+            resultsElement.innerHTML = 'Running tests...\n\n';
+            
+            // Redirect console.log to also appear in the results div
+            const originalConsoleLog = console.log;
+            console.log = function() {
+                originalConsoleLog.apply(console, arguments);
+                
+                const args = Array.from(arguments);
+                resultsElement.innerHTML += args.join(' ') + '\n';
+                
+                // Auto-scroll to bottom
+                resultsElement.scrollTop = resultsElement.scrollHeight;
+            };
+            
+            // Run the tests
+            window.runDataPersistenceTests();
+        });
+        
+        document.getElementById('closeApp').addEventListener('click', function() {
+            if (confirm('This will close the current tab. Make sure to run the test first, then come back to this page to run the test again.')) {
+                window.close();
+                // In case window.close() doesn't work (browser security)
+                document.body.innerHTML = '<h1>Please close this tab manually and then reopen the test page.</h1>';
+            }
+        });
+        
+        document.getElementById('reloadApp').addEventListener('click', function() {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>

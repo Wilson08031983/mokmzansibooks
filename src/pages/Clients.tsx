@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ClientErrorBoundary } from "@/components/ClientErrorBoundary";
-import { getSafeClientData, setSafeClientData } from "@/utils/clientDataPersistence";
+// Import our new super persistent storage adapter
+import { loadClientsState, saveClientsState, addClient, updateClient, deleteClient } from "@/utils/clientStorageAdapter";
 import { Client, CompanyClient, IndividualClient, VendorClient, isCompanyClient, isVendorClient, isIndividualClient, hasContactPerson } from "@/types/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,17 @@ const emptyClients = {
   companies: [],
   individuals: [],
   vendors: []
+};
+
+// Safe data loading utility function
+const getSafeClientData = async (): Promise<ClientsState> => {
+  try {
+    const clientsState = await loadClientsState();
+    return clientsState || emptyClients;
+  } catch (error) {
+    console.error('Error in getSafeClientData:', error);
+    return emptyClients;
+  }
 };
 
 // Client action buttons component for reuse across all client cards
@@ -126,10 +138,7 @@ const Clients = () => {
   const { currency } = useI18n();
   
   // State for managing clients data - use the ref pattern to ensure we get fresh state in callbacks
-  const [clients, setClients] = useState<ClientsState>(() => {
-    // Use our safe data loading utility to ensure data integrity
-    return getSafeClientData();
-  });
+  const [clients, setClients] = useState<ClientsState>(emptyClients);
   
   // Use a ref to keep track of the current clients state
   const clientsRef = useRef(clients);
@@ -150,8 +159,17 @@ const Clients = () => {
   
   // Function to handle creating a new invoice for a client
   const handleCreateInvoice = (client: Client) => {
+    console.log('Creating invoice for client:', client.name);
+    
     // Store the selected client in localStorage for use in the invoice creation page
+    // Using a specific key for the invoice creation flow
     localStorage.setItem('selectedClientForInvoice', JSON.stringify(client));
+    
+    // Also store that we want to create a new invoice (vs. editing an existing one)
+    localStorage.setItem('invoiceAction', 'create');
+    
+    // Store a flag to automatically select the createInvoice tab
+    localStorage.setItem('activeInvoiceTab', 'createInvoice');
     
     // Make sure Ryzen client is also added to the clients list if it doesn't exist
     try {
@@ -168,11 +186,13 @@ const Clients = () => {
         credit: 3000,
         outstanding: 0,
         overdue: 0,
-        contactPerson: "Tom Mark"
+        contactPerson: "Tom Mark",
+        lastInteraction: new Date().toISOString().split('T')[0] // Add today's date
       };
       
       // Ensure Ryzen client exists in state and localStorage
       if (!clients.companies.some(c => c.id === ryzenClient.id)) {
+        console.log('Adding Ryzen client to the database');
         // Add to in-memory state
         setClients(prev => ({
           ...prev,
@@ -185,8 +205,8 @@ const Clients = () => {
     
     // Show success notification
     toast({
-      title: "Client Selected",
-      description: `${client.name} selected for new invoice`,
+      title: "Creating New Invoice",
+      description: `Preparing invoice for ${client.name}`,
       variant: "default"
     });
     
@@ -197,8 +217,8 @@ const Clients = () => {
       type: "info"
     });
     
-    // Redirect to Invoices page
-    window.location.href = '/dashboard/invoices/new';
+    // Redirect to the Invoice/Quote Manager with the invoice tab selected
+    window.location.href = '/dashboard/invoices';
   };
   const [clientCount, setClientCount] = useState({
     companies: 0,
@@ -242,13 +262,58 @@ const Clients = () => {
     lastInteraction: "",
   });
 
+  // Load clients data with useEffect to avoid render-phase state updates
   useEffect(() => {
-    setClientCount({
+    let mounted = true;
+    
+    const loadAllClients = async () => {
+      try {
+        // Load from persistent storage with all fallbacks
+        console.log('Loading clients from persistent storage...');
+        const clientsState = await loadClientsState();
+        
+        // Only update state if the component is still mounted
+        if (!mounted) return;
+        
+        if (clientsState && (
+          clientsState.companies.length > 0 || 
+          clientsState.individuals.length > 0 || 
+          clientsState.vendors.length > 0
+        )) {
+          setClients(clientsState);
+          console.log(`Loaded clients successfully: ${clientsState.companies.length} companies, ${clientsState.individuals.length} individuals, ${clientsState.vendors.length} vendors`);
+        } else {
+          console.log('No clients found in persistent storage');
+        }
+      } catch (error) {
+        console.error('Error loading clients:', error);
+        if (mounted) {
+          toast({
+            title: "Error Loading Clients",
+            description: "There was a problem loading your client data.",
+            variant: "destructive"
+          });
+        }
+      }
+    };
+    
+    loadAllClients();
+    
+    // Cleanup function to prevent state updates after unmounting
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  // Update client counts whenever clients state changes
+  useEffect(() => {
+    const counts = {
       companies: clients.companies.length,
       individuals: clients.individuals.length,
       vendors: clients.vendors.length,
       all: clients.companies.length + clients.individuals.length + clients.vendors.length,
-    });
+    };
+    setClientCount(counts);
   }, [clients]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -443,19 +508,27 @@ const Clients = () => {
     setCreditAmount("");
   };
 
-  // Save client state 
+  // Save client state with super persistent storage
   useEffect(() => {
-    try {
-      setSafeClientData(clients);
-    } catch (error) {
-      console.error('Error saving clients to localStorage:', error);
-      toast({
-        title: "Error Saving",
-        description: "There was a problem saving your client data.",
-        variant: "destructive"
-      });
-    }
-  }, [clients]);
+    const persistClients = async () => {
+      try {
+        // Only save if we have clients to save
+        if (clients.companies.length > 0 || clients.individuals.length > 0 || clients.vendors.length > 0) {
+          console.log(`Saving clients to super persistent storage: ${clients.companies.length} companies, ${clients.individuals.length} individuals, ${clients.vendors.length} vendors`);
+          await saveClientsState(clients);
+        }
+      } catch (error) {
+        console.error('Error saving clients:', error);
+        toast({
+          title: "Error Saving",
+          description: "There was a problem saving your client data.",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    persistClients();
+  }, [clients, toast]);
 
   const filteredClients = useCallback((type: string) => {
     // Always use the current clients ref to ensure we have the latest data
@@ -902,23 +975,29 @@ const Clients = () => {
         <ClientDataProtection 
           clientCount={clientCount.all}
           onDataRestored={() => {
-            // Refresh client data from storage when data is restored
-            const refreshedData = getSafeClientData();
-            setClients(refreshedData);
-            
-            // Update client counts
-            setClientCount({
-              companies: refreshedData.companies.length,
-              individuals: refreshedData.individuals.length,
-              vendors: refreshedData.vendors.length,
-              all: refreshedData.companies.length + refreshedData.individuals.length + refreshedData.vendors.length
-            });
-            
-            toast({
-              title: "Data Restored",
-              description: "Client data has been successfully restored from backup.",
-              variant: "default"
-            });
+            // Use a non-async function to match the interface but handle async operations inside
+            (async () => {
+              try {
+                const refreshedData = await getSafeClientData();
+                setClients(refreshedData);
+                
+                // Show success notification
+                toast({
+                  title: "Client Data Restored",
+                  description: "Your client data has been successfully restored.",
+                  variant: "success"
+                });
+              } catch (error) {
+                console.error('Error refreshing client data:', error);
+                
+                toast({
+                  title: "Error Restoring Data",
+                  description: "There was a problem restoring your client data.",
+                  variant: "destructive"
+                });
+              }
+              // Client counts will be updated via the useEffect that watches clients
+            })(); // Immediately invoke the async function
           }}
         />
       </div>

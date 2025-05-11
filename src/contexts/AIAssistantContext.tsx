@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, Component, ErrorInfo, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
+import { useSupabaseAuth } from './SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useUserBehavior } from './UserBehaviorContext';
 import { RecommendationEngine, Recommendation } from '@/services/RecommendationEngine';
@@ -218,7 +218,7 @@ class AIAssistantErrorBoundary extends Component<
 export const AIAssistantProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   const { toast } = useToast();
   const { getUserActionHistory: getUserBehaviorHistory } = useUserBehavior();
   const recommendationEngine = RecommendationEngine.getInstance();

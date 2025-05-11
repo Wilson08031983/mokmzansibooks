@@ -1,7 +1,27 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from './NotificationsContext';
+import { useSyncStatus } from './SyncContext';
 import { safeJsonParse, safeJsonStringify, withErrorHandling } from '@/utils/errorHandling';
+// Import our new super persistent storage adapters
+import { loadCompanyDetails as getCompanyDetailsFromStorage, saveCompanyDetails as saveCompanyDetailsToStorage } from '@/utils/companyStorageAdapter';
+import { syncCompanyData } from '@/utils/companyDataSync';
+import { createSyncStorageWrapper } from '@/utils/syncStorageUtils';
+
+// Import the event bus with a try-catch to handle potential HMR issues
+let eventBus: any = null;
+try {
+  // Dynamic import to prevent HMR issues
+  eventBus = require('@/utils/companyEventBus').default;
+} catch (error) {
+  console.warn('Could not load event bus, real-time updates may be affected:', error);
+  // Provide a fallback dummy eventBus if the real one fails to load
+  eventBus = {
+    publish: (event: string, data: any) => console.log(`Event ${event} would be published with:`, data),
+    subscribe: () => 'dummy-id',
+    unsubscribe: () => {}
+  };
+}
 
 // Define the CompanyDetails interface
 export interface CompanyDetails {
@@ -97,16 +117,13 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 // Default company details
 const defaultCompanyDetails: CompanyDetails = {
-  name: '',
-  registrationNumber: '',
-  vatNumber: '',
-  taxRegistrationNumber: '',
-  csdRegistrationNumber: '',
-  directorFirstName: '',
-  directorLastName: '',
-  contactEmail: '',
-  contactPhone: '',
-  address: '',
+  id: "",
+  name: "",
+  registrationNumber: "",
+  vatNumber: "",
+  contactEmail: "",
+  contactPhone: "",
+  address: "",
   addressLine2: '',
   city: '',
   province: '',
@@ -115,12 +132,17 @@ const defaultCompanyDetails: CompanyDetails = {
   logo: null,
   stamp: null,
   signature: null,
+  taxRegistrationNumber: '',
+  csdRegistrationNumber: '',
+  directorFirstName: '',
+  directorLastName: ''
 };
 
 // Provider component
 export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { toast } = useToast();
   const { addNotification } = useNotifications();
+  const { showSyncing, showSuccess, showError } = useSyncStatus();
 
   // State for loading and error handling
   const [isLoading, setIsLoading] = useState(false);
@@ -141,66 +163,62 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     return !localStorage.getItem('adminPasscode');
   });
 
-  // State for company details with enhanced persistence
+  // State for company details with super persistent storage
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails>(() => {
     try {
-      // Multi-layered approach to loading company details for maximum persistence
-      
-      // First try to load from authenticated storage (normal flow)
+      // Using synchronous initialization - we'll update with async data once loaded
+      // First check if we have data in localStorage for immediate display
       const savedCompany = localStorage.getItem('companyDetails');
       if (savedCompany) {
-        console.log('Loaded company details from primary storage');
+        console.log('Loaded company details from localStorage (initial)');
         return safeJsonParse(savedCompany, defaultCompanyDetails);
       }
       
-      // If not found, try to load from public persistent storage
-      const publicCompanyData = localStorage.getItem('publicCompanyDetails');
-      if (publicCompanyData) {
-        console.log('Loaded company details from public persistent storage');
-        const parsedData = safeJsonParse(publicCompanyData, defaultCompanyDetails);
-        
-        // If the public data is comprehensive, use it
-        if (parsedData.name && parsedData.contactEmail) {
-          // Immediately restore this to the main storage as well
-          localStorage.setItem('companyDetails', safeJsonStringify(parsedData));
-          return parsedData;
-        }
-      }
-      
-      // Last resort - check session storage backup (created during logout)
-      const backupData = sessionStorage.getItem('companyDataBackup');
-      if (backupData) {
-        try {
-          console.log('Attempting to recover from session backup');
-          const allBackupData = JSON.parse(backupData);
-          
-          // If we have company details in the backup, use that
-          if (allBackupData.companyDetails) {
-            const recoveredDetails = JSON.parse(allBackupData.companyDetails);
-            // Restore to localStorage for future use
-            localStorage.setItem('companyDetails', allBackupData.companyDetails);
-            return recoveredDetails;
-          } 
-          
-          // If we have public company details, use that as a fallback
-          if (allBackupData.publicCompanyDetails) {
-            const recoveredPublicDetails = JSON.parse(allBackupData.publicCompanyDetails);
-            // Restore to localStorage for future use
-            localStorage.setItem('publicCompanyDetails', allBackupData.publicCompanyDetails);
-            return recoveredPublicDetails;
-          }
-        } catch (parseError) {
-          console.error('Error parsing backup data:', parseError);
-        }
-      }
-      
-      // If all else fails, return defaults
-      return defaultCompanyDetails;
+      return {...defaultCompanyDetails};
     } catch (error) {
-      console.error('Error loading company details:', error);
-      return defaultCompanyDetails;
+      console.error('Error loading initial company details:', error);
+      return {...defaultCompanyDetails};
     }
   });
+
+  // Create sync-enabled storage functions for company details
+  const syncCompanyStorage = createSyncStorageWrapper(
+    saveCompanyDetailsToStorage,
+    getCompanyDetailsFromStorage,
+    'Company Details'
+  );
+
+  // Load company details from super persistent storage on component mount
+  useEffect(() => {
+    const loadCompanyDetailsFromStorage = async () => {
+      try {
+        setIsLoading(true);
+        showSyncing('Loading company information...');
+        
+        const savedCompany = await syncCompanyStorage.load({
+          onSyncStart: () => showSyncing('Loading company information...'),
+          onSyncSuccess: () => showSuccess('Company information loaded'),
+          onSyncError: () => showError('Error loading company information')
+        });
+        
+        if (savedCompany) {
+          console.log('Loaded company details from super persistent storage');
+          setCompanyDetails(savedCompany);
+        } else {
+          console.warn('No company details found in super persistent storage');
+        }
+      } catch (error) {
+        console.error('Error loading company details from storage:', error);
+        setHasError(true);
+        setErrorMessage('Failed to load company details');
+        showError('Failed to load company details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadCompanyDetailsFromStorage();
+  }, []);
 
   // Initialize users from localStorage if available
   const [users, setUsers] = useState<User[]>(() => {
@@ -317,141 +335,61 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
   };
 
-  // Create a backup of company details
-  const backupCompanyDetails = () => {
-    try {
-      // Get current timestamp for versioning
-      const timestamp = new Date().toISOString();
-      
-      // Create a versioned backup
-      const backupKey = `companyDetails_backup_${timestamp}`;
-      localStorage.setItem(backupKey, safeJsonStringify(companyDetails));
-      
-      // Keep track of backups (store last 5 versions)
-      const backupList = localStorage.getItem('companyDetailsBackupList');
-      const backups = backupList ? safeJsonParse(backupList, []) : [];
-      
-      // Add new backup to the list
-      backups.unshift({ key: backupKey, timestamp });
-      
-      // Keep only the last 5 backups
-      const trimmedBackups = backups.slice(0, 5);
-      
-      // Remove any backups beyond the 5 most recent
-      if (backups.length > 5) {
-        backups.slice(5).forEach(backup => {
-          localStorage.removeItem(backup.key);
-        });
-      }
-      
-      // Save the updated backup list
-      localStorage.setItem('companyDetailsBackupList', safeJsonStringify(trimmedBackups));
-      
-      return true;
-    } catch (error) {
-      console.error('Error creating company details backup:', error);
-      return false;
-    }
-  };
-
-  // Save company details with enhanced safeguards
+  // Function to save company details with super persistence and sync indicator
   const saveCompanyDetails = async () => {
-    setIsLoading(true);
-    setHasError(false);
-    
     try {
-      // Validate company details before saving
-      const validation = validateCompanyDetails(companyDetails);
+      setIsLoading(true);
+      showSyncing('Saving company information...');
       
-      if (!validation.isValid) {
-        setHasError(true);
-        setErrorMessage(`Cannot save company details: ${validation.errors.join(', ')}`);
-        setIsLoading(false);
-        return;
+      // Save to our super persistent storage system with sync status
+      const result = await syncCompanyStorage.save(companyDetails, {
+        onSyncStart: () => showSyncing('Saving company information...'),
+        onSyncSuccess: () => showSuccess('Company information saved successfully'),
+        onSyncError: () => showError('Error saving company information')
+      });
+      
+      if (result) {
+        // Publish an event that company details have been updated
+        if (eventBus) {
+          eventBus.publish('company-details-updated', companyDetails);
+        }
+        
+        // Add audit log entry
+        addAuditLogEntry('company_updated', 'Company details updated');
+        
+        // Show success notification
+        toast({
+          title: "Company Details Saved",
+          description: "Your company information has been updated successfully."
+        });
+        
+        addNotification({
+          title: 'Company information saved',
+          message: 'Your company details have been saved and will persist even after browser restarts.',
+          type: 'success'
+        });
+      } else {
+        throw new Error('Failed to save company details to storage');
       }
+    } catch (error) {
+      console.error('Error saving company details:', error);
+      setHasError(true);
+      setErrorMessage('Failed to save company details. Please try again.');
       
-      // Create a backup before saving new data
-      const backupCreated = backupCompanyDetails();
-      if (!backupCreated) {
-        console.warn('Failed to create backup, but proceeding with save');
-      }
-      
-      // Save to regular authenticated storage
-      localStorage.setItem('companyDetails', safeJsonStringify(companyDetails));
-      
-      // Create a more complete public company data object to persist more information
-      // This ensures most company data remains available even after logout
-      const publicCompanyData = {
-        // Basic identification
-        id: companyDetails.id,
-        name: companyDetails.name,
-        registrationNumber: companyDetails.registrationNumber,
-        vatNumber: companyDetails.vatNumber,
-        taxRegistrationNumber: companyDetails.taxRegistrationNumber,
-        csdRegistrationNumber: companyDetails.csdRegistrationNumber,
-        
-        // Contact details
-        contactEmail: companyDetails.contactEmail,
-        contactPhone: companyDetails.contactPhone,
-        
-        // Address information
-        address: companyDetails.address,
-        addressLine2: companyDetails.addressLine2,
-        city: companyDetails.city,
-        province: companyDetails.province,
-        postalCode: companyDetails.postalCode,
-        
-        // Director information
-        directorFirstName: companyDetails.directorFirstName,
-        directorLastName: companyDetails.directorLastName,
-        
-        // Web and media assets
-        websiteUrl: companyDetails.websiteUrl,
-        logo: companyDetails.logo,
-        stamp: companyDetails.stamp,
-        signature: companyDetails.signature,
-        
-        // Timestamp to track when this was last updated
-        lastUpdated: new Date().toISOString(),
-        
-        // Add a data protection flag
-        protected: true
-      };
-      
-      // Save to multiple storage mechanisms for redundancy
-      // 1. localStorage - primary storage
-      localStorage.setItem('publicCompanyDetails', safeJsonStringify(publicCompanyData));
-      
-      // 2. sessionStorage - backup while browser is open
-      sessionStorage.setItem('publicCompanyDetails', safeJsonStringify(publicCompanyData));
-      
-      // 3. Create an additional encrypted backup (using a simple encryption)
-      const encryptedData = btoa(safeJsonStringify(publicCompanyData));
-      localStorage.setItem('publicCompanyDetails_encrypted', encryptedData);
-      
-      // Add audit log entry with more detailed information
-      addAuditLogEntry('company_updated', `Company details updated by user at ${new Date().toISOString()}`);
-      
-      // Show success notification
+      // Show error notification
       toast({
-        title: "Company Details Saved",
-        description: "Your company information has been permanently saved and will persist across sessions."
+        title: "Error Saving Company Details",
+        description: "There was a problem saving your company information. Please try again.",
+        variant: "destructive"
       });
       
       addNotification({
-        title: "Company Updated", 
-        message: "Company details have been successfully updated and backed up.", 
-        type: 'success',
+        title: 'Save error',
+        message: 'Could not save company information. Please try again.',
+        type: 'error'
       });
-    } catch (error) {
-      setHasError(true);
-      setErrorMessage('Failed to save company details: ' + (error instanceof Error ? error.message : String(error)));
       
-      toast({
-        title: "Error Saving Company Details",
-        description: "There was a problem saving your company information.",
-        variant: "destructive"
-      });
+      showError('Failed to save company details');
     } finally {
       setIsLoading(false);
     }

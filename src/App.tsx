@@ -1,12 +1,14 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react';
-import { initializeApp } from '@/utils/initApp';
-import { initializeCompanyDataPersistence } from '@/utils/companyDataPersistence';
+import { SyncProvider } from '@/contexts/SyncContext';
+import SyncIndicator from '@/components/shared/SyncIndicator';
+import { initializeApp, exposeDebugMethods } from '@/utils/initApp';
+import { GlobalAppProvider } from '@/contexts/GlobalAppContext';
 import { lazyWithRetry as lazy } from '@/utils/lazyWithRetry.tsx';
 import SuspenseFallback from '@/components/SuspenseFallback';
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import AccountingRedirect from "./pages/AccountingRedirect";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { SupabaseAuthProvider } from "@/contexts/SupabaseAuthContext";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import { FinancialDataProvider } from "@/contexts/FinancialDataContext";
@@ -16,7 +18,9 @@ import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
 import { AIAssistant } from "@/components/AIAssistant";
 import { UserBehaviorProvider } from "@/contexts/UserBehaviorContext";
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { testPersistence } from './utils/testPersistence';
+import PersistenceProvider from "@/contexts/PersistenceContext";
+// Import test utilities for development mode
+import { testPersistence } from '@/utils/testPersistence';
 
 // Import DashboardLayout after fixing it
 import DashboardLayout from "@/layouts/DashboardLayout";
@@ -80,29 +84,58 @@ const RunPayroll = lazy(() => import("@/pages/hr/RunPayroll"));
 function App() {
   const [renderError, setRenderError] = useState(false);
 
+  // Track mounted state to prevent updates after unmount
+  const isMountedRef = useRef(true);
+  
   useEffect(() => {
-    // Initialize global error handlers
-    initializeApp();
-    
-    // Initialize company data persistence to ensure data isn't lost after restart
-    initializeCompanyDataPersistence();
-    
-    // Make test function available in development mode
-    if (process.env.NODE_ENV === 'development') {
-      (window as any).testCompanyDataPersistence = testPersistence;
-      console.log('Company data persistence test function available!', 
-                'Run window.testCompanyDataPersistence() to test');
+    // Initialize the entire application with our enhanced persistence system
+    try {
+      initializeApp();
+    } catch (error) {
+      console.error('Failed to initialize app:', error);
     }
     
-    const handleRenderError = (event: Event) => {
-      console.error('Global Render Error:', event);
-      setRenderError(true);
+    // Enhanced error handler for global errors
+    const handleGlobalError = (event: ErrorEvent) => {
+      console.error('Global error caught:', event);
+      
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        try {
+          setRenderError(true);
+          
+          // Force clear problematic localStorage items that might be causing issues
+          try {
+            localStorage.removeItem('COMPANY_DATA_CACHE');
+            localStorage.removeItem('COMPANY_DATA_FORCE_UPDATE_NOW');
+            // Clear session storage as well
+            sessionStorage.removeItem('COMPANY_DISPLAY_STATE');
+          } catch (e) {
+            console.error('Failed to clear problematic storage items:', e);
+          }
+        } catch (e) {
+          console.error('Error in error handler:', e);
+        }
+      }
+      
+      // Prevent the error from bubbling further and crashing the app completely
+      event.preventDefault();
+      event.stopPropagation();
+      return true;
     };
-
-    window.addEventListener('error', handleRenderError);
     
+    // Attach multiple listeners to ensure we catch all errors
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled Promise Rejection:', event.reason);
+      if (isMountedRef.current) setRenderError(true);
+    });
+    
+    // Setup cleanup
     return () => {
-      window.removeEventListener('error', handleRenderError);
+      isMountedRef.current = false;
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', () => {});
     };
   }, []);
 
@@ -134,22 +167,25 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <Router>
-          <I18nProvider>
-            <AuthProvider>
-              <FinancialDataProvider>
-                <NotificationsProvider>
-                  <UserBehaviorProvider>
-                    <CompanyProvider>
-                      <AIAssistantProvider>
-                        <Suspense 
-                          fallback={<SuspenseFallback message="Loading application..." />}>
-                        <Routes>
-                          <Route path="/" element={<PublicLayout />}>
-                            <Route index element={<Index />} />
-                            <Route path="signin" element={<SignIn />} />
-                            <Route path="signup" element={<SignUp />} />
-                            <Route path="onboarding" element={<Onboarding />} />
-                          </Route>
+          <SupabaseAuthProvider>
+            <I18nProvider>
+              <SyncProvider>
+                <PersistenceProvider>
+                  <GlobalAppProvider>
+                    <FinancialDataProvider>
+                      <NotificationsProvider>
+                        <UserBehaviorProvider>
+                          <CompanyProvider>
+                            <AIAssistantProvider>
+                              <Suspense 
+                                fallback={<SuspenseFallback message="Loading application..." />}>
+                                <Routes>
+                                  <Route path="/" element={<PublicLayout />}>
+                                    <Route index element={<Index />} />
+                                    <Route path="signin" element={<SignIn />} />
+                                    <Route path="signup" element={<SignUp />} />
+                                    <Route path="onboarding" element={<Onboarding />} />
+                                  </Route>
 
                           <Route
                             path="dashboard"
@@ -208,19 +244,24 @@ function App() {
                           <Route path="accounting/reports" element={<Navigate to="/dashboard/accounting/reports" replace />} />
                           <Route path="accounting/chart-of-accounts" element={<Navigate to="/dashboard/accounting/chart-of-accounts" replace />} />
                           <Route path="*" element={<NotFound />} />
-                        </Routes>
-                        </Suspense>
-                        <Toaster />
-                      </AIAssistantProvider>
-                    </CompanyProvider>
-                  </UserBehaviorProvider>
-                </NotificationsProvider>
-              </FinancialDataProvider>
-            </AuthProvider>
-          </I18nProvider>
-        </Router>
-      </ThemeProvider>
-    </ErrorBoundary>
+                                </Routes>
+                              </Suspense>
+                              <AIAssistant />
+                              <Toaster />
+                              <SyncIndicator position="bottom-right" />
+                            </AIAssistantProvider>
+                          </CompanyProvider>
+                        </UserBehaviorProvider>
+                      </NotificationsProvider>
+                    </FinancialDataProvider>
+                  </GlobalAppProvider>
+                </PersistenceProvider>
+              </SyncProvider>
+              </I18nProvider>
+            </SupabaseAuthProvider>
+          </Router>
+        </ThemeProvider>
+      </ErrorBoundary>
   );
 }
 

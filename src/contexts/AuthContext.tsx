@@ -12,6 +12,7 @@ import {
   updateEmail,
   updatePassword,
 } from 'firebase/auth';
+import { toast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -33,18 +34,126 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoading(false);
-    });
+  // Check for persisted mock user in localStorage
+  const checkPersistedMockUser = () => {
+    try {
+      const mockUserJson = localStorage.getItem('mock_auth_user');
+      if (mockUserJson) {
+        const mockUser = JSON.parse(mockUserJson);
+        setCurrentUser(mockUser as unknown as User);
+        setUsingMockAuth(true);
+        return true;
+      }
+    } catch (e) {
+      console.error('Error checking persisted mock user:', e);
+    }
+    return false;
+  };
 
-    return unsubscribe;
+  useEffect(() => {
+    // First check if we have a persisted mock user
+    const hasMockUser = checkPersistedMockUser();
+    
+    // If no mock user, try regular Firebase auth
+    if (!hasMockUser && auth) {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setCurrentUser(user);
+        setIsLoading(false);
+        
+        // Clear any mock user if we have a real Firebase user
+        if (user) {
+          localStorage.removeItem('mock_auth_user');
+          setUsingMockAuth(false);
+        }
+      });
+      return unsubscribe;
+    } else {
+      // Just update loading state if we're using mock auth
+      setIsLoading(false);
+    }
+    
+    // No cleanup needed for mock auth
+    return () => {};
   }, []);
 
+  // Track if we're using mock authentication due to Firebase configuration issues
+  const [usingMockAuth, setUsingMockAuth] = useState(false);
+  
+  // Mock data for development/testing when Firebase is unavailable
+  const MOCK_USERS = [
+    { email: 'admin@example.com', password: 'password123', displayName: 'Admin User' },
+    { email: 'user@example.com', password: 'password123', displayName: 'Test User' },
+  ];
+  
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // First try regular Firebase authentication
+      if (auth && !usingMockAuth) {
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          return; // Success, exit early
+        } catch (error: any) {
+          // Check for API key errors specifically
+          if (error?.code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.') {
+            console.warn('Firebase API key invalid, falling back to mock authentication');
+            setUsingMockAuth(true);
+            toast({
+              title: 'Authentication Notice',
+              description: 'Using development authentication mode. Some features may be limited.',
+              variant: 'default',
+            });
+            // Continue to mock auth below
+          } else {
+            // For other Firebase errors, throw normally
+            console.error('Error signing in:', error);
+            toast({
+              title: 'Authentication Failed',
+              description: error?.message || 'Invalid email or password',
+              variant: 'destructive',
+            });
+            throw error;
+          }
+        }
+      }
+      
+      // Fallback to mock authentication when Firebase is unavailable
+      if (usingMockAuth || !auth) {
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Check against mock users
+        const mockUser = MOCK_USERS.find(u => u.email === email && u.password === password);
+        
+        if (mockUser) {
+          // Create a mock user object similar to Firebase User
+          const user = {
+            uid: btoa(email), // Simple mock uid from email
+            email,
+            displayName: mockUser.displayName,
+            emailVerified: true,
+            // Add other properties needed to simulate a Firebase User
+          };
+          
+          // Set as current user
+          setCurrentUser(user as unknown as User);
+          
+          toast({
+            title: 'Signed in (Development Mode)',
+            description: `Welcome, ${mockUser.displayName}`,
+          });
+          
+          return;
+        } else {
+          // Mock authentication failed
+          toast({
+            title: 'Authentication Failed',
+            description: 'Invalid email or password',
+            variant: 'destructive',
+          });
+          
+          throw new Error('Invalid email or password');
+        }
+      }
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;
@@ -53,9 +162,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, displayName: string): Promise<void> => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, { displayName });
+      // Try real Firebase auth if available
+      if (auth && !usingMockAuth) {
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          if (userCredential.user) {
+            await updateProfile(userCredential.user, { displayName });
+          }
+          return; // Success, exit early
+        } catch (error: any) {
+          // Check for API key errors specifically
+          if (error?.code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.') {
+            console.warn('Firebase API key invalid, falling back to mock authentication');
+            setUsingMockAuth(true);
+            // Continue to mock auth below
+          } else {
+            // For other Firebase errors, throw normally
+            console.error('Error signing up:', error);
+            toast({
+              title: 'Sign Up Failed',
+              description: error?.message || 'Unable to create account',
+              variant: 'destructive',
+            });
+            throw error;
+          }
+        }
+      }
+      
+      // Mock sign up when Firebase is unavailable
+      if (usingMockAuth || !auth) {
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Check if email already exists
+        if (MOCK_USERS.some(u => u.email === email)) {
+          const error = new Error('Email already in use');
+          toast({
+            title: 'Sign Up Failed',
+            description: 'Email already in use',
+            variant: 'destructive',
+          });
+          throw error;
+        }
+        
+        // Create a new mock user
+        const newUser = { email, password, displayName };
+        MOCK_USERS.push(newUser);
+        
+        // Create a mock user object similar to Firebase User
+        const user = {
+          uid: btoa(email),
+          email,
+          displayName,
+          emailVerified: false,
+        };
+        
+        // Set as current user
+        setCurrentUser(user as unknown as User);
+        
+        // Persist mock user to localStorage
+        localStorage.setItem('mock_auth_user', JSON.stringify(user));
+        
+        toast({
+          title: 'Account Created',
+          description: 'Your account has been created successfully',
+        });
       }
     } catch (error) {
       console.error('Error signing up:', error);
@@ -69,12 +240,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { createClientDataBackup } = await import('@/utils/clientDataPersistence');
       createClientDataBackup();
       
-      await firebaseSignOut(auth);
+      if (usingMockAuth || !auth) {
+        // Handle mock auth logout
+        setCurrentUser(null);
+        localStorage.removeItem('mock_auth_user'); // Clear persisted mock user
+      } else {
+        // Real Firebase logout
+        await firebaseSignOut(auth);
+      }
+      
+      // Navigate to sign in page
       navigate('/signin');
       
       // After signing out, reinitialize app to ensure data is still available
       const { reinitializeAfterLogout } = await import('@/utils/initApp');
       reinitializeAfterLogout();
+      
+      toast({
+        title: 'Signed Out',
+        description: 'You have been signed out successfully',
+      });
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;

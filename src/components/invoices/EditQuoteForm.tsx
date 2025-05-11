@@ -1,5 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { parseNumberWithComma, parseIntSafe } from "@/utils/numberUtils";
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,16 +55,74 @@ const EditQuoteForm: React.FC<EditQuoteFormProps> = ({
   const { companyDetails } = useCompany();
   const [isSaving, setIsSaving] = useState(false);
 
-  // Calculate totals whenever items change
+  // Recalculate all item totals on load to ensure fresh start
   useEffect(() => {
+    // Force recalculating all items on component mount
+    if (initialQuoteData.items && initialQuoteData.items.length > 0) {
+      const recalculatedItems = initialQuoteData.items.map(item => {
+        // Ensure all values are numbers
+        const quantity = parseFloat(String(item.quantity)) || 0;
+        const unitPrice = parseFloat(String(item.unitPrice)) || 0;
+        const markupPercentage = parseFloat(String(item.markupPercentage)) || 0;
+        const discount = parseFloat(String(item.discount)) || 0;
+        
+        // Calculation steps
+        const priceWithMarkup = unitPrice * (1 + markupPercentage / 100);
+        const amountBeforeDiscount = priceWithMarkup * quantity;
+        const discountAmount = amountBeforeDiscount * (discount / 100);
+        const finalAmount = parseFloat((amountBeforeDiscount - discountAmount).toFixed(2));
+        
+        // Return item with calculated totals
+        return {
+          ...item,
+          amount: finalAmount,
+          total: finalAmount
+        };
+      });
+      
+      // Calculate totals
+      const subtotal = recalculatedItems.reduce((sum, item) => sum + item.total, 0);
+      const vatRate = parseFloat(String(initialQuoteData.vatRate)) || 0;
+      const vatAmount = subtotal * (vatRate / 100);
+      const total = subtotal + vatAmount;
+      
+      // Update the quote state with recalculated values
+      setQuote(prev => ({
+        ...prev,
+        items: recalculatedItems,
+        subtotal: parseFloat(subtotal.toFixed(2)),
+        tax: parseFloat(vatAmount.toFixed(2)),
+        total: parseFloat(total.toFixed(2))
+      }));
+      
+      console.log('Initial recalculation:', {
+        items: recalculatedItems,
+        subtotal: parseFloat(subtotal.toFixed(2)),
+        vatAmount: parseFloat(vatAmount.toFixed(2)),
+        total: parseFloat(total.toFixed(2))
+      });
+    }
+  }, []); // Only run on mount
+  
+  // Additional effect for changes
+  useEffect(() => {
+    // This effect handles updates when items or VAT rate changes
     const subtotal = quote.items.reduce((sum, item) => sum + (parseFloat(String(item.total)) || 0), 0);
     const vatAmount = subtotal * (parseFloat(String(quote.vatRate || 0)) / 100);
+    const total = subtotal + vatAmount;
+    
+    console.log('Recalculation on change:', {
+      items: quote.items,
+      subtotal,
+      vatAmount,
+      total
+    });
     
     setQuote(prev => ({
       ...prev,
-      subtotal: subtotal,
-      tax: vatAmount,
-      total: subtotal + vatAmount
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      tax: parseFloat(vatAmount.toFixed(2)),
+      total: parseFloat(total.toFixed(2))
     }));
   }, [quote.items, quote.vatRate]);
 
@@ -79,29 +137,49 @@ const EditQuoteForm: React.FC<EditQuoteFormProps> = ({
   // Handle item changes
   const handleItemChange = (index: number, field: string, value: string | number) => {
     const updatedItems = [...quote.items];
+    
+    // First update the field with the new value
     updatedItems[index] = {
       ...updatedItems[index],
       [field]: value
     };
-
-    // Recalculate total for this line item
-    if (field === 'quantity' || field === 'unitPrice' || field === 'markupPercentage' || field === 'discount') {
-      const quantity = field === 'quantity' ? parseFloat(String(value)) : parseFloat(String(updatedItems[index].quantity));
-      const unitPrice = field === 'unitPrice' ? parseFloat(String(value)) : parseFloat(String(updatedItems[index].unitPrice));
-      const markupPercentage = field === 'markupPercentage' ? parseFloat(String(value)) : parseFloat(String(updatedItems[index].markupPercentage || 0));
-      const discount = field === 'discount' ? parseFloat(String(value)) : parseFloat(String(updatedItems[index].discount || 0));
-      
-      const priceWithMarkup = unitPrice * (1 + markupPercentage / 100);
-      const amountBeforeDiscount = priceWithMarkup * quantity;
-      const discountAmount = amountBeforeDiscount * (discount / 100);
-      
-      updatedItems[index].amount = parseFloat((amountBeforeDiscount - discountAmount).toFixed(2));
-      updatedItems[index].total = updatedItems[index].amount;
-    }
-
+    
+    // Always recalculate totals for this line item to ensure they're up to date
+    // Convert all values to numbers to avoid string concatenation issues
+    const quantity = parseFloat(String(updatedItems[index].quantity)) || 0;
+    const unitPrice = parseFloat(String(updatedItems[index].unitPrice)) || 0;
+    const markupPercentage = parseFloat(String(updatedItems[index].markupPercentage)) || 0;
+    const discount = parseFloat(String(updatedItems[index].discount)) || 0;
+    
+    // Clear calculation steps
+    const priceWithMarkup = unitPrice * (1 + markupPercentage / 100);
+    const amountBeforeDiscount = priceWithMarkup * quantity;
+    const discountAmount = amountBeforeDiscount * (discount / 100);
+    
+    // Calculate the final amount and ensure it's a number with two decimal places
+    const finalAmount = parseFloat((amountBeforeDiscount - discountAmount).toFixed(2));
+    
+    // Update the amount and total properties
+    updatedItems[index].amount = finalAmount;
+    updatedItems[index].total = finalAmount;
+    
+    // Force a recalculation of all totals
+    const subtotal = updatedItems.reduce((sum, item) => {
+      const itemTotal = parseFloat(String(item.total)) || 0;
+      return sum + itemTotal;
+    }, 0);
+    
+    const vatRate = parseFloat(String(quote.vatRate)) || 0;
+    const vatAmount = subtotal * (vatRate / 100);
+    const total = subtotal + vatAmount;
+    
+    // Update the entire quote with new calculated values
     setQuote(prev => ({
       ...prev,
-      items: updatedItems
+      items: updatedItems,
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      tax: parseFloat(vatAmount.toFixed(2)),
+      total: parseFloat(total.toFixed(2))
     }));
   };
 
@@ -174,8 +252,15 @@ const EditQuoteForm: React.FC<EditQuoteFormProps> = ({
     <div className="space-y-6">
       {/* Basic Quote Information */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle>Quote Details</CardTitle>
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving} 
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {isSaving ? 'Saving...' : 'Save Quote'}
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -264,42 +349,72 @@ const EditQuoteForm: React.FC<EditQuoteFormProps> = ({
                     </TableCell>
                     <TableCell>
                       <Input 
-                        type="number" 
-                        min="1" 
-                        step="1"
+                        type="text" 
+                        inputMode="numeric" 
+                        pattern="[0-9]*"
                         value={item.quantity || ''} 
-                        onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                        onChange={(e) => {
+                          // Force convert to number and update immediately
+                          const val = e.target.value === '' ? 0 : parseIntSafe(e.target.value);
+                          handleItemChange(index, 'quantity', val);
+                        }}
                       />
                     </TableCell>
                     <TableCell>
                       <Input 
-                        type="number" 
-                        min="0" 
-                        step="0.01"
+                        type="text" 
+                        inputMode="decimal" 
+                        pattern="[0-9]*[.,]?[0-9]*"
                         value={item.unitPrice || ''} 
-                        onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
+                        onChange={(e) => {
+                          // Force convert to number and update immediately
+                          const val = e.target.value === '' ? 0 : parseNumberWithComma(e.target.value);
+                          handleItemChange(index, 'unitPrice', val);
+                        }}
                       />
                     </TableCell>
                     <TableCell>
                       <Input 
-                        type="number" 
-                        min="0" 
-                        step="0.01"
+                        type="text" 
+                        inputMode="decimal" 
+                        pattern="[0-9]*[.,]?[0-9]*"
                         value={item.markupPercentage || 0} 
-                        onChange={(e) => handleItemChange(index, 'markupPercentage', e.target.value)}
+                        onChange={(e) => {
+                          // Force convert to number and update immediately
+                          const val = e.target.value === '' ? 0 : parseNumberWithComma(e.target.value);
+                          handleItemChange(index, 'markupPercentage', val);
+                        }}
                       />
                     </TableCell>
                     <TableCell>
                       <Input 
-                        type="number" 
-                        min="0" 
-                        max="100"
+                        type="text" 
+                        inputMode="decimal" 
+                        pattern="[0-9]*[.,]?[0-9]*"
                         value={item.discount || 0} 
-                        onChange={(e) => handleItemChange(index, 'discount', e.target.value)}
+                        onChange={(e) => {
+                          // Force convert to number and update immediately
+                          const val = e.target.value === '' ? 0 : parseNumberWithComma(e.target.value);
+                          handleItemChange(index, 'discount', val);
+                        }}
                       />
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {formatCurrency(Number(item.total) || 0)}
+                      {(() => {
+                        // Force recalculation of the line total right in the render
+                        const quantity = parseFloat(String(item.quantity)) || 0;
+                        const unitPrice = parseFloat(String(item.unitPrice)) || 0;
+                        const markupPercentage = parseFloat(String(item.markupPercentage)) || 0;
+                        const discount = parseFloat(String(item.discount)) || 0;
+                        
+                        const priceWithMarkup = unitPrice * (1 + markupPercentage / 100);
+                        const amountBeforeDiscount = priceWithMarkup * quantity;
+                        const discountAmount = amountBeforeDiscount * (discount / 100);
+                        const total = parseFloat((amountBeforeDiscount - discountAmount).toFixed(2));
+                        
+                        // Display the calculated total
+                        return formatCurrency(total);
+                      })()}
                     </TableCell>
                     <TableCell>
                       {quote.items.length > 1 && (
@@ -363,8 +478,12 @@ const EditQuoteForm: React.FC<EditQuoteFormProps> = ({
             <Button variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Update Quote'}
+            <Button 
+              onClick={handleSave} 
+              disabled={isSaving} 
+              className="bg-green-600 hover:bg-green-700 edit-quote-save-btn"
+            >
+              {isSaving ? 'Saving...' : 'Save Quote'}
             </Button>
           </div>
         </CardContent>

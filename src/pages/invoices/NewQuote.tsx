@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
+import { parseNumberWithComma, parseIntSafe } from "@/utils/numberUtils";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -518,8 +519,8 @@ const NewQuote = () => {
                             <Input type="text" value={item.itemNo} onChange={e => updateItem(item.id, "itemNo", e.target.value)} className="w-full" />
                           </td>
                           <td className="col-span-1">
-                            <Input type="number" min="0" step="0.01" value={item.markupPercentage} onChange={e => {
-                          const value = parseFloat(e.target.value);
+                            <Input type="text" inputMode="decimal" pattern="[0-9]*[.,]?[0-9]*" value={item.markupPercentage} onChange={e => {
+                          const value = parseNumberWithComma(e.target.value);
                           updateItem(item.id, "markupPercentage", isNaN(value) ? 0 : value);
                         }} className="w-full text-center" />
                           </td>
@@ -527,20 +528,20 @@ const NewQuote = () => {
                             <Input type="text" value={item.description} onChange={e => updateItem(item.id, "description", e.target.value)} className="w-full" />
                           </td>
                           <td className="col-span-1">
-                            <Input type="number" min="0" step="1" value={item.quantity} onChange={e => {
-                          const value = parseInt(e.target.value);
+                            <Input type="text" inputMode="numeric" pattern="[0-9]*" value={item.quantity} onChange={e => {
+                          const value = parseIntSafe(e.target.value);
                           updateItem(item.id, "quantity", isNaN(value) ? 0 : value);
                         }} className="w-full text-center" />
                           </td>
                           <td className="col-span-2">
-                            <Input type="number" min="0" step="0.01" value={item.unitPrice} onChange={e => {
-                          const value = parseFloat(e.target.value);
+                            <Input type="text" inputMode="decimal" pattern="[0-9]*[.,]?[0-9]*" value={item.unitPrice} onChange={e => {
+                          const value = parseNumberWithComma(e.target.value);
                           updateItem(item.id, "unitPrice", isNaN(value) ? 0 : value);
                         }} className="w-full text-center" />
                           </td>
                           <td className="col-span-2">
-                            <Input type="number" min="0" max="100" step="0.01" value={item.discount} onChange={e => {
-                          const value = parseFloat(e.target.value);
+                            <Input type="text" inputMode="decimal" pattern="[0-9]*[.,]?[0-9]*" value={item.discount} onChange={e => {
+                          const value = parseNumberWithComma(e.target.value);
                           updateItem(item.id, "discount", isNaN(value) ? 0 : Math.min(100, value));
                         }} className="w-full text-center" />
                           </td>

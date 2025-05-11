@@ -4,6 +4,7 @@
  */
 
 import { safeJsonParse, safeJsonStringify } from '@/utils/errorHandling';
+import { decodeBase64 } from '@/utils/base64Helper';
 import { FileWithPreview } from '@/components/invoices/FileUploader';
 
 // File storage structure interface
@@ -42,7 +43,21 @@ export const saveFileToStorage = async (file: FileWithPreview | null, storageKey
   }
 
   try {
-    // Convert file to data URL for storage
+    // If file already has a preview that's a data URL, use it directly
+    if (file.preview && file.preview.startsWith('data:')) {
+      // Save file metadata and existing data URL
+      const fileData = {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl: file.preview
+      };
+      
+      localStorage.setItem(storageKey, safeJsonStringify(fileData));
+      return;
+    }
+
+    // Otherwise, convert file to data URL for storage
     const reader = new FileReader();
     
     const dataUrlPromise = new Promise<string>((resolve, reject) => {
@@ -67,9 +82,23 @@ export const saveFileToStorage = async (file: FileWithPreview | null, storageKey
       dataUrl
     };
     
-    localStorage.setItem(storageKey, safeJsonStringify(fileData));
+    // Use try/catch when setting localStorage to handle quota exceeded errors
+    try {
+      localStorage.setItem(storageKey, safeJsonStringify(fileData));
+    } catch (storageError) {
+      // If storage quota is exceeded, try to remove the item first then set it again
+      if (storageError instanceof DOMException && 
+          (storageError.code === 22 || storageError.name === 'QuotaExceededError')) {
+        console.warn('Storage quota exceeded. Trying to compress image data...');
+        // In a real app, you might want to compress the image or use a different storage approach
+        throw new Error('Storage quota exceeded. The image may be too large.');
+      } else {
+        throw storageError;
+      }
+    }
   } catch (error) {
     console.error(`Error saving file to storage (${storageKey}):`, error);
+    throw error; // Re-throw to allow handling in the component
   }
 };
 
@@ -87,22 +116,47 @@ export const loadFileFromStorage = (storageKey: string): FileWithPreview | null 
     
     // Convert data URL back to File
     const base64Data = fileData.dataUrl.split(',')[1];
-    const byteString = atob(base64Data);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+    if (!base64Data) {
+      console.error(`Invalid data URL format in storage: ${storageKey}`);
+      return null;
     }
     
-    const blob = new Blob([ab], { type: fileData.type });
-    const file = new File([blob], fileData.name, { type: fileData.type });
-    
-    // Add preview property to make it compatible with FileWithPreview
-    const fileWithPreview = file as FileWithPreview;
-    fileWithPreview.preview = fileData.dataUrl;
-    
-    return fileWithPreview;
+    try {
+      // Add null check for base64Data
+      if (!base64Data) {
+        throw new Error('Invalid base64 data: empty string');
+      }
+      
+      // Use our helper function to decode base64 safely (avoids TypeScript errors)
+      const byteString = decodeBase64(base64Data);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      
+      const blob = new Blob([ab], { type: fileData.type });
+      const file = new File([blob], fileData.name, { type: fileData.type });
+      
+      // Add preview property to make it compatible with FileWithPreview
+      const fileWithPreview = file as FileWithPreview;
+      fileWithPreview.preview = fileData.dataUrl;
+      
+      return fileWithPreview;
+    } catch (decodeError) {
+      console.error(`Error decoding base64 data for ${storageKey}:`, decodeError);
+      
+      // Fallback: If we can't recreate the file, at least create a placeholder
+      // with the preview so the user can see the image
+      const placeholderFile = new File([
+        new Blob([new ArrayBuffer(0)], { type: fileData.type })
+      ], fileData.name, { type: fileData.type });
+      
+      const placeholder = placeholderFile as FileWithPreview;
+      placeholder.preview = fileData.dataUrl;
+      return placeholder;
+    }
   } catch (error) {
     console.error(`Error loading file from storage (${storageKey}):`, error);
     return null;
@@ -142,6 +196,31 @@ export const loadCompanyStamp = (): FileWithPreview | null => {
  */
 export const saveSignature = async (signature: FileWithPreview | null): Promise<void> => {
   await saveFileToStorage(signature, STORAGE_KEYS.SIGNATURE);
+};
+
+/**
+ * Initialize the storage keys to ensure empty placeholders exist
+ * This ensures that even after logging out, the storage keys remain
+ */
+export const initializeImageStorage = (): void => {
+  try {
+    // Only initialize keys that don't already exist
+    if (!localStorage.getItem(STORAGE_KEYS.COMPANY_LOGO)) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_LOGO, '{}');
+    }
+    
+    if (!localStorage.getItem(STORAGE_KEYS.COMPANY_STAMP)) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_STAMP, '{}');
+    }
+    
+    if (!localStorage.getItem(STORAGE_KEYS.SIGNATURE)) {
+      localStorage.setItem(STORAGE_KEYS.SIGNATURE, '{}');
+    }
+    
+    console.log('Image storage initialized successfully');
+  } catch (error) {
+    console.error('Error initializing image storage:', error);
+  }
 };
 
 /**

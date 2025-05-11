@@ -22,6 +22,15 @@ export interface InvoiceData {
     phone: string;
     logo?: string;
     stamp?: string;
+    signature?: string;        // Digital signature image
+    regNumber?: string;        // Company registration number
+    vatNumber?: string;        // VAT registration number
+    bankDetails?: {
+      accountName?: string;
+      accountNumber?: string;
+      bankName?: string;
+      branchCode?: string;
+    };
   };
   
   // Invoice line items
@@ -31,13 +40,13 @@ export interface InvoiceData {
   subtotal: number;           // Sum of all items before tax
   vatRate: number;            // VAT/tax rate percentage
   tax: number;                // Tax amount
+  taxAmount?: number;         // Alternative tax amount field (for compatibility)
   total: number;              // Final total including tax
   
   // Additional information
   notes?: string;             // Additional notes
   terms?: string;             // Payment terms
-  bankingDetails?: string;    // Bank account information
-  signature?: string;         // Digital signature image
+  bankingDetails?: string;    // Bank account information (old format)
   currency?: string;          // Currency code (default: ZAR)
   
   // Status information
@@ -49,16 +58,22 @@ export interface InvoiceData {
   updatedAt?: string;         // Date the invoice was last updated
   sentToClient?: boolean;     // Whether the invoice has been sent to the client
   sentDate?: string;          // Date the invoice was sent to the client 
+
+  // Template selection
+  template?: number;          // Template number (1-8)
+  hideMarkup?: boolean;       // Whether to hide markup percentages
 }
 
 export interface InvoiceItem {
-  itemNo: number | string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
+  id?: string;                // Unique identifier
+  itemNo?: number | string;    // Item number or SKU
+  description: string;        // Description of the item
+  quantity: number;           // Quantity
+  unitPrice: number;          // Unit price
   markupPercentage?: number;  // Added markup percentage
-  discount: number;
-  amount: number;
+  discount?: number;          // Discount amount or percentage
+  amount: number;             // Total amount for this item
+  taxRate?: number;           // Tax rate for this item
 }
 
 export interface TemplateProps {

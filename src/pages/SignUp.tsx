@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 
 const SignUp = () => {
@@ -24,7 +24,7 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle } = useSupabaseAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -97,9 +97,9 @@ const SignUp = () => {
       await signInWithGoogle();
       toast({
         title: "Success!",
-        description: "Your account has been created with Google. Welcome to MOKMzansiBooks!",
+        description: "Redirecting to Google for authentication...",
       });
-      navigate("/onboarding");
+      // Redirect happens automatically via Supabase OAuth
     } catch (error) {
       toast({
         title: "Error",
@@ -107,7 +107,6 @@ const SignUp = () => {
         variant: "destructive",
       });
       console.error("Google sign up error:", error);
-    } finally {
       setIsGoogleLoading(false);
     }
   };

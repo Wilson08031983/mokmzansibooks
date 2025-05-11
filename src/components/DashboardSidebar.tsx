@@ -14,12 +14,12 @@ import Logo from "./Logo";
 import { 
   Users, FileText, Calculator, Receipt, PieChart, Settings, LogOut, Package, UserRound, LayoutDashboard, Building
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 
 const DashboardSidebar = () => {
-  const { currentUser, signOut } = useAuth();
+  const { currentUser, signOut } = useSupabaseAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -82,10 +82,10 @@ const DashboardSidebar = () => {
           {currentUser && (
             <div className="flex items-center space-x-3 p-2">
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium">
-                {currentUser.name?.[0] || "U"}
+                {(currentUser?.displayName || currentUser?.user_metadata?.display_name || "U")[0]}
               </div>
               <div className="flex-1 overflow-hidden">
-                <p className="truncate font-medium text-sm">{currentUser.name}</p>
+                <p className="truncate font-medium text-sm">{currentUser.displayName || currentUser?.user_metadata?.display_name || "User"}</p>
                 <p className="truncate text-xs text-gray-500">{currentUser.email}</p>
               </div>
             </div>

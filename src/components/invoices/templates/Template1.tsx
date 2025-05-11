@@ -55,7 +55,7 @@ const Template1 = ({ data, preview = false }: TemplateProps) => {
   const displayData = preview ? previewData : data;
   
   return (
-    <div className="w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans" style={{ minHeight: '297mm' }}>
+    <div className="invoice-template w-[210mm] h-[297mm] bg-white p-8 shadow-lg mx-auto font-sans" style={{ minHeight: '297mm' }}>
       {/* Header */}
       <div className="flex justify-between items-start border-b pb-6">
         <div className="space-y-1">

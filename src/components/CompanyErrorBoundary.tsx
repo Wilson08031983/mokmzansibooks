@@ -49,7 +49,8 @@ export class CompanyErrorBoundary extends Component<Props, State> {
     this.setState({ isRecovering: true });
     
     try {
-      const recovered = restoreCompanyDataFromBackup();
+      // Ensure we properly wait for the async restoration to complete
+      const recovered = await Promise.resolve(restoreCompanyDataFromBackup());
       
       if (recovered) {
         toast({

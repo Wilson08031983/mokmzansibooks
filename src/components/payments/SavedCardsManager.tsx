@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { CreditCard, Trash2, Lock, Eye, EyeOff } from 'lucide-react';
 
 // Define the SavedCard interface
@@ -33,7 +33,7 @@ const saveCards = (userId: string, cards: SavedCard[]): void => {
 };
 
 const SavedCardsManager = () => {
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   const { toast } = useToast();
   const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);

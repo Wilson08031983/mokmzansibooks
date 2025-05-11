@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { Link } from "react-router-dom";
 import { Users, FileText, Calculator, UserRound, Package, PieChart, TrendingUp, Activity, Bell } from "lucide-react";
 import PayrollSummary from "@/components/hr/PayrollSummary";
@@ -11,7 +11,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import { formatCurrency } from "@/utils/formatters";
 
 const Dashboard = () => {
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   const { currency } = useI18n();
   
   const statsCards = [
@@ -87,7 +87,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Welcome back, {currentUser?.name || "User"}!</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Welcome back, {currentUser?.displayName || currentUser?.user_metadata?.display_name || "User"}!</h1>
         <p className="text-muted-foreground">Here's an overview of your business management options.</p>
       </div>
 

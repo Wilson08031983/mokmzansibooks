@@ -34,20 +34,21 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { useState, useEffect } from "react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNavigate } from "react-router-dom";
 import PaystackButton from "@/components/payments/PaystackButton";
 import SavedCardsManager from "@/components/payments/SavedCardsManager";
 import ShowHiddenElements from "@/components/ShowHiddenElements";
+import SettingsPanel from "@/components/settings/SettingsPanel";
 
 const Settings = () => {
   const { t } = useI18n();
-  const { currentUser, signOut } = useAuth();
+  const { currentUser, signOut } = useSupabaseAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("preferences");
   
   // Calculate yearly price with 6% discount
   const calculateYearlyPrice = (monthlyPrice: number) => {
@@ -94,7 +95,7 @@ const Settings = () => {
     if (currentUser) {
       setFormValues(prevValues => ({
         ...prevValues,
-        fullName: currentUser.name || "",
+        fullName: currentUser?.displayName || currentUser?.user_metadata?.display_name || "",
         email: currentUser.email || ""
       }));
     }
@@ -163,13 +164,28 @@ const Settings = () => {
         </p>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="profile">{t('profile')}</TabsTrigger>
           <TabsTrigger value="notifications">{t('notifications')}</TabsTrigger>
           <TabsTrigger value="billing">{t('billing')}</TabsTrigger>
           <TabsTrigger value="payment_methods">Payment Methods</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="preferences">
+          <Card>
+            <CardHeader>
+              <CardTitle>Application Preferences</CardTitle>
+              <CardDescription>
+                Customize your application settings and preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SettingsPanel />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
         <TabsContent value="profile">
           <Card>
             <CardHeader>
@@ -594,7 +610,7 @@ const Settings = () => {
                     <PaystackButton
                       amount={499} // Example amount
                       email={currentUser.email || ''}
-                      name={currentUser.name || ''}
+                      name={currentUser?.displayName || currentUser?.user_metadata?.display_name || ''}
                       phone={formValues.phone}
                       buttonText="Add Payment Method"
                       metadata={{
@@ -769,7 +785,7 @@ const Settings = () => {
                         <PaystackButton
                           amount={formValues.billingCycle === "monthly" ? 6000 : Number(calculateYearlyPrice(60)) * 100}
                           email={currentUser.email || ''}
-                          name={currentUser.name || ''}
+                          name={currentUser?.displayName || currentUser?.user_metadata?.display_name || ''}
                           phone={formValues.phone}
                           buttonText="Subscribe Now"
                           className="w-full"

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { useFinancialData } from "@/contexts/FinancialDataContext";
 import { Button } from "@/components/ui/button";
 import { Printer, ChevronDown, PieChart, BarChart, LineChart, FileText } from "lucide-react";
@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ConsolidatedReportGenerator from "@/components/reports/ConsolidatedReportGenerator";
 
 const Reports = () => {
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   const { toast } = useToast();
   const { financialReports, taxDocuments, vatReturns, payeReturns, incomeTaxForms, getTotalTaxLiability } = useFinancialData();
   const reportsRef = useRef<HTMLDivElement>(null);

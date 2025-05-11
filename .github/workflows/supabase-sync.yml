@@ -61,16 +61,18 @@ jobs:
         supabase db push || echo "No local migrations to push"
     
     - name: Notify on Failure
-      if: failure()
+      if: failure() && github.event_name != 'pull_request'
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       uses: 8398a7/action-slack@v3
       with:
         status: ${{ job.status }}
         text: Supabase migration sync failed for project
         fields: repo,message,action,eventName
-        webhook_url: ${{ secrets.SLACK_WEBHOOK || '' }}
+        webhook_url: ${{ env.SLACK_WEBHOOK }}
         
     - name: Notify Slack on Success
-      if: success()
+      if: success() && github.event_name != 'pull_request'
       uses: slackapi/slack-github-action@v1.23.0
       with:
         payload: |
@@ -78,4 +80,4 @@ jobs:
             "text": "✅ Supabase migrations synced successfully!\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Triggered by:* ${{ github.actor }}"
           }
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK || '' }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

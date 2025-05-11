@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { useAuth } from './AuthContext';
+import { useSupabaseAuth } from './SupabaseAuthContext';
 
 // Types for User Behavior Tracking
 export interface UserAction {
@@ -20,7 +20,7 @@ const UserBehaviorContext = createContext<UserBehaviorContextType | undefined>(u
 
 export const UserBehaviorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [actionHistory, setActionHistory] = useState<UserAction[]>([]);
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
 
   // Track initial page load
   useEffect(() => {

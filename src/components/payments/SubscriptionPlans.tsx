@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check } from 'lucide-react';
 import PaystackCheckout from './PaystackCheckout';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 
 interface PlanFeature {
   name: string;
@@ -72,7 +72,7 @@ const plans: Plan[] = [
 
 const SubscriptionPlans = () => {
   const { t } = useI18n();
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
 
@@ -150,7 +150,7 @@ const SubscriptionPlans = () => {
                   <PaystackCheckout
                     amount={price}
                     email={currentUser.email || ''}
-                    name={currentUser.name || ''}
+                    name={currentUser?.displayName || currentUser?.user_metadata?.display_name || ''}
                     buttonText={t('subscribe')}
                     className="w-full"
                     onSuccess={handlePaymentSuccess}

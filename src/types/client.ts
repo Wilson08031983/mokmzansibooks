@@ -52,3 +52,10 @@ export function isIndividualClient(client: Client): client is IndividualClient {
 export function hasContactPerson(client: Client): boolean {
   return isCompanyClient(client) || isVendorClient(client);
 }
+
+// State structure for client data persistence
+export interface ClientsState {
+  companies: CompanyClient[];
+  individuals: IndividualClient[];
+  vendors: VendorClient[];
+}

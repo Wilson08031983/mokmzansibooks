@@ -1,0 +1,5 @@
+https://www.canva.com/design/DAGnJkVJXHE/HWkFsAjlnujJh4Db33nwhQ/view?utm_content=DAGnJkVJXHE&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=hc421f41053
+
+# This is a reference to the Canva template
+# You'll need to download this design from Canva as an image and place it in this directory
+# Filename should be template1-background.jpg or template1-background.png

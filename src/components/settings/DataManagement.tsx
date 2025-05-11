@@ -15,10 +15,10 @@ import {
   CheckCircle2 
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 
 export const DataManagement = () => {
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);

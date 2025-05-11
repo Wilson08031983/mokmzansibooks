@@ -12,27 +12,48 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Lock, ShieldCheck, Key, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 
 export const SecuritySettings = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, updateUserPassword } = useSupabaseAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState('weak');
+  const [password, setPassword] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState('medium');
 
   const handleChangePassword = async () => {
+    if (!password) {
+      toast({
+        title: 'Password Required',
+        description: 'Please enter a new password.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (passwordStrength === 'weak') {
+      toast({
+        title: 'Weak Password',
+        description: 'Please use a stronger password with a mix of letters, numbers, and special characters.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
-      // Implement password change logic
+      await updateUserPassword(password);
+      setPassword('');
       toast({
         title: 'Password Updated',
         description: 'Your password has been successfully changed.',
         variant: 'default'
       });
     } catch (error) {
+      console.error('Password update error:', error);
       toast({
         title: 'Password Change Failed',
-        description: 'Unable to change password. Please try again.',
+        description: error instanceof Error ? error.message : 'Unable to change password. Please try again.',
         variant: 'destructive'
       });
     }
@@ -69,10 +90,28 @@ export const SecuritySettings = () => {
       <CardContent className="space-y-4">
         <div className="grid gap-2">
           <Label>Change Password</Label>
-          <div className="flex items-center gap-2">
+          <div className="flex">  
             <Input 
-              type={showPassword ? 'text' : 'password'} 
-              placeholder="New Password" 
+              type={showPassword ? "text" : "password"} 
+              placeholder="New password"
+              className="flex-1 mr-2"
+              value={password}
+              onChange={(e) => {
+                const newPassword = e.target.value;
+                setPassword(newPassword);
+                
+                // Evaluate password strength
+                if (!newPassword || newPassword.length < 6) {
+                  setPasswordStrength('weak');
+                } else if (newPassword.length >= 8 && 
+                           /[A-Z]/.test(newPassword) && 
+                           /[0-9]/.test(newPassword) && 
+                           /[^A-Za-z0-9]/.test(newPassword)) {
+                  setPasswordStrength('strong');
+                } else {
+                  setPasswordStrength('medium');
+                }
+              }} 
             />
             <Button 
               variant="outline" 

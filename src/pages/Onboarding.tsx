@@ -32,7 +32,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Check, Loader2, Upload, Image, FileSignature, FileText } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 
 // Steps for the onboarding process
 const steps = [
@@ -102,7 +102,7 @@ const Onboarding = () => {
   }>({});
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   
   // References for file inputs
   const logoInputRef = useRef<HTMLInputElement>(null);

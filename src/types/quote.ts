@@ -14,6 +14,7 @@ export interface QuoteData {
   subtotal?: number;
   vatRate?: number;
   tax?: number;
+  taxAmount?: number; // Alternative tax amount field (for compatibility)
   total: number;
   notes?: string;
   terms?: string;
@@ -27,6 +28,10 @@ export interface QuoteData {
     branchCode: string;
     swiftCode?: string;
   };
+  
+  // Template selection
+  template?: number; // Template number (1-8)
+  hideMarkup?: boolean; // Whether to hide markup percentages
 }
 
 export interface QuoteClient {
@@ -43,18 +48,29 @@ export interface QuoteCompany {
   phone: string;
   logo?: string;
   stamp?: string;
+  signature?: string; // Digital signature image
+  regNumber?: string; // Company registration number
+  vatNumber?: string; // VAT registration number
+  bankDetails?: {
+    accountName?: string;
+    accountNumber?: string;
+    bankName?: string;
+    branchCode?: string;
+  };
 }
 
 export interface QuoteItem {
-  itemNo: number | string;
-  description: string;
-  quantity: number;
-  markupPercentage?: number;
-  unitPrice: number;
-  discount: number;
-  total: number;
-  amount: number;
-  websiteUrl?: string;
+  id?: string; // Unique identifier
+  itemNo?: number | string; // Item number or SKU
+  description: string; // Description of the item
+  quantity: number; // Quantity
+  markupPercentage?: number; // Added markup percentage
+  unitPrice: number; // Unit price
+  discount?: number; // Discount amount or percentage
+  total?: number; // Total amount (may be same as amount)
+  amount: number; // Total amount for this item
+  taxRate?: number; // Tax rate for this item
+  websiteUrl?: string; // Website URL for service or product
 }
 
 export interface TemplateProps {

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { Download, FileText, Filter, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -113,7 +113,7 @@ const inventoryReportData = {
 
 const ConsolidatedReportGenerator = () => {
   const { toast } = useToast();
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   const [activeTab, setActiveTab] = useState<ReportCategory>("all");
   const { getTotalTaxLiability } = useFinancialData();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -231,7 +231,7 @@ const ConsolidatedReportGenerator = () => {
             <p class="text-xs mt-1">All transactions have been reconciled and verified against source documents.</p>
           </div>
           <div class="mt-4 text-xs italic">
-            <p>Prepared by: ${currentUser?.name || currentUser?.email || 'System Administrator'}</p>
+            <p>Prepared by: ${currentUser?.displayName || currentUser?.user_metadata?.display_name || currentUser?.email || 'System Administrator'}</p>
             <p>Report Version: 1.0</p>
             <p>Data Last Reconciled: ${format(new Date(reportDate.getTime() - 86400000), "MMM d, yyyy")}</p>
           </div>

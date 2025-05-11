@@ -7,13 +7,13 @@ import DashboardHeader from "@/components/DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import PublicCompanyInfo from "@/components/PublicCompanyInfo";
 
 const DashboardLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser } = useSupabaseAuth();
   const [canGoBack, setCanGoBack] = useState(false);
   
   // Check if we can go back in history
@@ -24,9 +24,12 @@ const DashboardLayout = () => {
     setCanGoBack(!isDashboardRoot);
   }, [location.pathname]);
 
-  const getTabsForSection = () => {
-    if (location.pathname.includes('/dashboard/invoices')) {
-      const currentPath = location.pathname;
+  // Memoize tab rendering to prevent unnecessary recalculations
+  const renderTabs = () => {
+    const currentPath = location.pathname;
+    
+    // Invoice section tabs
+    if (currentPath.includes('/dashboard/invoices')) {
       let defaultValue = "invoices";
       
       if (currentPath.includes("/dashboard/invoices/quotes")) {
@@ -35,15 +38,17 @@ const DashboardLayout = () => {
         defaultValue = "manager";
       }
       
+      const handleValueChange = (value: string) => {
+        if (value === "invoices") navigate('/dashboard/invoices');
+        else if (value === "quotes") navigate('/dashboard/invoices/quotes');
+        else navigate(`/dashboard/invoices/${value}`);
+      };
+      
       return (
         <Tabs
           defaultValue={defaultValue}
           className="mb-4"
-          onValueChange={value => {
-            if (value === "invoices") navigate('/dashboard/invoices');
-            else if (value === "quotes") navigate('/dashboard/invoices/quotes');
-            else navigate(`/dashboard/invoices/${value}`);
-          }}
+          onValueChange={handleValueChange}
         >
           <TabsList>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
@@ -54,8 +59,8 @@ const DashboardLayout = () => {
       );
     }
 
-    if (location.pathname.includes('/dashboard/accounting')) {
-      const currentPath = location.pathname;
+    // Accounting section tabs
+    if (currentPath.includes('/dashboard/accounting')) {
       let defaultValue = "overview";
       
       if (currentPath.includes("/dashboard/accounting/transactions")) {
@@ -64,13 +69,15 @@ const DashboardLayout = () => {
         defaultValue = "reports";
       }
       
+      const handleValueChange = (value: string) => {
+        navigate(`/dashboard/accounting${value !== 'overview' ? '/' + value : ''}`);
+      };
+      
       return (
         <Tabs
           defaultValue={defaultValue}
           className="mb-4"
-          onValueChange={value => {
-            navigate(`/dashboard/accounting${value !== 'overview' ? '/' + value : ''}`);
-          }}
+          onValueChange={handleValueChange}
         >
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -81,14 +88,12 @@ const DashboardLayout = () => {
       );
     }
 
-    // Choosing the newer version from the merge conflict
     // HR tabs have been moved to the HR.tsx component
-    if (location.pathname.includes('/hr')) {
-      return null;
-    }
-    
     return null;
   };
+  
+  // Memoize the tabs to avoid unnecessary recalculations during render
+  const tabsSection = renderTabs();
 
   return (
     <SidebarProvider>
@@ -110,7 +115,7 @@ const DashboardLayout = () => {
                 </Button>
               </div>
             )}
-            {getTabsForSection()}
+            {tabsSection}
             <Outlet />
           </main>
           {/* We add the PublicCompanyInfo component at the bottom right of the dashboard layout */}
