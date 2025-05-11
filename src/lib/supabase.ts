@@ -1,4 +1,8 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+// Import our Database types - use relative path to avoid path mapping issues
+import { Database } from '../types/supabase';
 
 /**
  * Enhanced Supabase Client Configuration
@@ -19,11 +23,13 @@ if (!supabaseKey || supabaseKey === '') {
 }
 
 // Create Supabase client with additional options
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
+export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    storageKey: 'mok_mzansi_auth_token',
+    flowType: 'pkce', // Use PKCE flow for more secure authentication
   },
   global: {
     fetch: fetch
@@ -33,7 +39,11 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
     params: {
       eventsPerSecond: 10
     }
+  },
+  db: {
+    schema: 'public'
   }
+  // Debug mode is no longer directly supported in this way
 });
 
 /**
