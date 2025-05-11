@@ -207,6 +207,9 @@ export class SupabaseUser implements User {
   displayName: string | null;
   emailVerified: boolean;
   uid: string;
+  name: string | null; // Added for compatibility
+  trialEndsAt?: string; // Added for compatibility
+  subscriptionStatus?: string; // Added for compatibility
   
   constructor(user: User) {
     // Copy Supabase properties
@@ -223,8 +226,13 @@ export class SupabaseUser implements User {
     
     // Set Firebase-like properties
     this.displayName = this.user_metadata.display_name || null;
+    this.name = this.displayName; // Map to the name property
     this.emailVerified = !!this.confirmed_at;
     this.uid = this.id;
+    
+    // Additional compatibility properties
+    this.trialEndsAt = this.user_metadata.trial_ends_at || undefined;
+    this.subscriptionStatus = this.user_metadata.subscription_status || undefined;
   }
 }
 

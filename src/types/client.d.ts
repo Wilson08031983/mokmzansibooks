@@ -43,3 +43,24 @@ export interface ClientsState {
   individuals: IndividualClient[];
   vendors: VendorClient[];
 }
+
+// Helper type guards
+export function isCompanyClient(client: Client): client is CompanyClient {
+  return client.type === 'company';
+}
+
+export function isIndividualClient(client: Client): client is IndividualClient {
+  return client.type === 'individual';
+}
+
+export function isVendorClient(client: Client): client is VendorClient {
+  return client.type === 'vendor';
+}
+
+// Filter types
+export type ClientFilter = {
+  type?: 'all' | 'company' | 'individual' | 'vendor';
+  search?: string;
+  sortBy?: 'name' | 'balance' | 'lastInteraction' | 'createdAt';
+  sortDirection?: 'asc' | 'desc';
+};

@@ -17,6 +17,8 @@ import {
   mapSupabaseUser,
   SupabaseUser
 } from '@/services/supabaseAuthService';
+import { createClientDataBackup } from '@/utils/clientDataPersistence';
+import { backupCompanyData } from '@/utils/companyDataPersistence';
 
 interface AuthContextType {
   currentUser: SupabaseUser | null;
@@ -287,6 +289,10 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Sign out handler
   const handleSignOut = async () => {
     try {
+      // Before signing out, create backups of all critical data
+      createClientDataBackup();
+      backupCompanyData();
+      
       // For mock auth
       if (usingMockAuth) {
         localStorage.removeItem('mock_auth_user');
@@ -563,7 +569,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     signIn: handleSignIn,
     signUp: handleSignUp,
     signInWithGoogle: handleSignInWithGoogle,
-    signOut: handleSignOut,
+    signOut: handleSignOut, // Updated handler
     resetPassword: handleResetPassword,
     updateUserProfile: handleUpdateUserProfile,
     updateUserEmail: handleUpdateUserEmail,
