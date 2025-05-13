@@ -1,12 +1,9 @@
 
-/**
- * Client type definitions for different client types in the application
- */
-
-// Base client type with common properties
+// If you already have this file, make sure it includes these types
 export interface Client {
   id: string;
   name: string;
+  type: 'company' | 'individual' | 'vendor';
   email: string;
   phone: string;
   address: string;
@@ -20,10 +17,8 @@ export interface Client {
   lastInteraction: string | null;
   createdAt: string;
   updatedAt: string;
-  type: 'company' | 'individual' | 'vendor';
 }
 
-// Company client type
 export interface CompanyClient extends Client {
   type: 'company';
   vatNumber: string;
@@ -31,30 +26,19 @@ export interface CompanyClient extends Client {
   contactPerson: string;
 }
 
-// Individual client type
 export interface IndividualClient extends Client {
   type: 'individual';
   firstName: string;
   lastName: string;
 }
 
-// Vendor client type
 export interface VendorClient extends Client {
   type: 'vendor';
-  contactPerson: string;
   vendorCategory: string;
   vendorCode: string | null;
+  contactPerson: string;
 }
 
-// Filter/sort type for clients
-export type ClientFilter = {
-  type: 'all' | 'company' | 'individual' | 'vendor';
-  search: string;
-  sortBy: 'name' | 'balance' | 'lastInteraction' | 'createdAt';
-  sortDirection: 'asc' | 'desc';
-};
-
-// State structure for clients
 export interface ClientsState {
   companies: CompanyClient[];
   individuals: IndividualClient[];
