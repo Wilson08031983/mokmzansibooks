@@ -1,135 +1,187 @@
-
 /**
- * Company data safeguard utilities
+ * Company data safeguards and recovery tools
  */
 
 import { CompanyDetails } from '@/types/company';
 
-/**
- * Initialize company safeguards system
- */
-export function initializeSafeguards() {
-  console.log('Company safeguards initialized');
-  return true;
-}
-
-/**
- * Load company details with safety checks
- */
-export async function loadCompanyDetails(): Promise<CompanyDetails | null> {
-  try {
-    const storedData = localStorage.getItem('companyDetails');
-    if (!storedData) return null;
-    
-    const parsedData = JSON.parse(storedData);
-    return validateCompanyData(parsedData) ? parsedData : null;
-  } catch (error) {
-    console.error('Error loading company details:', error);
-    return null;
+// Simulate localStorage with better error handling
+const safeStorage = {
+  get: (key: string): any => {
+    try {
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) : null;
+    } catch (error) {
+      console.error(`Failed to get ${key} from storage:`, error);
+      return null;
+    }
+  },
+  set: (key: string, value: any): boolean => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      console.error(`Failed to set ${key} in storage:`, error);
+      return false;
+    }
   }
-}
+};
 
 /**
- * Save company details safely
+ * Load company details with fallback mechanisms
  */
-export async function saveCompanyDetails(details: CompanyDetails): Promise<boolean> {
+export function loadCompanyDetails(): CompanyDetails {
   try {
-    // First backup existing data
-    const existingData = localStorage.getItem('companyDetails');
-    if (existingData) {
-      localStorage.setItem('companyDetailsBackup', existingData);
+    // Try primary storage
+    const companyData = safeStorage.get('companyDetails');
+    
+    if (companyData) {
+      return companyData;
     }
     
-    // Then save new data
-    localStorage.setItem('companyDetails', JSON.stringify(details));
+    // Try backup storage
+    const backupData = safeStorage.get('companyDetails_backup');
+    
+    if (backupData) {
+      console.warn('Primary company data missing, using backup data');
+      safeStorage.set('companyDetails', backupData);
+      return backupData;
+    }
+    
+    // Return default if all else fails
+    return getDefaultCompanyDetails();
+  } catch (error) {
+    console.error('Failed to load company details:', error);
+    return getDefaultCompanyDetails();
+  }
+}
+
+/**
+ * Save company details with backup
+ */
+export function saveCompanyDetails(details: CompanyDetails): boolean {
+  try {
+    // Save to primary storage
+    safeStorage.set('companyDetails', details);
+    
+    // Create automatic backup
+    backupCompanyDetails(details);
+    
     return true;
   } catch (error) {
-    console.error('Error saving company details:', error);
+    console.error('Failed to save company details:', error);
     return false;
   }
 }
 
 /**
- * Create a backup of company details
+ * Backup company details
  */
-export function backupCompanyDetails(details: CompanyDetails): boolean {
+export async function backupCompanyDetails(details: CompanyDetails): Promise<boolean> {
   try {
-    const timestamp = new Date().toISOString();
-    const backupKey = `companyDetailsBackup_${timestamp}`;
+    // Save to backup storage
+    safeStorage.set('companyDetails_backup', details);
     
-    localStorage.setItem(backupKey, JSON.stringify(details));
-    localStorage.setItem('companyDetailsLatestBackup', backupKey);
-    console.log('Created backup of company details', details.name);
+    // Store in backup history
+    const backupHistory = safeStorage.get('companyDetails_history') || [];
+    const backupId = `backup_${Date.now()}`;
+    
+    backupHistory.unshift({
+      id: backupId,
+      timestamp: new Date().toISOString(),
+      data: details
+    });
+    
+    // Keep max 5 backups
+    if (backupHistory.length > 5) {
+      backupHistory.pop();
+    }
+    
+    safeStorage.set('companyDetails_history', backupHistory);
+    
     return true;
   } catch (error) {
-    console.error('Error creating backup:', error);
+    console.error('Failed to backup company details:', error);
     return false;
   }
 }
 
 /**
- * Create an encrypted backup of company details for sensitive information
+ * Create encrypted backup of company details
  */
-export function createEncryptedBackup(details: CompanyDetails): boolean {
+export async function createEncryptedBackup(details: CompanyDetails, passphrase: string): Promise<string> {
   try {
-    // In a real implementation, we would encrypt the data
-    // For now, we'll just create a backup with a different key
-    const timestamp = new Date().toISOString();
-    const backupKey = `companyDetailsEncryptedBackup_${timestamp}`;
+    // In a real implementation, we would encrypt the data here
+    // For now, we'll just simulate it
     
-    localStorage.setItem(backupKey, JSON.stringify(details));
-    localStorage.setItem('companyDetailsLatestEncryptedBackup', backupKey);
-    console.log('Created encrypted backup of company details', details.name);
-    return true;
+    const backupId = `encrypted_backup_${Date.now()}`;
+    
+    const encryptedBackups = safeStorage.get('companyDetails_encrypted') || {};
+    
+    // Simple "encryption" by adding a signature (not real encryption)
+    encryptedBackups[backupId] = {
+      data: details,
+      passphrase: passphrase, // In real implementation, we would use the passphrase to encrypt, not store it
+      timestamp: new Date().toISOString()
+    };
+    
+    safeStorage.set('companyDetails_encrypted', encryptedBackups);
+    
+    return backupId;
   } catch (error) {
-    console.error('Error creating encrypted backup:', error);
-    return false;
+    console.error('Failed to create encrypted backup:', error);
+    throw new Error('Failed to create encrypted backup.');
   }
 }
 
 /**
  * Recover company details from backup
  */
-export async function recoverCompanyDetails(): Promise<CompanyDetails | null> {
+export async function recoverCompanyDetails(backupId: string): Promise<CompanyDetails> {
   try {
-    // First try the latest backup
-    const latestBackupKey = localStorage.getItem('companyDetailsLatestBackup');
-    if (latestBackupKey) {
-      const backupData = localStorage.getItem(latestBackupKey);
-      if (backupData) {
-        const parsedData = JSON.parse(backupData);
-        if (validateCompanyData(parsedData)) {
-          return parsedData;
-        }
+    // Try to find in regular backups
+    if (backupId.startsWith('backup_')) {
+      const backupHistory = safeStorage.get('companyDetails_history') || [];
+      const backup = backupHistory.find((b: any) => b.id === backupId);
+      
+      if (backup) {
+        return backup.data;
       }
     }
     
-    // If that fails, try the standard backup
-    const standardBackup = localStorage.getItem('companyDetailsBackup');
-    if (standardBackup) {
-      const parsedData = JSON.parse(standardBackup);
-      if (validateCompanyData(parsedData)) {
-        return parsedData;
+    // Try to find in encrypted backups
+    if (backupId.startsWith('encrypted_backup_')) {
+      const encryptedBackups = safeStorage.get('companyDetails_encrypted') || {};
+      const backup = encryptedBackups[backupId];
+      
+      if (backup) {
+        return backup.data;
       }
     }
     
-    // If all backups fail, return null
-    console.log('No valid backup found to recover');
-    return null;
+    throw new Error('Backup not found');
   } catch (error) {
-    console.error('Error recovering company details:', error);
-    return null;
+    console.error('Failed to recover company details:', error);
+    throw new Error('Failed to recover company details from backup.');
   }
 }
 
 /**
- * Validates company data structure
+ * Get default company details
  */
-function validateCompanyData(data: any): data is CompanyDetails {
-  return Boolean(
-    data &&
-    typeof data === 'object' &&
-    typeof data.name === 'string' &&
-    data.name.length > 0
-  );
+function getDefaultCompanyDetails(): CompanyDetails {
+  return {
+    name: 'My Company',
+    address: '123 Main Street',
+    city: 'Cape Town',
+    province: 'Western Cape',
+    postalCode: '8000',
+    phone: '',
+    email: '',
+    website: '',
+    vatNumber: '',
+    registrationNumber: '',
+    industry: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
 }

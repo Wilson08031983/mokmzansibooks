@@ -1,147 +1,109 @@
 import React, { useState, useEffect } from 'react';
-import { CompanyDetails } from '@/contexts/CompanyContext';
+import { useCompany } from '@/contexts/CompanyContext';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
-import robustStorageMigrator from '@/utils/robustStorageMigrator';
-import indexedDBAvailabilityCheck from '@/utils/indexedDBAvailabilityCheck';
+import * as robustStorageMigrator from '@/utils/robustStorageMigrator';
 
 interface CompanyDisplayProps {
-  companyDetails?: CompanyDetails;
-  minimal?: boolean;
+  variant?: 'default' | 'minimal';
 }
 
-/**
- * Component to display company information in invoices and quotes
- */
-const CompanyDisplay: React.FC<CompanyDisplayProps> = ({
-  companyDetails,
-  minimal = false,
-}) => {
-  const [company, setCompany] = useState<CompanyDetails | null>(companyDetails || null);
-  const [isLoading, setIsLoading] = useState<boolean>(!companyDetails);
-  const [error, setError] = useState<string | null>(null);
+const CompanyDisplay: React.FC<CompanyDisplayProps> = ({ variant = 'default' }) => {
+  const { company, loading, error } = useCompany();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
-  // Check for and load company details from various sources
   useEffect(() => {
-    if (companyDetails) {
-      setCompany(companyDetails);
-      setIsLoading(false);
-      return;
+    if (error) {
+      toast({
+        title: 'Error Loading Company',
+        description: error,
+        variant: 'destructive',
+      });
     }
+  }, [error, toast]);
 
-    const loadCompanyDetails = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Check if IndexedDB is available
-        const indexedDBAvailable = await indexedDBAvailabilityCheck.checkIndexedDBAvailability();
-        
-        if (!indexedDBAvailable) {
-          console.warn('IndexedDB not available, falling back to localStorage');
-        }
-        
-        // Try to load from localStorage with fallbacks
-        const result = robustStorageMigrator.consolidateStorage(
-          ['companyDetails', 'company', 'businessDetails', 'organization'],
-          'companyDetails'
-        );
-        
-        if (result.success && result.result) {
-          setCompany(result.result);
-        } else {
-          setError('No company details found');
-        }
-      } catch (err) {
-        console.error('Error loading company details:', err);
-        setError('Failed to load company details');
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    
+    try {
+      // Attempt to consolidate storage
+      const result = await robustStorageMigrator.consolidateStorage({
+        forceFetch: true,
+        includeCompanyData: true
+      });
+      
+      if (result.success) {
         toast({
-          title: 'Error',
-          description: 'Failed to load company information',
+          title: 'Refresh Complete',
+          description: 'Company data has been refreshed.',
+        });
+      } else {
+        toast({
+          title: 'Refresh Failed',
+          description: result.result?.error?.message || 'Could not refresh company data.',
           variant: 'destructive',
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      toast({
+        title: 'Refresh Error',
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
-    loadCompanyDetails();
-  }, [companyDetails, toast]);
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-4 w-2/3" />
-        {!minimal && <Skeleton className="h-4 w-1/4" />}
+      <Card>
+        <CardContent className="flex items-center justify-center p-6">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Loading company data...
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!company) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center p-6">
+          <AlertCircle className="mr-2 h-4 w-4 text-red-500" />
+          No company data available.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (variant === 'minimal') {
+    return (
+      <div className="flex items-center space-x-2">
+        <Badge variant="secondary">{company.name}</Badge>
+        <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+          {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Refresh'}
+        </Button>
       </div>
     );
   }
 
-  if (error || !company) {
-    return (
-      <div className="p-4 border rounded-md bg-red-50 text-red-800">
-        <p className="font-medium">Company Information Not Available</p>
-        <p className="text-sm mt-1">{error || 'Please add your company details in settings.'}</p>
-      </div>
-    );
-  }
-
-  // Basic display with just essential info
-  if (minimal) {
-    return (
-      <div className="text-sm">
-        <h3 className="font-semibold">{company.name}</h3>
-        {company.contactEmail && (
-          <p className="text-gray-600">{company.contactEmail}</p>
-        )}
-        {company.contactPhone && (
-          <p className="text-gray-600">{company.contactPhone}</p>
-        )}
-      </div>
-    );
-  }
-
-  // Full display with all company details
   return (
-    <div className="space-y-1">
-      <h3 className="font-bold text-lg">{company.name}</h3>
-      
-      {/* Contact information */}
-      <div className="space-y-0.5">
-        {company.address && (
-          <p className="text-sm">{company.address}</p>
-        )}
-        {company.addressLine2 && (
-          <p className="text-sm">{company.addressLine2}</p>
-        )}
-        {company.city && company.province && company.postalCode && (
-          <p className="text-sm">
-            {company.city}, {company.province}, {company.postalCode}
-          </p>
-        )}
-        {company.contactEmail && (
-          <p className="text-sm">Email: {company.contactEmail}</p>
-        )}
-        {company.contactPhone && (
-          <p className="text-sm">Phone: {company.contactPhone}</p>
-        )}
-        {company.website && (
-          <p className="text-sm">Website: {company.website}</p>
-        )}
-      </div>
-      
-      {/* Registration information */}
-      <div className="space-y-0.5 pt-1">
-        {company.registrationNumber && (
-          <p className="text-xs text-gray-600">Registration No: {company.registrationNumber}</p>
-        )}
-        {company.vatNumber && (
-          <p className="text-xs text-gray-600">VAT No: {company.vatNumber}</p>
-        )}
-      </div>
-    </div>
+    <Card>
+      <CardContent className="space-y-4 p-6">
+        <div className="text-lg font-semibold">{company.name}</div>
+        <div className="text-sm text-gray-500">{company.address}, {company.city}</div>
+        <div className="text-sm text-gray-500">{company.email}</div>
+        <div className="text-sm text-gray-500">{company.phone}</div>
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+          {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Refresh'}
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 

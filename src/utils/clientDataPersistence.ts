@@ -1,108 +1,87 @@
 
-import { ClientsState } from '@/types/client';
-
-// Default empty state
-const DEFAULT_CLIENTS_STATE: ClientsState = {
-  companies: [],
-  individuals: [],
-  vendors: []
-};
-
-// Storage keys
-const CLIENT_DATA_KEY = 'CLIENT_DATA';
-const CLIENT_DATA_BACKUP_KEY = 'CLIENT_DATA_BACKUP';
-
 /**
- * Get client data safely with fallbacks
+ * Client data persistence utilities
  */
-export const getSafeClientData = (): ClientsState => {
+
+import { Client, ClientsState } from '@/types/client';
+
+// Safe storage key for client data
+const CLIENT_DATA_KEY = 'mok_mzansi_client_data';
+
+// Function to safely get client data from storage
+export function getSafeClientData(): ClientsState {
   try {
-    const storedData = localStorage.getItem(CLIENT_DATA_KEY);
-    if (!storedData) {
-      return DEFAULT_CLIENTS_STATE;
-    }
+    const data = localStorage.getItem(CLIENT_DATA_KEY);
     
-    const parsedData = JSON.parse(storedData);
-    return parsedData || DEFAULT_CLIENTS_STATE;
+    if (data) {
+      return JSON.parse(data) as ClientsState;
+    }
   } catch (error) {
     console.error('Error retrieving client data:', error);
-    
-    // Try to recover from backup
-    try {
-      const backupData = localStorage.getItem(CLIENT_DATA_BACKUP_KEY);
-      if (backupData) {
-        return JSON.parse(backupData);
-      }
-    } catch (e) {
-      console.error('Error retrieving backup client data:', e);
-    }
-    
-    return DEFAULT_CLIENTS_STATE;
   }
-};
+  
+  // Return empty data if retrieval fails
+  return {
+    companies: [],
+    individuals: [],
+    vendors: []
+  };
+}
 
-/**
- * Save client data with backup
- */
-export const setSafeClientData = (clientsData: ClientsState): boolean => {
+// Function to safely set client data in storage
+export function setSafeClientData(data: ClientsState): void {
   try {
-    // First, create a backup of existing data
-    const existingData = localStorage.getItem(CLIENT_DATA_KEY);
-    if (existingData) {
-      localStorage.setItem(CLIENT_DATA_BACKUP_KEY, existingData);
-    }
-    
-    // Then save the new data
-    localStorage.setItem(CLIENT_DATA_KEY, JSON.stringify(clientsData));
-    return true;
+    localStorage.setItem(CLIENT_DATA_KEY, JSON.stringify(data));
   } catch (error) {
     console.error('Error saving client data:', error);
-    return false;
   }
-};
+}
 
-/**
- * Create a backup of client data
- */
-export const createClientDataBackup = (): boolean => {
-  try {
-    const currentData = localStorage.getItem(CLIENT_DATA_KEY);
-    if (!currentData) {
-      return false;
-    }
-    
-    localStorage.setItem(CLIENT_DATA_BACKUP_KEY, currentData);
-    
-    // Create a timestamped backup
-    const timestamp = new Date().toISOString();
-    localStorage.setItem(`CLIENT_DATA_BACKUP_${timestamp}`, currentData);
-    
-    return true;
-  } catch (error) {
-    console.error('Error creating client data backup:', error);
-    return false;
-  }
-};
-
-/**
- * Restore client data from backup
- */
-export const restoreClientDataFromBackup = (): boolean => {
-  try {
-    const backupData = localStorage.getItem(CLIENT_DATA_BACKUP_KEY);
-    if (!backupData) {
-      return false;
-    }
-    
-    localStorage.setItem(CLIENT_DATA_KEY, backupData);
-    return true;
-  } catch (error) {
-    console.error('Error restoring client data from backup:', error);
-    return false;
-  }
-};
-
-// Add aliases for backward compatibility
+// For backward compatibility, alias setSafeClientData as saveClientData
 export const saveClientData = setSafeClientData;
-export const loadClientData = getSafeClientData;
+
+// Export the ClientsState type for use in other modules
 export { ClientsState };
+
+// Add missing client functionality for Clients page
+export function addClient(client: Client, clientsData: ClientsState): ClientsState {
+  const newState = { ...clientsData };
+  
+  if (client.type === 'company') {
+    newState.companies = [...newState.companies, client];
+  } else if (client.type === 'individual') {
+    newState.individuals = [...newState.individuals, client];
+  } else if (client.type === 'vendor') {
+    newState.vendors = [...newState.vendors, client];
+  }
+  
+  return newState;
+}
+
+export function updateClient(id: string, updatedClient: Client, clientsData: ClientsState): ClientsState {
+  const newState = { ...clientsData };
+  
+  if (updatedClient.type === 'company') {
+    newState.companies = newState.companies.map(client => 
+      client.id === id ? updatedClient : client
+    );
+  } else if (updatedClient.type === 'individual') {
+    newState.individuals = newState.individuals.map(client => 
+      client.id === id ? updatedClient : client
+    );
+  } else if (updatedClient.type === 'vendor') {
+    newState.vendors = newState.vendors.map(client => 
+      client.id === id ? updatedClient : client
+    );
+  }
+  
+  return newState;
+}
+
+export function deleteClient(id: string, clientsData: ClientsState): ClientsState {
+  return {
+    companies: clientsData.companies.filter(client => client.id !== id),
+    individuals: clientsData.individuals.filter(client => client.id !== id),
+    vendors: clientsData.vendors.filter(client => client.id !== id)
+  };
+}

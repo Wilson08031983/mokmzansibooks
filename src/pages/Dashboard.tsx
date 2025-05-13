@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
@@ -87,7 +86,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Welcome back, {currentUser?.displayName || currentUser?.user_metadata?.display_name || "User"}!</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Welcome back, {currentUser?.email || currentUser?.user_metadata?.display_name || "User"}!</h1>
         <p className="text-muted-foreground">Here's an overview of your business management options.</p>
       </div>
 

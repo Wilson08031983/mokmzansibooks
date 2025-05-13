@@ -1,3 +1,4 @@
+
 // Base client interface with common properties
 export interface BaseClient {
   id: string;
@@ -13,23 +14,31 @@ export interface BaseClient {
   outstanding: number;
   overdue: number;
   lastInteraction?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Company client type
 export interface CompanyClient extends BaseClient {
   type: "company";
   contactPerson: string;
+  vatNumber: string;
+  registrationNumber: string;
 }
 
 // Individual client type
 export interface IndividualClient extends BaseClient {
   type: "individual";
+  firstName: string;
+  lastName: string;
 }
 
 // Vendor client type
 export interface VendorClient extends BaseClient {
   type: "vendor";
   contactPerson: string;
+  vendorCategory: string;
+  vendorCode: string | null;
 }
 
 // Union type for all client types
@@ -58,4 +67,12 @@ export interface ClientsState {
   companies: CompanyClient[];
   individuals: IndividualClient[];
   vendors: VendorClient[];
+}
+
+// Client filter for filtering and sorting clients
+export interface ClientFilter {
+  type: 'all' | 'company' | 'individual' | 'vendor';
+  search: string;
+  sortBy: 'name' | 'balance' | 'lastInteraction' | 'createdAt';
+  sortDirection: 'asc' | 'desc';
 }

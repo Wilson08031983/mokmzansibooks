@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -29,7 +30,6 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
     persistSession: true,
     detectSessionInUrl: true,
     storageKey: 'mok_mzansi_auth_token',
-    flowType: 'pkce', // Use PKCE flow for more secure authentication
   },
   global: {
     fetch: fetch
@@ -43,7 +43,6 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   db: {
     schema: 'public'
   }
-  // Debug mode is no longer directly supported in this way
 });
 
 /**
@@ -52,8 +51,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
  */
 export const checkSupabaseConnection = async (): Promise<{ success: boolean; message: string }> => {
   try {
-    // Simple health check query
-    const { data, error } = await supabase.from('health_check').select('*').limit(1);
+    // Use a different approach to check connection - query an existing table
+    const { data, error } = await supabase.from('company_data').select('*').limit(1);
     
     if (error) {
       console.error('Supabase connection check failed:', error.message);
