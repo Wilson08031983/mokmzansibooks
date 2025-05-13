@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
  * Setup Supabase for all pages by initializing any needed configuration
  * This ensures consistent Supabase behavior across the application
  */
-const setupSupabaseForAllPages = async (): Promise<boolean> => {
+export async function initializeSupabaseForAllPages(): Promise<boolean> {
   try {
     // Check if Supabase is accessible
     const { error } = await supabase.from('company_data').select('id').limit(1);
@@ -30,6 +30,7 @@ const setupSupabaseForAllPages = async (): Promise<boolean> => {
     console.error('Error during Supabase setup:', error);
     return false;
   }
-};
+}
 
-export default setupSupabaseForAllPages;
+// Default export for convenience
+export default initializeSupabaseForAllPages;

@@ -14,25 +14,65 @@
  * This ensures consistency across the application and prevents redundant data loading.
  */
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import robustStorageMigrator from '../utils/robustStorageMigrator';
-import { CompanyDetails } from '../contexts/CompanyContext';
-import type { Client } from '@/types/client';
-import { UserPreference, AppSettings } from '../utils/settingsStorageAdapter';
-import { loadCompanyDetails, saveCompanyDetails } from '../utils/companyStorageAdapter';
-import { loadClients, saveClients } from '../utils/clientStorageAdapter';
-import { 
-  useAccountingWithSync,
-  useHRWithSync,
-  useInventoryWithSync,
-  useReportsWithSync,
-  useSettingsWithSync
-} from './integrateStorageAdapters';
-import { useSyncStatus } from './SyncContext';
-import { initializeAllStorageAdapters } from './integrateStorageAdapters';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import robustStorageMigrator from '@/utils/robustStorageMigrator';
 
-// Define the shape of our global context
-interface GlobalAppState {
+// Define app state interfaces
+interface AppState {
+  // Company information
+  companyDetails: CompanyDetails | null;
+  updateCompanyDetails: (details: CompanyDetails) => Promise<boolean>;
+  
+  // Clients information
+  clients: Client[];
+  clientCount: number;
+  activeClientCount: number;
+  updateClients: (clients: Client[]) => Promise<boolean>;
+  
+  // Accounting summary
+  accountingSummary: {
+    totalRevenue: number;
+    totalExpenses: number;
+    balance: number;
+    recentTransactions: any[];
+  };
+  
+  // HR & Payroll summary
+  hrSummary: {
+    employeeCount: number;
+    onLeaveCount: number;
+    upcomingPayroll: any[];
+    recentPayments: any[];
+  };
+  
+  // Inventory summary 
+  inventorySummary: {
+    totalItems: number;
+    lowStockItems: number;
+    totalValue: number;
+    recentMovements: any[];
+  };
+  
+  // Reports summary
+  reportsSummary: {
+    savedReports: number;
+    recentReports: any[];
+  };
+  
+  // User settings
+  userPreferences: UserPreference | null;
+  appSettings: AppSettings | null;
+  updateUserPreferences: (preferences: Partial<UserPreference>) => Promise<boolean>;
+  
+  // Global app state
+  isLoading: boolean;
+  isInitialized: boolean;
+  lastUpdated: Date | null;
+  refreshAllData: () => Promise<void>;
+}
+
+// Define context interface
+interface GlobalAppContextProps {
   // Company information
   companyDetails: CompanyDetails | null;
   updateCompanyDetails: (details: CompanyDetails) => Promise<boolean>;
@@ -86,7 +126,7 @@ interface GlobalAppState {
 }
 
 // Create the context with default values
-const GlobalAppContext = createContext<GlobalAppState>({
+const GlobalAppContext = createContext<GlobalAppContextProps>({
   companyDetails: null,
   updateCompanyDetails: async () => false,
   clients: [],
@@ -125,7 +165,7 @@ const GlobalAppContext = createContext<GlobalAppState>({
 });
 
 // Provider component
-export const GlobalAppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const GlobalAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // State for company details
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
   
@@ -181,15 +221,19 @@ export const GlobalAppProvider: React.FC<{ children: ReactNode }> = ({ children 
   // Get sync status for visual feedback
   const syncStatus = useSyncStatus();
   
-  // Initialize all data
+  // Initialize app data and load settings
   useEffect(() => {
-    const initializeApp = async () => {
+    const initializeAppData = async () => {
       try {
+        // Ensure storage is initialized properly
+        const isInitialized = await robustStorageMigrator.ensureInitialized();
+        if (!isInitialized) {
+          console.error('Failed to initialize storage');
+          return;
+        }
+
+        // Perform any other initialization
         setIsLoading(true);
-        
-        // First ensure our robust storage migrator has recovered any lost data
-        await robustStorageMigrator.ensureInitialized();
-        console.log('Data recovery completed, initializing application...');
         
         // Initialize all storage adapters
         await initializeAllStorageAdapters();
@@ -303,10 +347,10 @@ export const GlobalAppProvider: React.FC<{ children: ReactNode }> = ({ children 
         setIsLoading(false);
       }
     };
-    
-    initializeApp();
+
+    initializeAppData();
   }, []);
-  
+
   // Function to refresh all data
   const refreshAllData = async () => {
     try {

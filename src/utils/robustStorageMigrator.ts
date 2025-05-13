@@ -1,163 +1,179 @@
 
-// Storage migration utilities for safely transferring data between storage methods
-
 /**
- * Options for data migration
+ * Robust Storage Migration Utility
+ * Helps migrate data between different storage mechanisms and keys
+ * with validation and fallbacks to ensure data integrity
  */
+
 export interface MigrationOptions {
   sourceKey?: string;
   targetKey?: string;
   deleteSource?: boolean;
-  fallbackData?: any;
-  overwrite?: boolean;
+  validateData?: (data: any) => boolean;
 }
 
-/**
- * Result of a migration operation
- */
 export interface MigrationResult {
   success: boolean;
-  message: string;
-  data?: any;
   error?: Error;
+  migratedData?: any;
 }
 
-/**
- * Robust Storage Migrator
- * Utility to safely migrate data between different storage mechanisms
- */
-const robustStorageMigrator = {
-  /**
-   * Initialize the storage migrator
-   * This ensures it's ready to use before performing operations
-   */
-  ensureInitialized: (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      // Simple check to ensure storage is available
-      try {
-        localStorage.setItem('_storage_check', 'true');
-        localStorage.removeItem('_storage_check');
-        resolve(true);
-      } catch (error) {
-        console.warn('Storage initialization failed:', error);
-        resolve(false);
-      }
-    });
-  },
-
+class RobustStorageMigrator {
   /**
    * Migrate data from one storage key to another
    * @param options Migration options
+   * @returns Migration result object
    */
-  migrateData: (options?: MigrationOptions): MigrationResult => {
+  migrateData(options: MigrationOptions = {}): MigrationResult {
     try {
-      const sourceKey = options?.sourceKey || 'oldData';
-      const targetKey = options?.targetKey || 'newData';
-      const deleteSource = options?.deleteSource !== undefined ? options.deleteSource : false;
-      const overwrite = options?.overwrite !== undefined ? options.overwrite : false;
-      
-      // Check if target already exists and we're not overwriting
-      const existingTarget = localStorage.getItem(targetKey);
-      if (existingTarget && !overwrite) {
-        return {
-          success: true,
-          message: `Target ${targetKey} already exists, skipping migration`,
-          data: JSON.parse(existingTarget)
-        };
-      }
-      
-      // Get source data
+      const {
+        sourceKey = 'oldData',
+        targetKey = 'newData',
+        deleteSource = false,
+        validateData = (data) => !!data,
+      } = options;
+
+      // Try to get source data
       const sourceData = localStorage.getItem(sourceKey);
+
       if (!sourceData) {
-        if (options?.fallbackData) {
-          localStorage.setItem(targetKey, JSON.stringify(options.fallbackData));
-          return {
-            success: true,
-            message: `No source data found, used fallback for ${targetKey}`,
-            data: options.fallbackData
-          };
-        }
-        
         return {
           success: false,
-          message: `Source ${sourceKey} not found`
+          error: new Error(`Source data not found with key: ${sourceKey}`),
         };
       }
-      
-      // Migrate data
-      localStorage.setItem(targetKey, sourceData);
-      
-      // Delete source if requested
-      if (deleteSource) {
-        localStorage.removeItem(sourceKey);
-      }
-      
-      return {
-        success: true,
-        message: `Successfully migrated data from ${sourceKey} to ${targetKey}`,
-        data: JSON.parse(sourceData)
-      };
-    } catch (error) {
-      console.error('Error during data migration:', error);
-      return {
-        success: false,
-        message: 'Migration failed due to error',
-        error: error as Error
-      };
-    }
-  },
-  
-  /**
-   * Check if migration is needed
-   */
-  needsMigration: (sourceKey: string, targetKey: string): boolean => {
-    try {
-      const sourceData = localStorage.getItem(sourceKey);
-      const targetData = localStorage.getItem(targetKey);
-      
-      return !!sourceData && !targetData;
-    } catch (error) {
-      console.error('Error checking if migration is needed:', error);
-      return false;
-    }
-  },
-  
-  /**
-   * Consolidate data from multiple sources into a single target
-   */
-  consolidateStorage: (sourceKeys: string[], targetKey: string, deleteSource: boolean = false): MigrationResult => {
-    try {
-      // Try each source key in order
-      for (const sourceKey of sourceKeys) {
-        const sourceData = localStorage.getItem(sourceKey);
-        if (sourceData) {
-          localStorage.setItem(targetKey, sourceData);
-          
-          if (deleteSource) {
-            localStorage.removeItem(sourceKey);
-          }
-          
+
+      // Parse and validate data
+      try {
+        const parsedData = JSON.parse(sourceData);
+        
+        if (!validateData(parsedData)) {
           return {
-            success: true,
-            message: `Consolidated data from ${sourceKey} to ${targetKey}`,
-            data: JSON.parse(sourceData)
+            success: false,
+            error: new Error('Data validation failed'),
           };
         }
+
+        // Save to target key
+        localStorage.setItem(targetKey, sourceData);
+
+        // Delete source if requested
+        if (deleteSource) {
+          localStorage.removeItem(sourceKey);
+        }
+
+        return {
+          success: true,
+          migratedData: parsedData,
+        };
+      } catch (parseError) {
+        return {
+          success: false,
+          error: parseError instanceof Error 
+            ? parseError 
+            : new Error('Failed to parse source data'),
+        };
       }
-      
-      return {
-        success: false,
-        message: 'No valid source data found for consolidation'
-      };
     } catch (error) {
-      console.error('Error during storage consolidation:', error);
       return {
         success: false,
-        message: 'Consolidation failed due to error',
-        error: error as Error
+        error: error instanceof Error 
+          ? error 
+          : new Error('Unknown error during migration'),
       };
     }
   }
-};
 
+  /**
+   * Check if migration is needed
+   * @param sourceKey Source storage key
+   * @param targetKey Target storage key
+   * @returns True if migration is needed
+   */
+  needsMigration(sourceKey: string, targetKey: string): boolean {
+    try {
+      const sourceData = localStorage.getItem(sourceKey);
+      const targetData = localStorage.getItem(targetKey);
+
+      // Migration needed if source has data but target doesn't
+      return Boolean(sourceData) && !Boolean(targetData);
+    } catch (error) {
+      console.error('Error checking migration need:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Consolidate data from multiple sources into one target
+   * @param sourceKeys Array of source keys
+   * @param targetKey Target key
+   * @param deleteSource Whether to delete source keys after migration
+   * @returns Migration result
+   */
+  consolidateStorage(
+    sourceKeys: string[],
+    targetKey: string,
+    deleteSource: boolean = false
+  ): MigrationResult {
+    try {
+      const consolidatedData: Record<string, any> = {};
+
+      // Gather all data from sources
+      for (const sourceKey of sourceKeys) {
+        try {
+          const sourceData = localStorage.getItem(sourceKey);
+          if (sourceData) {
+            const parsedData = JSON.parse(sourceData);
+            Object.assign(consolidatedData, parsedData);
+          }
+        } catch (error) {
+          console.error(`Error processing source ${sourceKey}:`, error);
+          // Continue with other sources
+        }
+      }
+
+      // Save consolidated data
+      localStorage.setItem(targetKey, JSON.stringify(consolidatedData));
+
+      // Delete sources if requested
+      if (deleteSource) {
+        for (const sourceKey of sourceKeys) {
+          localStorage.removeItem(sourceKey);
+        }
+      }
+
+      return {
+        success: true,
+        migratedData: consolidatedData,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error 
+          ? error 
+          : new Error('Failed to consolidate storage'),
+      };
+    }
+  }
+
+  /**
+   * Ensure storage is initialized
+   * @returns Promise resolving to true if initialization was successful
+   */
+  async ensureInitialized(): Promise<boolean> {
+    try {
+      // Test localStorage availability
+      localStorage.setItem('__test__', 'test');
+      const value = localStorage.getItem('__test__');
+      localStorage.removeItem('__test__');
+      
+      return value === 'test';
+    } catch (error) {
+      console.error('Storage initialization error:', error);
+      return false;
+    }
+  }
+}
+
+const robustStorageMigrator = new RobustStorageMigrator();
 export default robustStorageMigrator;
