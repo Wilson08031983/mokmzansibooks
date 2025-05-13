@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/sidebar";
 import Logo from "./Logo";
 import { 
-  Users, FileText, Calculator, Receipt, PieChart, Settings, LogOut, Package, UserRound, LayoutDashboard, Building
+  Users, FileText, Calculator, Receipt, PieChart, Settings, LogOut, Package, UserRound, LayoutDashboard, Building,
+  Database, Shield
 } from "lucide-react";
 import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { Button } from "./ui/button";
@@ -46,6 +47,7 @@ const DashboardSidebar = () => {
     { icon: UserRound, label: "HR & Payroll", path: "/dashboard/hr" },
     { icon: Package, label: "Inventory", path: "/dashboard/inventory" },
     { icon: PieChart, label: "Reports", path: "/dashboard/reports" },
+    { icon: Shield, label: "Data Management", path: "/dashboard/data-management" },
     { icon: Settings, label: "Settings", path: "/dashboard/settings" },
   ];
 

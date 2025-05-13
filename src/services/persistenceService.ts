@@ -3,10 +3,11 @@
  * 
  * A robust service to handle data persistence across browser sessions.
  * This service implements:
- * 1. Multiple storage mechanisms (localStorage, IndexedDB)
+ * 1. Multiple storage mechanisms (localStorage, IndexedDB, sessionStorage)
  * 2. Data versioning
  * 3. Automatic data recovery
  * 4. Periodic backups
+ * 5. Graceful fallbacks when storage mechanisms are unavailable
  */
 
 // Define the storage keys we want to protect and ensure persistence for
@@ -25,84 +26,197 @@ const CRITICAL_STORAGE_KEYS = [
   'quoteData'
 ];
 
+import { storageAvailability } from '@/utils/indexedDBAvailabilityCheck';
+
 // IndexedDB database details
 const DB_NAME = 'MokMzansiPersistentStorage';
 const DB_VERSION = 1;
 const STORE_NAME = 'persistentData';
 
+// In-memory fallback when all storage mechanisms fail
+const memoryStorage = new Map<string, any>();
+
 /**
  * Initialize the IndexedDB database for persistent storage
  */
-const initIndexedDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onerror = (event) => {
-      console.error('Error opening IndexedDB:', event);
-      reject('Failed to open IndexedDB');
-    };
-    
-    request.onsuccess = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      resolve(db);
-    };
-    
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      // Create an object store for persistent data
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+const initIndexedDB = (): Promise<IDBDatabase | null> => {
+  // First check if IndexedDB is available
+  if (!storageAvailability.checked) {
+    // Initialize the availability check if not done yet
+    return storageAvailability.check().then(strategy => {
+      if (!strategy.useIndexedDB) {
+        console.warn('IndexedDB is not available, using fallback storage mechanisms');
+        return null;
       }
-    };
+      return openIndexedDB();
+    });
+  } else if (!storageAvailability.indexedDB) {
+    console.warn('IndexedDB already determined to be unavailable, using fallback storage');
+    return Promise.resolve(null);
+  }
+  
+  return openIndexedDB();
+};
+
+/**
+ * Open the IndexedDB database with proper error handling and timeouts
+ */
+const openIndexedDB = (): Promise<IDBDatabase | null> => {
+  return new Promise((resolve, reject) => {
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      
+      // Set a timeout to prevent hanging
+      const timeoutId = setTimeout(() => {
+        console.error('IndexedDB open request timed out');
+        resolve(null);
+      }, 3000); // 3 second timeout
+      
+      request.onerror = (event) => {
+        clearTimeout(timeoutId);
+        console.error('Error opening IndexedDB:', event);
+        resolve(null); // Resolve with null instead of rejecting to enable fallbacks
+      };
+      
+      request.onsuccess = (event) => {
+        clearTimeout(timeoutId);
+        const db = (event.target as IDBOpenDBRequest).result;
+        resolve(db);
+      };
+      
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        // Create an object store for persistent data
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+        }
+      };
+      
+      request.onblocked = () => {
+        clearTimeout(timeoutId);
+        console.warn('IndexedDB request was blocked');
+        resolve(null);
+      };
+    } catch (error) {
+      console.error('Exception while opening IndexedDB:', error);
+      resolve(null);
+    }
   });
 };
 
 /**
- * Save data to both localStorage and IndexedDB for redundancy
+ * Save data to multiple storage mechanisms for redundancy
  */
 export const saveData = async (key: string, data: any): Promise<void> => {
   try {
-    // Always stringify data for storage
-    const stringifiedData = JSON.stringify(data);
+    // Serialize the data once
+    const serializedData = JSON.stringify(data);
     
-    // Store in localStorage (primary, fast access)
-    localStorage.setItem(key, stringifiedData);
+    // Track which storage mechanisms succeeded
+    let localStorageSuccess = false;
+    let sessionStorageSuccess = false;
+    let indexedDBSuccess = false;
     
-    // Create a timestamped backup
-    const timestamp = new Date().toISOString();
-    localStorage.setItem(`${key}_backup_${timestamp}`, stringifiedData);
+    // 1. Try localStorage (primary, faster)
+    if (storageAvailability.localStorage) {
+      try {
+        localStorage.setItem(key, serializedData);
+        
+        // Create backup keys with timestamps for recovery
+        const timestamp = new Date().toISOString();
+        const backupKey = `${key}_backup_${timestamp}`;
+        localStorage.setItem(backupKey, serializedData);
+        
+        // Clean up old backups to prevent storage bloat
+        cleanupBackups(key);
+        
+        localStorageSuccess = true;
+      } catch (err) {
+        console.error(`Error saving to localStorage for key ${key}:`, err);
+      }
+    }
     
-    // Maintain only 3 most recent backups
-    cleanupBackups(key);
+    // 2. Try sessionStorage as additional backup
+    if (storageAvailability.sessionStorage) {
+      try {
+        sessionStorage.setItem(key, serializedData);
+        sessionStorage.setItem(`${key}_timestamp`, Date.now().toString());
+        sessionStorageSuccess = true;
+      } catch (err) {
+        console.error(`Error saving to sessionStorage for key ${key}:`, err);
+      }
+    }
     
-    // Also store in IndexedDB for persistent storage (secondary, more robust)
+    // 3. Try IndexedDB for persistent storage (more robust)
     try {
       const db = await initIndexedDB();
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
       
-      store.put({
-        key,
-        value: stringifiedData,
-        timestamp: new Date().toISOString(),
-        version: 1, // Can be used for data migration in the future
-      });
-      
-      transaction.oncomplete = () => {
-        console.log(`Data successfully saved to both storage mechanisms: ${key}`);
-        db.close();
-      };
-      
-      transaction.onerror = (event) => {
-        console.error('Transaction error:', event);
-        db.close();
-      };
+      if (db) {
+        await new Promise<void>((resolve, reject) => {
+          try {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            
+            // Set a timeout to prevent hanging transactions
+            const timeoutId = setTimeout(() => {
+              console.warn('IndexedDB transaction timed out');
+              resolve();
+            }, 2000);
+            
+            const request = store.put({
+              key,
+              value: data,
+              timestamp: Date.now()
+            });
+            
+            request.onsuccess = () => {
+              clearTimeout(timeoutId);
+              indexedDBSuccess = true;
+              resolve();
+            };
+            
+            request.onerror = (event) => {
+              clearTimeout(timeoutId);
+              console.error('Error storing data in IndexedDB:', event);
+              resolve(); // Resolve anyway to continue with other storage mechanisms
+            };
+            
+            transaction.oncomplete = () => {
+              clearTimeout(timeoutId);
+              resolve();
+            };
+            
+            transaction.onerror = (event) => {
+              clearTimeout(timeoutId);
+              console.error('IndexedDB transaction error:', event);
+              resolve(); // Resolve anyway to continue
+            };
+          } catch (err) {
+            console.error('IndexedDB transaction setup failed:', err);
+            resolve(); // Resolve anyway to continue
+          }
+        });
+      }
     } catch (err) {
-      console.error('IndexedDB storage failed, falling back to localStorage only:', err);
+      console.error('IndexedDB storage failed:', err);
     }
+    
+    // 4. Use memory fallback as last resort
+    if (!localStorageSuccess && !sessionStorageSuccess && !indexedDBSuccess) {
+      memoryStorage.set(key, data);
+      console.warn(`Using in-memory fallback storage for key ${key} as all other mechanisms failed`);
+    }
+    
+    // Log storage status for debugging
+    console.log(`Storage status for ${key}: localStorage=${localStorageSuccess}, sessionStorage=${sessionStorageSuccess}, indexedDB=${indexedDBSuccess}`);
   } catch (error) {
-    console.error(`Error saving data for key ${key}:`, error);
-    throw error;
+    console.error(`Error in saveData for key ${key}:`, error);
+    // Last resort: try in-memory storage
+    try {
+      memoryStorage.set(key, data);
+    } catch (e) {
+      console.error('Even in-memory storage failed:', e);
+    }
   }
 };
 
@@ -330,26 +444,59 @@ export const restoreCriticalDataIfNeeded = async (): Promise<void> => {
 
 /**
  * Initialize the persistence service
+ * - Checks storage availability
  * - Sets up periodic backups
  * - Checks and restores data if needed
  */
-export const initPersistenceService = (): void => {
-  // Immediately check and restore critical data if needed
-  restoreCriticalDataIfNeeded().then(() => {
-    console.log('Initial data restoration check completed');
-  });
-  
-  // Set up periodic backups (every 5 minutes)
-  setInterval(() => {
-    backupAllCriticalData();
-  }, 5 * 60 * 1000);
-  
-  // Listen for beforeunload events to create final backup
-  window.addEventListener('beforeunload', () => {
-    backupAllCriticalData();
-  });
-  
-  console.log('Persistence service initialized');
+export const initPersistenceService = async (): Promise<void> => {
+  try {
+    // First check which storage mechanisms are available
+    await storageAvailability.check();
+    
+    if (!storageAvailability.indexedDB) {
+      console.warn('⚠️ IndexedDB is not available - using localStorage/sessionStorage with memory fallback');
+    }
+    
+    if (!storageAvailability.localStorage && !storageAvailability.sessionStorage) {
+      console.warn('⚠️ Neither localStorage nor sessionStorage is available - using memory-only storage');
+    }
+    
+    // Immediately check and restore critical data if needed
+    await restoreCriticalDataIfNeeded();
+    console.log('✅ Initial data restoration check completed');
+    
+    // Set up periodic backups (every 5 minutes)
+    const backupInterval = setInterval(() => {
+      backupAllCriticalData().catch(err => {
+        console.error('Error during periodic backup:', err);
+      });
+    }, 5 * 60 * 1000);
+    
+    // Listen for beforeunload events to create final backup
+    window.addEventListener('beforeunload', () => {
+      backupAllCriticalData().catch(err => {
+        console.error('Error during beforeunload backup:', err);
+      });
+    });
+    
+    // Listen for storage events to sync between tabs
+    window.addEventListener('storage', (event) => {
+      if (event.key && CRITICAL_STORAGE_KEYS.includes(event.key)) {
+        console.log(`Storage event detected for key: ${event.key}`);
+        // Dispatch a custom event that components can listen for
+        window.dispatchEvent(new CustomEvent('storage-updated', { 
+          detail: { key: event.key, newValue: event.newValue }
+        }));
+      }
+    });
+    
+    console.log('✅ Persistence service initialized successfully');
+    return Promise.resolve();
+  } catch (error) {
+    console.error('❌ Error initializing persistence service:', error);
+    // Even if initialization fails, we want to continue
+    return Promise.resolve();
+  }
 };
 
 // Helper function to update all localStorage references in one place

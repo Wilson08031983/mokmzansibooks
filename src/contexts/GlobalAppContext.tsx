@@ -15,6 +15,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import robustStorageMigrator from '../utils/robustStorageMigrator';
 import { CompanyDetails } from '../contexts/CompanyContext';
 import type { Client } from '@/types/client';
 import { UserPreference, AppSettings } from '../utils/settingsStorageAdapter';
@@ -186,6 +187,10 @@ export const GlobalAppProvider: React.FC<{ children: ReactNode }> = ({ children 
       try {
         setIsLoading(true);
         
+        // First ensure our robust storage migrator has recovered any lost data
+        await robustStorageMigrator.ensureInitialized();
+        console.log('Data recovery completed, initializing application...');
+        
         // Initialize all storage adapters
         await initializeAllStorageAdapters();
         
@@ -307,6 +312,9 @@ export const GlobalAppProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       syncStatus.showSyncing('Refreshing all application data...');
       setIsLoading(true);
+      
+      // First ensure our robust storage migrator has recovered any lost data
+      await robustStorageMigrator.ensureInitialized();
       
       // Reload all data in parallel
       const [

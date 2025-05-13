@@ -3,9 +3,11 @@
  * 
  * This module provides ultra-reliable data persistence with multiple fallback mechanisms
  * to ensure data is never lost between sessions. Enhanced with improved IndexedDB error handling.
+ * Now with network status awareness and synchronization capabilities.
  */
 
 import { handleIndexedDBError } from './indexedDBErrorHandler';
+import syncManager from './syncManager';
 
 // Storage types that we support
 export enum StorageType {
@@ -229,7 +231,7 @@ class SuperPersistentStorageManager {
   /**
    * Generate storage keys for a category with namespacing
    */
-  private getKeys(category: DataCategory): Record<string, string> {
+  private getKeys(category: DataCategory): { primary: string, backups: string[] } {
     const primaryKey = `mok_${category}`;
     const backupKeys = this.config.enableMultipleBackups 
       ? [
@@ -312,6 +314,27 @@ class SuperPersistentStorageManager {
         this.saveToIndexedDB(category, jsonData).catch(error => {
           console.error(`Error saving to IndexedDB for category ${category}:`, error);
         });
+      }
+      
+      // Add to sync queue if online status is important for this category
+      // These data categories should be synced to the server when online
+      const categoriesToSync = [
+        DataCategory.COMPANY,
+        DataCategory.CLIENTS,
+        DataCategory.QUOTES,
+        DataCategory.INVOICES,
+        DataCategory.ACCOUNTING,
+        DataCategory.HR,
+        DataCategory.PAYROLL,
+        DataCategory.INVENTORY,
+        DataCategory.REPORTS
+      ];
+      
+      if (categoriesToSync.includes(category)) {
+        // Generate a consistent ID for this data
+        const dataId = `${category}_${Date.now()}`;
+        // Add to sync queue with current date
+        syncManager.addPendingSync(category, 'update', data, dataId);
       }
       
       // Validate the save if configured
@@ -687,57 +710,92 @@ class SuperPersistentStorageManager {
       localStorage: boolean;
       sessionStorage: boolean;
       indexedDB: boolean;
+      network: boolean;
     }
   }> {
+    await this.ensureReady();
+    
     const issues: string[] = [];
+    const storageTypes = {
+      localStorage: true,
+      sessionStorage: true,
+      indexedDB: true,
+      network: syncManager.isNetworkOnline()
+    };
     
     // Check localStorage
-    let localStorageWorking = true;
     try {
-      localStorage.setItem('mokhealth_test', 'test');
-      const testValue = localStorage.getItem('mokhealth_test');
-      if (testValue !== 'test') {
-        localStorageWorking = false;
-        issues.push('localStorage test failed: Value mismatch');
+      localStorage.setItem('storage_health_check', 'ok');
+      if (localStorage.getItem('storage_health_check') !== 'ok') {
+        storageTypes.localStorage = false;
+        issues.push('localStorage read/write test failed');
       }
-      localStorage.removeItem('mokhealth_test');
+      localStorage.removeItem('storage_health_check');
     } catch (error) {
-      localStorageWorking = false;
-      issues.push(`localStorage test failed: ${error}`);
+      storageTypes.localStorage = false;
+      issues.push(`localStorage error: ${error instanceof Error ? error.message : String(error)}`);
     }
     
     // Check sessionStorage
-    let sessionStorageWorking = true;
-    try {
-      sessionStorage.setItem('mokhealth_test', 'test');
-      const testValue = sessionStorage.getItem('mokhealth_test');
-      if (testValue !== 'test') {
-        sessionStorageWorking = false;
-        issues.push('sessionStorage test failed: Value mismatch');
+    if (this.config.enableSessionStorage) {
+      try {
+        sessionStorage.setItem('storage_health_check', 'ok');
+        if (sessionStorage.getItem('storage_health_check') !== 'ok') {
+          storageTypes.sessionStorage = false;
+          issues.push('sessionStorage read/write test failed');
+        }
+        sessionStorage.removeItem('storage_health_check');
+      } catch (error) {
+        storageTypes.sessionStorage = false;
+        issues.push(`sessionStorage error: ${error instanceof Error ? error.message : String(error)}`);
       }
-      sessionStorage.removeItem('mokhealth_test');
-    } catch (error) {
-      sessionStorageWorking = false;
-      issues.push(`sessionStorage test failed: ${error}`);
     }
     
     // Check IndexedDB
-    let indexedDBWorking = this.db !== null;
-    if (!indexedDBWorking) {
-      issues.push('IndexedDB not initialized');
+    if (this.config.enableIndexedDB) {
+      if (!this.db) {
+        storageTypes.indexedDB = false;
+        issues.push('IndexedDB is not initialized');
+      } else {
+        // Check for any recorded errors
+        const errorDetected = localStorage.getItem('indexeddb_error_detected');
+        if (errorDetected === 'true') {
+          storageTypes.indexedDB = false;
+          const lastError = localStorage.getItem('indexeddb_last_error');
+          if (lastError) {
+            try {
+              const errorInfo = JSON.parse(lastError);
+              issues.push(`IndexedDB error detected: ${errorInfo.error} at ${errorInfo.time}`);
+            } catch {
+              issues.push('IndexedDB error detected (details unavailable)');
+            }
+          } else {
+            issues.push('IndexedDB error detected (details unavailable)');
+          }
+        }
+      }
     }
     
-    const healthy = localStorageWorking && (sessionStorageWorking || !this.config.enableSessionStorage) && 
-                 (indexedDBWorking || !this.config.enableIndexedDB);
+    // Check network status
+    if (!storageTypes.network) {
+      issues.push('Network is offline. Data will be synchronized when back online.');
+      // Check if there are pending sync items
+      const pendingSyncCount = syncManager.getPendingSyncCount();
+      if (pendingSyncCount > 0) {
+        issues.push(`${pendingSyncCount} items waiting to be synchronized when back online.`);
+      }
+    }
+    
+    // Record the health status
+    const healthy = issues.length === 0;
+    
+    this.debugLog('Storage health check completed', 
+      healthy ? 'Healthy' : `Unhealthy: ${issues.join(', ')}`);
     
     return {
       healthy,
       issues,
-      storageTypes: {
-        localStorage: localStorageWorking,
-        sessionStorage: sessionStorageWorking,
-        indexedDB: indexedDBWorking
-      }
+      storageTypes
     };
   }
 
@@ -745,28 +803,32 @@ class SuperPersistentStorageManager {
    * Attempt to recover from storage issues
    */
   public async attemptRecovery(): Promise<boolean> {
-    this.debugLog('Attempting storage recovery...');
+    this.debugLog('Attempting to recover from storage issues...');
     
-    try {
-      // Re-initialize IndexedDB
-      if (this.config.enableIndexedDB) {
-        await this.initializeIndexedDB();
-      }
-      
-      // Try to restore data from backups for all categories
-      for (const category of Object.values(DataCategory)) {
-        const data = await this.loadWithRedundancy(category);
-        if (data !== null) {
-          // Save back to all storage mechanisms
-          await this.save(category, data);
-        }
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Failed to recover storage:', error);
-      return false;
+    // Try reloading all data from all sources to restore any lost data
+    await this.preloadFromAllSources();
+    
+    // Reset the IndexedDB error flag, as we're going to try again
+    localStorage.removeItem('indexeddb_error_detected');
+    
+    // Try re-initializing IndexedDB if it's not working
+    if (this.config.enableIndexedDB && !this.db) {
+      await this.initializeIndexedDB();
     }
+    
+    // If we're online, trigger a sync to ensure server has latest data
+    if (syncManager.isNetworkOnline() && syncManager.getPendingSyncCount() > 0) {
+      this.debugLog('Network is online. Triggering sync of pending items...');
+      // The syncManager will handle the actual sync process
+    }
+    
+    // Check health again after recovery attempts
+    const healthStatus = await this.validateHealth();
+    
+    this.debugLog('Recovery attempt completed', 
+      healthStatus.healthy ? 'Successfully' : 'Some issues remain');
+    
+    return healthStatus.healthy;
   }
 }
 

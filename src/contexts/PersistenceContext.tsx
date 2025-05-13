@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { initPersistenceService, saveData, getData, removeData } from '@/services/persistenceService';
+import storageStatusManager from '@/utils/storageStatusManager';
 
 // Define the context interface
 interface PersistenceContextType {
@@ -28,29 +29,66 @@ export const PersistenceProvider: React.FC<PersistenceProviderProps> = ({ childr
 
   // Initialize the persistence service on component mount
   useEffect(() => {
+    let isMounted = true;
+    let initTimeout: NodeJS.Timeout | null = null;
+    
     const initialize = async () => {
       try {
-        initPersistenceService();
-        setIsReady(true);
+        // First make sure our storage status is checked
+        await storageStatusManager.initialize();
+        
+        // Then initialize the persistence service with the storage status
+        await initPersistenceService();
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          console.log('PersistenceContext: Service initialized successfully');
+          setIsReady(true);
+        }
       } catch (error) {
-        console.error('Failed to initialize persistence service:', error);
+        console.error('PersistenceContext: Failed to initialize persistence service:', error);
+        
         // Try to continue even if initialization fails
-        setIsReady(true);
+        if (isMounted) {
+          // Set a delayed ready state to prevent UI blocking
+          initTimeout = setTimeout(() => {
+            if (isMounted) {
+              console.log('PersistenceContext: Continuing despite initialization failure');
+              setIsReady(true);
+            }
+          }, 1000);
+        }
       }
     };
 
     initialize();
+    
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+      if (initTimeout) clearTimeout(initTimeout);
+    };
   }, []);
 
   // Create the context value object with the wrapped functions
   const contextValue = {
     saveItem: async (key: string, data: any) => {
       try {
+        // Get current storage status
+        const status = storageStatusManager.getStatus();
+        
+        // Use the persistence service first
         await saveData(key, data);
         
-        // For compatibility with existing code, also use the original localStorage format
-        // This helps with transitioning to the new system
-        localStorage.setItem(key, JSON.stringify(data));
+        // For compatibility with existing code, also try localStorage if available
+        if (status.localStorageAvailable) {
+          try {
+            localStorage.setItem(key, JSON.stringify(data));
+          } catch (e) {
+            console.warn(`Failed to save to localStorage for key ${key}:`, e);
+            // Non-critical error, continue
+          }
+        }
       } catch (error) {
         console.error(`Error saving item with key ${key}:`, error);
         throw error;

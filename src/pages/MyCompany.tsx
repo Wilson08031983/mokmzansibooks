@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CompanyErrorBoundary } from '@/components/CompanyErrorBoundary';
 import { useCompany } from '@/contexts/CompanyContext';
-import { syncCompanyData } from '@/utils/companyDataSync';
+import { syncCompanyData, forceCompanyDataUpdate } from '@/utils/companyDataSync';
+import dataService from '@/services/supabase/dataService';
 // Import UI components
 import { 
   Card, CardContent, CardHeader, CardTitle, CardDescription 
@@ -157,8 +158,9 @@ const MyCompany: React.FC = () => {
     // Create the action to perform after passcode verification
     const toggleStatusAction = async (passcode: string) => {
       const isValid = await verifyPasscode(passcode);
-      if (!isValid) return false;
+      if (!isValid) return false; // REQUIRED: Ensures PasscodeDialog shows error on invalid passcode
       
+      // Execute the action after successful validation
       toggleUserStatus(userId);
       
       // Find the user to get their name and new status for the toast
@@ -190,7 +192,7 @@ const MyCompany: React.FC = () => {
     // Create the action to perform after passcode verification
     const removeUserAction = async (passcode: string) => {
       const isValid = await verifyPasscode(passcode);
-      if (!isValid) return false;
+      if (!isValid) return false; // REQUIRED: Ensures PasscodeDialog shows error on invalid passcode
       
       // Find the user to get their name for the toast
       const user = users.find(u => u.id === userId);
@@ -230,7 +232,7 @@ const MyCompany: React.FC = () => {
     // Create the action to perform after passcode verification
     const resetPasswordAction = async (passcode: string) => {
       const isValid = await verifyPasscode(passcode);
-      if (!isValid) return false;
+      if (!isValid) return false; // REQUIRED: Ensures PasscodeDialog shows error on invalid passcode
       
       // Generate a random password
       const newPassword = Math.random().toString(36).slice(-8);
@@ -342,6 +344,9 @@ const MyCompany: React.FC = () => {
     });
   };
   
+  // State for passcode input
+  const [passcodeInput, setPasscodeInput] = useState('');
+  
   // Function to handle company details update
   const handleUpdateCompanyDetails = async () => {
     // If it's first time setup, show passcode setup dialog
@@ -354,7 +359,7 @@ const MyCompany: React.FC = () => {
     
     try {
       // Verify passcode
-      const isValid = await verifyPasscode(passcode);
+      const isValid = await verifyPasscode(passcodeInput);
       
       if (!isValid) {
         toast({
@@ -362,11 +367,25 @@ const MyCompany: React.FC = () => {
           description: "The passcode you entered is incorrect. Please try again.",
           variant: "destructive"
         });
+        setIsSaving(false);
         return false;
       }
       
       // First save the company details
       await saveCompanyDetails();
+      
+      // Sync with our enhanced data synchronization system
+      await syncCompanyData(companyDetails);
+      
+      // Force update all components with the latest company data
+      forceCompanyDataUpdate();
+      
+      // Also save to Supabase if available
+      try {
+        await dataService.saveData('company', companyDetails, 'company-details');
+      } catch (error) {
+        console.warn('Failed to save company data to Supabase:', error);
+      }
       
       // Then synchronize with the Users tab
       if (users.length > 0) {

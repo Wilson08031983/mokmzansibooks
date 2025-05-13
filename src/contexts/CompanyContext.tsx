@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from './NotificationsContext';
 import { useSyncStatus } from './SyncContext';
@@ -7,6 +7,12 @@ import { safeJsonParse, safeJsonStringify, withErrorHandling } from '@/utils/err
 import { loadCompanyDetails as getCompanyDetailsFromStorage, saveCompanyDetails as saveCompanyDetailsToStorage } from '@/utils/companyStorageAdapter';
 import { syncCompanyData } from '@/utils/companyDataSync';
 import { createSyncStorageWrapper } from '@/utils/syncStorageUtils';
+// Import Supabase services
+import companyService from '@/services/supabase/companyService';
+import { v4 as uuidv4 } from 'uuid';
+// Import the new system health check
+import systemHealthCheck from '@/utils/systemHealthCheck';
+import superPersistentStorage, { DataCategory } from '@/utils/superPersistentStorage';
 
 // Import the event bus with a try-catch to handle potential HMR issues
 let eventBus: any = null;
@@ -163,15 +169,52 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     return !localStorage.getItem('adminPasscode');
   });
 
-  // State for company details with super persistent storage
+  // Track whether component is mounted to prevent memory leaks
+  const isMounted = useRef(true);
+  
+  // Recovery attempts counter to prevent infinite loops
+  const recoveryAttempts = useRef(0);
+  
+  // Last successful data timestamp to detect data loss
+  const lastDataTimestamp = useRef<number>(Date.now());
+  
+  // State for company details with multiple data recovery mechanisms
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails>(() => {
     try {
-      // Using synchronous initialization - we'll update with async data once loaded
-      // First check if we have data in localStorage for immediate display
+      // Using synchronous initialization with multiple fallbacks
+      
+      // 1. First try localStorage for immediate display
       const savedCompany = localStorage.getItem('companyDetails');
       if (savedCompany) {
-        console.log('Loaded company details from localStorage (initial)');
-        return safeJsonParse(savedCompany, defaultCompanyDetails);
+        const parsed = safeJsonParse(savedCompany, null);
+        if (parsed && parsed.name) {
+          console.log('Loaded company details from localStorage (initial)');
+          // Create immediate backup for extra safety
+          localStorage.setItem('company_backup_initial', savedCompany);
+          return parsed;
+        }
+      }
+      
+      // 2. Try emergency backup keys in localStorage
+      const backupKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith('emergency_company_backup_') || 
+        key.startsWith('company_backup_')
+      );
+      
+      if (backupKeys.length > 0) {
+        // Sort by timestamp (newest first) if available
+        backupKeys.sort().reverse();
+        
+        for (const key of backupKeys) {
+          const backupData = localStorage.getItem(key);
+          if (backupData) {
+            const parsed = safeJsonParse(backupData, null);
+            if (parsed && parsed.name) {
+              console.log(`Loaded company details from backup (${key})`);
+              return parsed;
+            }
+          }
+        }
       }
       
       return {...defaultCompanyDetails};
@@ -180,6 +223,116 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       return {...defaultCompanyDetails};
     }
   });
+
+  // Setup effect for cleanup
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Run system health check on startup
+  useEffect(() => {
+    const runHealthCheck = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Run system health check
+        await systemHealthCheck.runSystemHealthCheck();
+        
+        // Create emergency backup immediately
+        if (companyDetails && companyDetails.name) {
+          await systemHealthCheck.createEmergencyBackup();
+        }
+      } catch (error) {
+        console.error('Error running health check:', error);
+      } finally {
+        if (isMounted.current) {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    runHealthCheck();
+  }, []);
+
+  // Enhanced loading effect with multiple recovery mechanisms
+  useEffect(() => {
+    const loadCompanyDetailsWithRecovery = async () => {
+      try {
+        console.log('Loading company details with recovery mechanisms...');
+        setIsLoading(true);
+        
+        // First try normal loading
+        let companyData = await getCompanyDetailsFromStorage();
+        
+        // Check if we got valid data
+        if (!companyData || !companyData.name) {
+          console.warn('Failed to load company details normally, attempting recovery...');
+          recoveryAttempts.current += 1;
+          
+          // Attempt recovery if we're not in an infinite loop
+          if (recoveryAttempts.current < 3) {
+            // Try system recovery
+            companyData = await systemHealthCheck.runCompanyDataRecovery();
+            
+            if (!companyData || !companyData.name) {
+              // Last resort - try emergency backup
+              companyData = await systemHealthCheck.restoreFromEmergencyBackup();
+            }
+          }
+        }
+        
+        // If we have valid data, update state
+        if (companyData && companyData.name && isMounted.current) {
+          // Validate data integrity to prevent rendering errors
+          const validatedData = await systemHealthCheck.validateCompanyDataIntegrity(companyData);
+          
+          // Update state
+          setCompanyDetails(validatedData);
+          
+          // Update timestamp of successful data
+          lastDataTimestamp.current = Date.now();
+          
+          // Create fresh backup
+          await systemHealthCheck.createEmergencyBackup();
+          
+          console.log('Successfully loaded company details for:', validatedData.name);
+          
+          // Show success notification if we recovered from a bad state
+          if (recoveryAttempts.current > 0) {
+            toast({
+              title: 'Data Recovered Successfully',
+              description: 'Your company information has been recovered.',
+              duration: 5000
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading company details with recovery:', error);
+        setHasError(true);
+        setErrorMessage('Failed to load company details. Please try again.');
+      } finally {
+        if (isMounted.current) {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    loadCompanyDetailsWithRecovery();
+    
+    // Set up periodic data validation (every 5 minutes)
+    const validateInterval = setInterval(async () => {
+      if (companyDetails && companyDetails.name) {
+        // Create regular backups
+        await systemHealthCheck.createEmergencyBackup();
+      }
+    }, 5 * 60 * 1000);
+    
+    return () => {
+      clearInterval(validateInterval);
+    };
+  }, []);
 
   // Create sync-enabled storage functions for company details
   const syncCompanyStorage = createSyncStorageWrapper(

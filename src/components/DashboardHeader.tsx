@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { Notifications } from "@/components/Notifications";
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/contexts/NotificationsContext";
+import { NetworkStatusIndicator } from "@/components/ui/network-status";
 
 const DashboardHeader = () => {
   const { currentUser, signOut } = useSupabaseAuth();
@@ -90,6 +91,7 @@ const DashboardHeader = () => {
             <span>{overdueClientsCount} overdue {overdueClientsCount === 1 ? 'client' : 'clients'}</span>
           </Button>
         )}
+        <NetworkStatusIndicator />
         <ThemeToggle />
         <Notifications />
         <DropdownMenu>

@@ -32,7 +32,17 @@ try {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      flowType: 'pkce', // Recommended for better security
+      storage: {
+        // Custom storage that integrates with our persistence system
+        getItem: (key) => localStorage.getItem(key),
+        setItem: (key, value) => localStorage.setItem(key, value),
+        removeItem: (key) => localStorage.removeItem(key)
+      }
+    },
+    db: {
+      schema: 'public' // Explicit schema declaration
     }
   });
   
