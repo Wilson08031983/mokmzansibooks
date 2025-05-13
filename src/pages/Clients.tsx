@@ -1,30 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { ClientErrorBoundary } from "@/components/ClientErrorBoundary";
-import { getSafeClientData, saveClientData, ClientsState } from "@/utils/clientDataPersistence";
-import { Client, CompanyClient, IndividualClient, VendorClient, isCompanyClient, isVendorClient, isIndividualClient, ClientFilter } from "@/types/client";
-import ClientTable from "@/components/clients/ClientTable";
-import ClientForm from "@/components/clients/ClientForm";
-import ClientDetails from "@/components/clients/ClientDetails";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { PlusIcon, FilterIcon, RefreshCw, SearchIcon } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useClient } from "@/contexts/ClientContext";
-import { useGlobalClientData } from "@/hooks/useGlobalClientData";
-import { usePersistence } from "@/contexts/PersistenceContext";
+import React, { useEffect, useState } from 'react';
+import { useClient } from '@/contexts/ClientContext';
+import { Client, CompanyClient, IndividualClient, VendorClient, ClientType } from '@/types/client';
+import { addClient, updateClient, deleteClient } from '@/utils/clientDataPersistence';
+
+export interface ClientFilter {
+  type?: ClientType | 'all';
+  search?: string;
+  sortBy?: 'name' | 'createdAt' | 'updatedAt';
+  sortDirection?: 'asc' | 'desc';
+}
 
 const Clients = () => {
   const [clients, setClients] = useState<ClientsState>({
@@ -258,6 +242,20 @@ const Clients = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleAddClient = (clientData: Partial<Client>) => {
+    const result = addClient(clientData);
+    return result !== null;
+  };
+
+  const handleUpdateClient = (id: string, clientData: Partial<Client>) => {
+    const result = updateClient(id, clientData);
+    return result !== null;
+  };
+
+  const handleDeleteClient = (id: string, type: ClientType) => {
+    return deleteClient(id, type);
   };
 
   return (

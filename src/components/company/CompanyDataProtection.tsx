@@ -11,7 +11,7 @@ import { Lock, Save, RotateCcw } from 'lucide-react';
 import { CompanyDetails } from '@/types/company';
 
 const CompanyDataProtection: React.FC = () => {
-  const { company, updateCompany } = useCompany();
+  const { companyDetails, updateCompany } = useCompany();
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [passphrase, setPassphrase] = useState('');
@@ -25,26 +25,26 @@ const CompanyDataProtection: React.FC = () => {
     try {
       // Convert from context CompanyDetails to type definition CompanyDetails
       const companyData: CompanyDetails = {
-        id: company.id,
-        name: company.name,
-        address: company.address,
-        city: company.city,
-        province: company.province,
-        postalCode: company.postalCode,
-        phone: company.phone || '',
-        email: company.email || '',
-        contactEmail: company.contactEmail || '',
-        contactPhone: company.contactPhone || '',
-        website: company.website || '',
-        registrationNumber: company.registrationNumber || '',
-        vatNumber: company.vatNumber || '',
+        name: companyDetails.name,
+        address: companyDetails.address,
+        city: companyDetails.city,
+        province: companyDetails.province,
+        postalCode: companyDetails.postalCode,
+        phone: companyDetails.phone || '',
+        email: companyDetails.email || '',
+        contactEmail: companyDetails.contactEmail || '',
+        contactPhone: companyDetails.contactPhone || '',
+        website: companyDetails.website || '',
+        registrationNumber: companyDetails.registrationNumber || '',
+        vatNumber: companyDetails.vatNumber || '',
         // Handle optional fields
-        logo: typeof company.logo === 'string' ? company.logo : '',
-        primaryColor: company.primaryColor || '',
-        secondaryColor: company.secondaryColor || '',
-        industry: company.industry || '',
-        createdAt: company.createdAt,
-        updatedAt: company.updatedAt
+        logo: typeof companyDetails.logo === 'string' ? companyDetails.logo : '',
+        primaryColor: companyDetails.primaryColor || '',
+        secondaryColor: companyDetails.secondaryColor || '',
+        industry: companyDetails.industry || '',
+        addressLine2: companyDetails.addressLine2 || '',
+        stamp: companyDetails.stamp || null,
+        signature: companyDetails.signature || null
       };
       
       await backupCompanyDetails(companyData);
@@ -74,26 +74,26 @@ const CompanyDataProtection: React.FC = () => {
       
       // Convert from context CompanyDetails to type definition CompanyDetails
       const companyData: CompanyDetails = {
-        id: company.id,
-        name: company.name,
-        address: company.address,
-        city: company.city,
-        province: company.province,
-        postalCode: company.postalCode,
-        phone: company.phone || '',
-        email: company.email || '',
-        contactEmail: company.contactEmail || '',
-        contactPhone: company.contactPhone || '',
-        website: company.website || '',
-        registrationNumber: company.registrationNumber || '',
-        vatNumber: company.vatNumber || '',
+        name: companyDetails.name,
+        address: companyDetails.address,
+        city: companyDetails.city,
+        province: companyDetails.province,
+        postalCode: companyDetails.postalCode,
+        phone: companyDetails.phone || '',
+        email: companyDetails.email || '',
+        contactEmail: companyDetails.contactEmail || '',
+        contactPhone: companyDetails.contactPhone || '',
+        website: companyDetails.website || '',
+        registrationNumber: companyDetails.registrationNumber || '',
+        vatNumber: companyDetails.vatNumber || '',
         // Handle optional fields
-        logo: typeof company.logo === 'string' ? company.logo : '',
-        primaryColor: company.primaryColor || '',
-        secondaryColor: company.secondaryColor || '',
-        industry: company.industry || '',
-        createdAt: company.createdAt,
-        updatedAt: company.updatedAt
+        logo: typeof companyDetails.logo === 'string' ? companyDetails.logo : '',
+        primaryColor: companyDetails.primaryColor || '',
+        secondaryColor: companyDetails.secondaryColor || '',
+        industry: companyDetails.industry || '',
+        addressLine2: companyDetails.addressLine2 || '',
+        stamp: companyDetails.stamp || null,
+        signature: companyDetails.signature || null
       };
       
       const id = await createEncryptedBackup(companyData, passphrase);
@@ -128,9 +128,7 @@ const CompanyDataProtection: React.FC = () => {
       const recoveredData = await recoverCompanyDetails(backupId);
       
       // Update company with recovered data
-      await updateCompany({
-        ...recoveredData,
-      });
+      await updateCompany(recoveredData);
       
       toast({
         title: 'Backup Restored',

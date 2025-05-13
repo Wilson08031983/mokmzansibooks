@@ -13,7 +13,7 @@ interface CompanyDisplayProps {
 }
 
 const CompanyDisplay: React.FC<CompanyDisplayProps> = ({ variant = 'default' }) => {
-  const { company, loading, error } = useCompany();
+  const { companyDetails, loading, error } = useCompany();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
@@ -32,12 +32,9 @@ const CompanyDisplay: React.FC<CompanyDisplayProps> = ({ variant = 'default' }) 
     
     try {
       // Attempt to consolidate storage
-      const result = await robustStorageMigrator.consolidateStorage({
-        forceFetch: true,
-        includeCompanyData: true
-      });
+      const result = await robustStorageMigrator.consolidateStorage();
       
-      if (result.success) {
+      if (result) {
         toast({
           title: 'Refresh Complete',
           description: 'Company data has been refreshed.',
@@ -45,7 +42,7 @@ const CompanyDisplay: React.FC<CompanyDisplayProps> = ({ variant = 'default' }) 
       } else {
         toast({
           title: 'Refresh Failed',
-          description: (result.result?.error as Error)?.message || 'Could not refresh company data.',
+          description: 'Could not refresh company data.',
           variant: 'destructive',
         });
       }
@@ -71,7 +68,7 @@ const CompanyDisplay: React.FC<CompanyDisplayProps> = ({ variant = 'default' }) 
     );
   }
 
-  if (!company) {
+  if (!companyDetails) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center p-6">
@@ -85,7 +82,7 @@ const CompanyDisplay: React.FC<CompanyDisplayProps> = ({ variant = 'default' }) 
   if (variant === 'minimal') {
     return (
       <div className="flex items-center space-x-2">
-        <Badge variant="secondary">{company.name}</Badge>
+        <Badge variant="secondary">{companyDetails.name}</Badge>
         <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
           {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Refresh'}
         </Button>
@@ -96,10 +93,10 @@ const CompanyDisplay: React.FC<CompanyDisplayProps> = ({ variant = 'default' }) 
   return (
     <Card>
       <CardContent className="space-y-4 p-6">
-        <div className="text-lg font-semibold">{company.name}</div>
-        <div className="text-sm text-gray-500">{company.address}, {company.city}</div>
-        <div className="text-sm text-gray-500">{company.email}</div>
-        <div className="text-sm text-gray-500">{company.phone}</div>
+        <div className="text-lg font-semibold">{companyDetails.name}</div>
+        <div className="text-sm text-gray-500">{companyDetails.address}, {companyDetails.city}</div>
+        <div className="text-sm text-gray-500">{companyDetails.email}</div>
+        <div className="text-sm text-gray-500">{companyDetails.phone}</div>
         <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
           {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Refresh'}
         </Button>

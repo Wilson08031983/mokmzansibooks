@@ -1,152 +1,257 @@
 
 /**
- * Client data persistence utilities
- * Ensures robust client data management with backup and recovery mechanisms
+ * Client Data Persistence Utilities
+ * 
+ * Functions for saving, loading, and managing client data
  */
 
-import { Client, CompanyClient, IndividualClient, VendorClient } from "@/types/client";
+import { Client, CompanyClient, IndividualClient, VendorClient } from '@/types/client';
+import { v4 as uuidv4 } from 'uuid';
 
-// Type for client state management
-export interface ClientsState {
-  companies: CompanyClient[];
-  individuals: IndividualClient[];
-  vendors: VendorClient[];
-}
+// Key for storing client data in local storage
+const CLIENTS_STORAGE_KEY = 'mokClients';
 
-// Default state for clients
-export const defaultClientState: ClientsState = {
-  companies: [],
-  individuals: [],
-  vendors: []
+// Default storage structure
+const defaultStorage = {
+  companies: [] as CompanyClient[],
+  individuals: [] as IndividualClient[],
+  vendors: [] as VendorClient[],
+  lastUpdated: new Date().toISOString()
 };
 
 /**
- * Initialize client data persistence mechanisms
- * This should be called early in the application lifecycle
+ * Get all clients from local storage
  */
-export function initializeClientDataPersistence(): void {
+export const getClients = (): {
+  companies: CompanyClient[];
+  individuals: IndividualClient[];
+  vendors: VendorClient[];
+  lastUpdated: string;
+} => {
   try {
-    // Set up an interval to periodically back up client data
-    const backupInterval = setInterval(() => {
-      createClientDataBackup();
-    }, 5 * 60 * 1000); // Every 5 minutes
-    
-    // Clean up function
-    window.addEventListener('beforeunload', () => {
-      clearInterval(backupInterval);
-    });
-    
-    // Create an initial backup if we have data
-    createClientDataBackup();
-    console.log('Client data persistence initialized');
+    const clientsData = localStorage.getItem(CLIENTS_STORAGE_KEY);
+    if (!clientsData) {
+      return { ...defaultStorage };
+    }
+    return JSON.parse(clientsData);
   } catch (error) {
-    console.error('Error initializing client data persistence:', error);
+    console.error('Error getting clients:', error);
+    return { ...defaultStorage };
   }
-}
+};
 
 /**
- * Create a backup of the current client data
- * @returns boolean indicating if backup was successful
+ * Save clients to local storage
  */
-export function createClientDataBackup(): boolean {
+export const saveClients = (data: {
+  companies: CompanyClient[];
+  individuals: IndividualClient[];
+  vendors: VendorClient[];
+}): boolean => {
   try {
-    const clientData = localStorage.getItem('mokClients');
-    if (!clientData) return false;
+    const storageData = {
+      ...data,
+      lastUpdated: new Date().toISOString()
+    };
+    localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(storageData));
+    return true;
+  } catch (error) {
+    console.error('Error saving clients:', error);
+    return false;
+  }
+};
+
+/**
+ * Add a new client
+ */
+export const addClient = (client: Partial<Client>): Client | null => {
+  try {
+    const clients = getClients();
+    const now = new Date().toISOString();
+    const id = client.id || uuidv4();
     
-    // Validate data before backup
-    try {
-      JSON.parse(clientData);
-    } catch {
-      console.error('Invalid client data found, not backing up');
-      return false;
+    // Create a new client with the required fields
+    const newClient = {
+      ...client,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    // Add the client to the appropriate array based on type
+    if (client.type === 'company') {
+      clients.companies.push(newClient as CompanyClient);
+    } else if (client.type === 'individual') {
+      clients.individuals.push(newClient as IndividualClient);
+    } else if (client.type === 'vendor') {
+      clients.vendors.push(newClient as VendorClient);
+    } else {
+      throw new Error('Invalid client type');
     }
     
-    // Store the backup
-    localStorage.setItem('mokClientsBackup', clientData);
+    // Save the updated clients
+    saveClients(clients);
     
-    // Also store to sessionStorage as another layer of protection
-    sessionStorage.setItem('mokClientsBackup', clientData);
+    return newClient as Client;
+  } catch (error) {
+    console.error('Error adding client:', error);
+    return null;
+  }
+};
+
+/**
+ * Update an existing client
+ */
+export const updateClient = (id: string, clientData: Partial<Client>): Client | null => {
+  try {
+    const clients = getClients();
+    const clientType = clientData.type;
     
+    if (!clientType) {
+      throw new Error('Client type is required');
+    }
+    
+    // Find and update the client in the appropriate array
+    if (clientType === 'company') {
+      const index = clients.companies.findIndex(c => c.id === id);
+      if (index === -1) return null;
+      
+      clients.companies[index] = {
+        ...clients.companies[index],
+        ...clientData,
+        updatedAt: new Date().toISOString()
+      } as CompanyClient;
+      
+      saveClients(clients);
+      return clients.companies[index] as Client;
+    } else if (clientType === 'individual') {
+      const index = clients.individuals.findIndex(c => c.id === id);
+      if (index === -1) return null;
+      
+      clients.individuals[index] = {
+        ...clients.individuals[index],
+        ...clientData,
+        updatedAt: new Date().toISOString()
+      } as IndividualClient;
+      
+      saveClients(clients);
+      return clients.individuals[index] as Client;
+    } else if (clientType === 'vendor') {
+      const index = clients.vendors.findIndex(c => c.id === id);
+      if (index === -1) return null;
+      
+      clients.vendors[index] = {
+        ...clients.vendors[index],
+        ...clientData,
+        updatedAt: new Date().toISOString()
+      } as VendorClient;
+      
+      saveClients(clients);
+      return clients.vendors[index] as Client;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error updating client:', error);
+    return null;
+  }
+};
+
+/**
+ * Delete a client
+ */
+export const deleteClient = (id: string, type: 'company' | 'individual' | 'vendor'): boolean => {
+  try {
+    const clients = getClients();
+    
+    if (type === 'company') {
+      clients.companies = clients.companies.filter(c => c.id !== id);
+    } else if (type === 'individual') {
+      clients.individuals = clients.individuals.filter(c => c.id !== id);
+    } else if (type === 'vendor') {
+      clients.vendors = clients.vendors.filter(c => c.id !== id);
+    } else {
+      throw new Error('Invalid client type');
+    }
+    
+    saveClients(clients);
+    return true;
+  } catch (error) {
+    console.error('Error deleting client:', error);
+    return false;
+  }
+};
+
+/**
+ * Create a backup of client data
+ */
+export const createClientDataBackup = (): boolean => {
+  try {
+    const clients = getClients();
+    const backup = {
+      ...clients,
+      backupDate: new Date().toISOString()
+    };
+    
+    localStorage.setItem(`${CLIENTS_STORAGE_KEY}_backup`, JSON.stringify(backup));
+    console.log('Client data backup created successfully');
     return true;
   } catch (error) {
     console.error('Error creating client data backup:', error);
     return false;
   }
-}
+};
 
 /**
- * Restore client data from backup
- * @returns boolean indicating if restore was successful
+ * Restore client data from a backup
  */
-export function restoreClientDataFromBackup(): boolean {
+export const restoreClientDataFromBackup = (): boolean => {
   try {
-    // Try localStorage backup first
-    let backup = localStorage.getItem('mokClientsBackup');
-    
-    // If not found, try sessionStorage
-    if (!backup) {
-      backup = sessionStorage.getItem('mokClientsBackup');
-    }
-    
-    if (!backup) return false;
-    
-    // Validate backup data
-    try {
-      JSON.parse(backup);
-    } catch {
-      console.error('Invalid backup data found');
+    const backupData = localStorage.getItem(`${CLIENTS_STORAGE_KEY}_backup`);
+    if (!backupData) {
+      console.error('No backup data found');
       return false;
     }
     
-    // Restore from backup
-    localStorage.setItem('mokClients', backup);
+    const backup = JSON.parse(backupData);
+    const { companies, individuals, vendors } = backup;
+    
+    saveClients({ companies, individuals, vendors });
+    console.log('Client data restored from backup successfully');
     return true;
   } catch (error) {
     console.error('Error restoring client data from backup:', error);
     return false;
   }
-}
+};
 
 /**
- * Safe getter for client data
- * @returns Valid client data or empty default state
+ * Set client data safely (for migrations and imports)
  */
-export function getSafeClientData(): ClientsState {
-  try {
-    const clientData = localStorage.getItem('mokClients');
-    if (!clientData) return { companies: [], individuals: [], vendors: [] };
-    
-    const parsedData = JSON.parse(clientData) as ClientsState;
-    return {
-      companies: Array.isArray(parsedData.companies) ? parsedData.companies : [],
-      individuals: Array.isArray(parsedData.individuals) ? parsedData.individuals : [],
-      vendors: Array.isArray(parsedData.vendors) ? parsedData.vendors : []
-    };
-  } catch (error) {
-    console.error('Error getting safe client data:', error);
-    return { companies: [], individuals: [], vendors: [] };
-  }
-}
-
-/**
- * Safe setter for client data
- * @param data The client data to save
- * @returns boolean indicating if save was successful
- */
-export function setSafeClientData(data: ClientsState): boolean {
+export const setSafeClientData = (clientData: any): boolean => {
   try {
     // Validate data structure
-    if (!data || typeof data !== 'object') return false;
-    if (!Array.isArray(data.companies) || !Array.isArray(data.individuals) || !Array.isArray(data.vendors)) {
-      return false;
+    if (!clientData || typeof clientData !== 'object') {
+      throw new Error('Invalid client data format');
     }
     
-    // Save data and create backup
-    localStorage.setItem('mokClients', JSON.stringify(data));
-    createClientDataBackup();
+    const { companies = [], individuals = [], vendors = [] } = clientData;
+    
+    // Ensure arrays
+    if (!Array.isArray(companies) || !Array.isArray(individuals) || !Array.isArray(vendors)) {
+      throw new Error('Client data must contain arrays for companies, individuals, and vendors');
+    }
+    
+    // Update storage
+    saveClients({ 
+      companies: companies as CompanyClient[], 
+      individuals: individuals as IndividualClient[], 
+      vendors: vendors as VendorClient[] 
+    });
+    
     return true;
   } catch (error) {
-    console.error('Error setting client data safely:', error);
+    console.error('Error setting safe client data:', error);
     return false;
   }
-}
+};

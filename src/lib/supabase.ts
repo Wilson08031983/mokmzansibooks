@@ -1,86 +1,72 @@
 
+// Ensure that imports from supabase are correctly importing from your client file
 import { createClient } from '@supabase/supabase-js';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '@/integrations/supabase/types';
 
-// Import our Database types - use relative path to avoid path mapping issues
-import { Database } from '../types/supabase';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-/**
- * Enhanced Supabase Client Configuration
- * This provides improved error handling, fallbacks, and connection management.
- */
-
-// Initialize Supabase client with environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://bazbbweawubxqfebliil.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhemJid2Vhd3VieHFmZWJsaWlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODg5NDIsImV4cCI6MjA1Nzg2NDk0Mn0.2EVPWwcvbXdm2EttFfcyDd63B-TlCTpY-Bd-OuWRnWU';
-
-// Validate configuration
-if (!supabaseUrl || supabaseUrl === '') {
-  console.error('CRITICAL ERROR: Missing Supabase URL');
-}
-
-if (!supabaseKey || supabaseKey === '') {
-  console.error('CRITICAL ERROR: Missing Supabase Anon Key');
-}
-
-// Create Supabase client with additional options
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    storageKey: 'mok_mzansi_auth_token',
-  },
-  global: {
-    fetch: fetch
-  },
-  realtime: {
-    timeout: 30000, // longer timeout for realtime connections
-    params: {
-      eventsPerSecond: 10
-    }
-  },
-  db: {
-    schema: 'public'
-  }
-});
+// Create a type-safe client
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
- * Helper function to check Supabase connection status
- * @returns Promise with connection status
+ * Test the connection to Supabase
+ * @returns True if connection is successful, false otherwise
  */
-export const checkSupabaseConnection = async (): Promise<{ success: boolean; message: string }> => {
+export async function testConnection(): Promise<boolean> {
   try {
-    // Use a different approach to check connection - query an existing table with proper error handling
-    // Instead of a direct query to company_data, use a safe RPC call or a simple health check query
-    const { error } = await supabase.rpc('get_server_timestamp', {});
-    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.error('Supabase credentials not found in environment variables');
+      return false;
+    }
+
+    // Test database connection by querying the instruments table
+    const { data, error } = await supabase
+      .from('instruments')
+      .select('*')
+      .limit(1);
+
     if (error) {
-      // Fallback if RPC doesn't exist - try a simple query that should work on any Supabase project
+      console.error('Error connecting to Supabase:', error.message);
+      return false;
+    }
+
+    console.log('Supabase connection successful!', data);
+    return true;
+  } catch (error) {
+    console.error('Failed to test Supabase connection:', error);
+    return false;
+  }
+}
+
+/**
+ * Check for required tables in the database
+ * @returns A list of missing tables, or an empty array if all required tables exist
+ */
+export async function checkForRequiredTables(): Promise<string[]> {
+  try {
+    const requiredTables = ['app_data', 'company_data'];
+    const missingTables: string[] = [];
+
+    for (const table of requiredTables) {
       try {
-        const { data, error: fallbackError } = await supabase.from('app_data').select('count(*)').limit(1);
+        // Try to query the table to see if it exists
+        // Use a dynamic query as a workaround for type safety issues
+        const { error } = await supabase.rpc('check_table_exists', { table_name: table });
         
-        if (fallbackError) {
-          console.error('Supabase connection check failed:', fallbackError.message);
-          return { success: false, message: `Connection failed: ${fallbackError.message}` };
+        if (error) {
+          console.error(`Error checking table ${table}:`, error.message);
+          missingTables.push(table);
         }
-        
-        return { success: true, message: 'Connection successful' };
-      } catch (fallbackErr) {
-        return { success: false, message: `Connection failed: ${error.message}` };
+      } catch (error) {
+        console.error(`Error checking table ${table}:`, error);
+        missingTables.push(table);
       }
     }
-    
-    console.log('Supabase connection successful');
-    return { success: true, message: 'Connection successful' };
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    console.error('Supabase connection exception:', errorMessage);
-    return { success: false, message: `Connection exception: ${errorMessage}` };
-  }
-};
 
-// Expose connection status globally for debugging
-if (process.env.NODE_ENV === 'development') {
-  (window as any).checkSupabaseConnection = checkSupabaseConnection;
+    return missingTables;
+  } catch (error) {
+    console.error('Error checking for required tables:', error);
+    return ['Failed to check tables'];
+  }
 }

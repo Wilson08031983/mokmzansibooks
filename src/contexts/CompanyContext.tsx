@@ -17,7 +17,6 @@ export interface CompanyContextProps {
 
 // Default company details
 export const defaultCompanyDetails: CompanyDetails = {
-  id: "",
   name: "My Company",
   address: "",
   city: "",
@@ -25,6 +24,8 @@ export const defaultCompanyDetails: CompanyDetails = {
   postalCode: "",
   phone: "",
   email: "",
+  registrationNumber: "",
+  vatNumber: "",
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 };

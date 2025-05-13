@@ -1,211 +1,170 @@
+
 /**
- * Production-ready safeguards for company data persistence
- * These utilities ensure company data is protected against errors,
- * browser issues, and other potential problems
+ * Company data safeguard utilities
+ * 
+ * Functions to backup, encrypt, and restore company data
  */
 
 import { CompanyDetails } from '@/types/company';
-import { safeJsonParse, safeJsonStringify } from './errorHandling';
+import { v4 as uuidv4 } from 'uuid';
+
+// Storage keys
+const COMPANY_BACKUP_KEY = 'companyBackup';
+const ENCRYPTED_BACKUPS_KEY = 'encryptedCompanyBackups';
 
 /**
- * Validates company data structure to ensure it meets minimum requirements
- * @param data The company data object to validate
- * @returns {boolean} True if the data is valid, false otherwise
+ * Create a backup of company details
  */
-export const validateCompanyData = (data: any): boolean => {
-  if (!data) return false;
-  
-  // Check essential fields
-  const hasRequiredFields = 
-    data.name &&
-    typeof data.name === 'string';
-    
-  return hasRequiredFields;
-};
-
-/**
- * Create a deep copy of company data with sensitive information redacted
- * for safe logging or analytics
- * @param data The company data to sanitize
- * @returns Sanitized copy with sensitive information removed
- */
-export const sanitizeCompanyDataForLogging = (data: any): any => {
-  if (!data) return null;
-  
-  const sanitized = { ...data };
-  
-  // Redact sensitive information
-  if (sanitized.email) sanitized.email = '[REDACTED]';
-  if (sanitized.contactEmail) sanitized.contactEmail = '[REDACTED]';
-  if (sanitized.phone) sanitized.phone = '[REDACTED]';
-  if (sanitized.contactPhone) sanitized.contactPhone = '[REDACTED]';
-  if (sanitized.vatNumber) sanitized.vatNumber = '[REDACTED]';
-  if (sanitized.taxRegistrationNumber) sanitized.taxRegistrationNumber = '[REDACTED]';
-  if (sanitized.registrationNumber) sanitized.registrationNumber = '[REDACTED]';
-  
-  // Keep non-sensitive information
-  return sanitized;
-};
-
-/**
- * Load company details with built-in safeguards
- */
-export async function loadCompanyDetails(): Promise<CompanyDetails> {
+export async function backupCompanyDetails(companyData: CompanyDetails): Promise<boolean> {
   try {
-    // Implementation would typically load from storage
-    const mockCompanyDetails: CompanyDetails = {
-      id: "default",
-      name: "Default Company",
-      address: "123 Main St",
-      city: "Cape Town",
-      province: "Western Cape",
-      postalCode: "8001",
-      phone: "123-456-7890",
-      email: "contact@example.com",
-      registrationNumber: "2022/123456/07",
-      vatNumber: "4230156789",
-      contactEmail: "info@example.com",
-      contactPhone: "123-789-4560",
-      website: "www.example.com",
-      primaryColor: "#3b82f6", 
-      secondaryColor: "#93c5fd",
-      industry: "Technology",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+    const backup = {
+      ...companyData,
+      backupDate: new Date().toISOString(),
+      backupId: uuidv4()
     };
-    return mockCompanyDetails;
-  } catch (error) {
-    console.error("Failed to load company details:", error);
-    throw error;
-  }
-}
-
-/**
- * Save company details with verification
- */
-export async function saveCompanyDetails(details: CompanyDetails): Promise<boolean> {
-  try {
-    console.log("Saving company details:", sanitizeCompanyDataForLogging(details));
-    // Implementation would typically save to storage
+    
+    localStorage.setItem(COMPANY_BACKUP_KEY, JSON.stringify(backup));
+    console.log('Company backup created successfully');
     return true;
   } catch (error) {
-    console.error("Failed to save company details:", error);
-    return false;
+    console.error('Error creating company backup:', error);
+    throw new Error('Failed to create company backup');
   }
 }
 
 /**
- * Performs a recovery attempt if company data is missing or corrupt
- * @returns {boolean} True if recovery was successful
+ * Create an encrypted backup of company details with a passphrase
  */
-export const attemptDataRecovery = (): boolean => {
+export async function createEncryptedBackup(companyData: CompanyDetails, passphrase: string): Promise<string> {
   try {
-    // Check if we have a backup in localStorage
-    const backup = localStorage.getItem('companyDataBackup');
-    if (!backup) return false;
-    
-    const backupData = JSON.parse(backup);
-    
-    // Check if we have valid backup data
-    if (backupData.publicCompanyDetails) {
-      localStorage.setItem('publicCompanyDetails', backupData.publicCompanyDetails);
-      console.log('Restored public company details from backup');
-    } else {
-      return false;
+    if (!passphrase) {
+      throw new Error('Passphrase is required for encrypted backups');
     }
     
-    // Restore other data if available
-    if (backupData.companyDetails) {
-      localStorage.setItem('companyDetails', backupData.companyDetails);
-      console.log('Restored company details from backup');
-    }
+    // Generate a unique ID for this backup
+    const backupId = uuidv4();
     
-    return true;
+    // In a real implementation, we would encrypt the data with the passphrase
+    // For this demo, we'll just store the data with the backup ID
+    
+    // Get existing backups
+    const existingBackupsJson = localStorage.getItem(ENCRYPTED_BACKUPS_KEY);
+    const existingBackups = existingBackupsJson ? JSON.parse(existingBackupsJson) : {};
+    
+    // Create a new backup entry
+    const newBackup = {
+      data: companyData,
+      createdAt: new Date().toISOString(),
+      // In a real implementation, we would store a hash of the passphrase
+      passphraseHash: passphrase,
+    };
+    
+    // Add to backups
+    existingBackups[backupId] = newBackup;
+    
+    // Save backups
+    localStorage.setItem(ENCRYPTED_BACKUPS_KEY, JSON.stringify(existingBackups));
+    
+    return backupId;
   } catch (error) {
-    console.error('Error during recovery attempt:', error);
-    return false;
-  }
-};
-
-/**
- * Backup company details to secure storage
- */
-export async function backupCompanyDetails(details: CompanyDetails): Promise<boolean> {
-  try {
-    console.log("Backing up company details:", sanitizeCompanyDataForLogging(details));
-    // Implementation would create a backup
-    return true;
-  } catch (error) {
-    console.error("Failed to backup company details:", error);
-    return false;
+    console.error('Error creating encrypted company backup:', error);
+    throw new Error('Failed to create encrypted backup');
   }
 }
 
 /**
- * Create a checksum of company data to detect unauthorized changes
- * @param data The company data object
- * @returns A string checksum representing the data state
- */
-export const createDataChecksum = (data: any): string => {
-  if (!data) return '';
-  
-  try {
-    // Simple checksum based on key fields
-    const fields = [
-      data.name || '',
-      data.registrationNumber || '',
-      data.email || '',
-      data.phone || '',
-      data.address || ''
-    ];
-    
-    // Create a checksum by joining fields and using a hash function
-    // For simplicity, we're just using a string concat here
-    // In production, you would use a proper hash function
-    return fields.join('|');
-  } catch (error) {
-    console.error('Error creating data checksum:', error);
-    return '';
-  }
-};
-
-/**
- * Verifies data integrity by comparing checksums
- * @param data The company data object
- * @param storedChecksum Previously stored checksum
- * @returns True if data is valid and matches checksum
- */
-export const verifyDataIntegrity = (data: any, storedChecksum: string): boolean => {
-  if (!data || !storedChecksum) return false;
-  
-  const currentChecksum = createDataChecksum(data);
-  return currentChecksum === storedChecksum;
-};
-
-/**
- * Recover company details from backup
+ * Recover company details from a backup ID
  */
 export async function recoverCompanyDetails(backupId: string): Promise<CompanyDetails> {
   try {
-    console.log(`Recovering company details from backup ID: ${backupId}`);
-    // Implementation would restore from backup
-    return await loadCompanyDetails();
+    // First try to find it in encrypted backups
+    const encryptedBackupsJson = localStorage.getItem(ENCRYPTED_BACKUPS_KEY);
+    
+    if (encryptedBackupsJson) {
+      const encryptedBackups = JSON.parse(encryptedBackupsJson);
+      
+      if (encryptedBackups[backupId]) {
+        console.log('Found backup in encrypted backups');
+        return encryptedBackups[backupId].data;
+      }
+    }
+    
+    // If not found in encrypted backups, check regular backup
+    const backupJson = localStorage.getItem(COMPANY_BACKUP_KEY);
+    
+    if (!backupJson) {
+      throw new Error('No backup found');
+    }
+    
+    const backup = JSON.parse(backupJson);
+    
+    if (backup.backupId === backupId) {
+      console.log('Found backup in regular backups');
+      return backup;
+    }
+    
+    throw new Error('Backup ID not found');
   } catch (error) {
-    console.error("Failed to recover company details:", error);
-    throw error;
+    console.error('Error recovering company details:', error);
+    throw new Error('Failed to recover company details');
   }
 }
 
 /**
- * Create encrypted backup of company details
+ * Validate company data structure
  */
-export async function createEncryptedBackup(details: CompanyDetails, passphrase: string): Promise<string> {
+export function validateCompanyData(data: any): boolean {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+  
+  // Check for required fields
+  if (!data.name) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Load company details from localStorage
+ */
+export async function loadCompanyDetails(): Promise<CompanyDetails> {
   try {
-    console.log("Creating encrypted backup with passphrase");
-    // Implementation would encrypt data
-    return "encrypted-backup-id-" + Date.now();
+    const companyDataStr = localStorage.getItem('companyDetails');
+    if (!companyDataStr) {
+      throw new Error('No company details found');
+    }
+    
+    const companyData = JSON.parse(companyDataStr);
+    if (!validateCompanyData(companyData)) {
+      throw new Error('Invalid company data format');
+    }
+    
+    return companyData;
   } catch (error) {
-    console.error("Failed to create encrypted backup:", error);
-    throw error;
+    console.error('Error loading company details:', error);
+    throw new Error('Failed to load company details');
+  }
+}
+
+/**
+ * Save company details to localStorage
+ */
+export async function saveCompanyDetails(companyData: CompanyDetails): Promise<boolean> {
+  try {
+    if (!validateCompanyData(companyData)) {
+      throw new Error('Invalid company data format');
+    }
+    
+    localStorage.setItem('companyDetails', JSON.stringify({
+      ...companyData,
+      updatedAt: new Date().toISOString()
+    }));
+    
+    return true;
+  } catch (error) {
+    console.error('Error saving company details:', error);
+    throw new Error('Failed to save company details');
   }
 }

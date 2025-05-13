@@ -1,3 +1,4 @@
+
 /**
  * Hook for accessing company data throughout the application
  * This provides a consistent way to access company information
@@ -5,7 +6,7 @@
  */
 
 import { useContext, useEffect, useState } from 'react';
-import { CompanyDetails } from '@/contexts/CompanyContext';
+import { CompanyDetails } from '@/types/company';
 import { safeJsonParse } from '@/utils/errorHandling';
 import { validateCompanyData } from '@/utils/companyDataSafeguards';
 
@@ -85,8 +86,8 @@ export const useGlobalCompanyData = () => {
     hasData,
     // Read-only properties for commonly used fields
     companyName: companyData.name || '',
-    companyEmail: companyData.contactEmail || '',
-    companyPhone: companyData.contactPhone || '',
+    companyEmail: companyData.contactEmail || companyData.email || '',
+    companyPhone: companyData.contactPhone || companyData.phone || '',
     companyAddress: companyData.address || '',
     companyLogo: companyData.logo || null,
   };
