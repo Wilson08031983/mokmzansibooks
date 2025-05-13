@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -85,6 +86,12 @@ const SubscriptionPlans = () => {
     // Here you would typically update the user's subscription status in your backend
   };
 
+  // Get user name safely
+  const getUserDisplayName = () => {
+    if (!currentUser) return "";
+    return currentUser.user_metadata?.display_name || currentUser.email?.split('@')[0] || "";
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-center mb-8">
@@ -150,7 +157,7 @@ const SubscriptionPlans = () => {
                   <PaystackCheckout
                     amount={price}
                     email={currentUser.email || ''}
-                    name={currentUser?.displayName || currentUser?.user_metadata?.display_name || ''}
+                    name={getUserDisplayName()}
                     buttonText={t('subscribe')}
                     className="w-full"
                     onSuccess={handlePaymentSuccess}

@@ -1,30 +1,26 @@
 
 /**
- * Robust Storage Migrator
- * Handles migration of data between different storage mechanisms
- * and provides fallback options if primary storage fails
+ * Utility for migrating data between different storage mechanisms
+ * with robust error handling and validation
  */
 
-// Default migration options
-interface MigrationOptions {
+export interface MigrationOptions {
   sourceKey: string;
   targetKey: string;
+  transform?: (data: any) => any;
+  validateData?: (data: any) => boolean;
   deleteSource?: boolean;
-  transformer?: (data: any) => any;
 }
 
 /**
- * Migrate data from one storage key to another
- * @param options Migration options
- * @returns Success status and any migrated data
+ * Migrates data from one storage key to another with optional transformation
  */
-export const migrateData = (options: MigrationOptions): { success: boolean; data: any } => {
-  const { sourceKey, targetKey, deleteSource = false, transformer } = options;
-  
+export function migrateData(options: MigrationOptions): { success: boolean, data: any } {
   try {
-    // Get data from source
-    const sourceData = localStorage.getItem(sourceKey);
+    const { sourceKey, targetKey, transform, validateData, deleteSource = false } = options;
     
+    // Get source data
+    const sourceData = localStorage.getItem(sourceKey);
     if (!sourceData) {
       return { success: false, data: null };
     }
@@ -34,125 +30,137 @@ export const migrateData = (options: MigrationOptions): { success: boolean; data
     try {
       parsedData = JSON.parse(sourceData);
     } catch (e) {
-      console.error(`Error parsing data from ${sourceKey}:`, e);
+      console.error(`Invalid JSON in sourceKey ${sourceKey}:`, e);
       return { success: false, data: null };
     }
     
-    // Transform data if transformer is provided
-    const dataToStore = transformer ? transformer(parsedData) : parsedData;
+    // Apply transform if provided
+    let transformedData = parsedData;
+    if (transform) {
+      try {
+        transformedData = transform(parsedData);
+      } catch (e) {
+        console.error('Error during data transformation:', e);
+        return { success: false, data: parsedData };
+      }
+    }
     
-    // Store in target
-    localStorage.setItem(targetKey, JSON.stringify(dataToStore));
+    // Validate data if validator provided
+    if (validateData && !validateData(transformedData)) {
+      console.error('Data validation failed');
+      return { success: false, data: transformedData };
+    }
+    
+    // Store data to target
+    try {
+      localStorage.setItem(targetKey, JSON.stringify(transformedData));
+    } catch (e) {
+      console.error(`Error saving to targetKey ${targetKey}:`, e);
+      return { success: false, data: transformedData };
+    }
     
     // Delete source if requested
     if (deleteSource) {
-      localStorage.removeItem(sourceKey);
+      try {
+        localStorage.removeItem(sourceKey);
+      } catch (e) {
+        console.warn(`Could not remove sourceKey ${sourceKey}:`, e);
+        // Still consider the migration successful even if deletion fails
+      }
     }
     
-    return { success: true, data: dataToStore };
+    return { success: true, data: transformedData };
   } catch (error) {
-    console.error(`Error migrating data from ${sourceKey} to ${targetKey}:`, error);
+    console.error('Unexpected error during data migration:', error);
     return { success: false, data: null };
   }
-};
+}
 
 /**
- * Check if a migration is needed
- * @param sourceKey Source storage key
- * @param targetKey Target storage key
- * @returns True if migration is needed
+ * Check if a migration is needed between source and target
  */
-export const needsMigration = (sourceKey: string, targetKey: string): boolean => {
+export function needsMigration(sourceKey: string, targetKey: string): boolean {
   try {
-    const sourceExists = !!localStorage.getItem(sourceKey);
-    const targetExists = !!localStorage.getItem(targetKey);
+    const sourceData = localStorage.getItem(sourceKey);
+    const targetData = localStorage.getItem(targetKey);
     
-    return sourceExists && !targetExists;
+    // Migration needed if source exists but target doesn't
+    return !!sourceData && !targetData;
   } catch (error) {
-    console.error('Error checking migration need:', error);
+    // If any error occurs, assume migration is not needed
     return false;
   }
-};
+}
 
 /**
  * Consolidate data from multiple sources into one target
- * @param sourceKeys Array of source keys to check
- * @param targetKey Target storage key
- * @param deleteSource Whether to delete sources after migration
- * @returns Success status and consolidated data
  */
-export const consolidateStorage = (
-  sourceKeys: string[],
-  targetKey: string,
-  deleteSource = false
-): { success: boolean; data: any } => {
+export function consolidateStorage(
+  sourceKeys: string[], 
+  targetKey: string, 
+  deleteSource: boolean = false
+): { success: boolean, data: any } {
   try {
-    // Check if target already exists
-    const targetExists = !!localStorage.getItem(targetKey);
-    if (targetExists) {
-      // Target already exists, no consolidation needed
-      return { 
-        success: true, 
-        data: JSON.parse(localStorage.getItem(targetKey) || '{}') 
-      };
+    // Get data from all sources
+    const dataFromSources = [];
+    
+    for (const key of sourceKeys) {
+      try {
+        const data = localStorage.getItem(key);
+        if (data) {
+          dataFromSources.push(JSON.parse(data));
+        }
+      } catch (e) {
+        console.warn(`Could not process data from ${key}:`, e);
+      }
     }
     
-    // Try each source key in order
-    for (const sourceKey of sourceKeys) {
-      const sourceData = localStorage.getItem(sourceKey);
-      if (sourceData) {
+    if (dataFromSources.length === 0) {
+      return { success: false, data: null };
+    }
+    
+    // Merge all data - this is a simplistic approach, would need custom logic for real merging
+    const mergedData = dataFromSources.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+    
+    // Store merged data
+    try {
+      localStorage.setItem(targetKey, JSON.stringify(mergedData));
+    } catch (e) {
+      console.error(`Error saving consolidated data to ${targetKey}:`, e);
+      return { success: false, data: mergedData };
+    }
+    
+    // Delete sources if requested
+    if (deleteSource) {
+      for (const key of sourceKeys) {
         try {
-          const parsedData = JSON.parse(sourceData);
-          localStorage.setItem(targetKey, JSON.stringify(parsedData));
-          
-          if (deleteSource) {
-            localStorage.removeItem(sourceKey);
-          }
-          
-          return { success: true, data: parsedData };
+          localStorage.removeItem(key);
         } catch (e) {
-          console.warn(`Skipping invalid data at ${sourceKey}:`, e);
-          continue;
+          console.warn(`Could not remove key ${key}:`, e);
         }
       }
     }
     
-    // No valid source found
-    return { success: false, data: null };
+    return { success: true, data: mergedData };
   } catch (error) {
-    console.error('Error consolidating storage:', error);
+    console.error('Unexpected error during storage consolidation:', error);
     return { success: false, data: null };
   }
-};
+}
 
 /**
- * Ensure storage migrator is initialized
- * @returns Promise that resolves when initialization is complete
+ * Ensure the migrator is initialized
  */
-export const ensureInitialized = async (): Promise<boolean> => {
+export function ensureInitialized(): boolean {
   try {
-    // Run any necessary initialization tasks
-    const legacyKeys = ['old-client-data', 'legacy-company-data', 'mok-clients-old'];
-    const modernKeys = ['mok-clients', 'company-data'];
-    
-    // Check if we need to migrate legacy data
-    for (let i = 0; i < legacyKeys.length; i++) {
-      if (needsMigration(legacyKeys[i], modernKeys[i % modernKeys.length])) {
-        console.log(`Migrating from ${legacyKeys[i]} to ${modernKeys[i % modernKeys.length]}`);
-        migrateData({
-          sourceKey: legacyKeys[i],
-          targetKey: modernKeys[i % modernKeys.length],
-          deleteSource: false // Keep legacy data as backup
-        });
-      }
-    }
-    
+    // Set a flag to indicate the migrator has been initialized
+    localStorage.setItem('storageMigratorInitialized', 'true');
     return true;
   } catch (error) {
     console.error('Failed to initialize storage migrator:', error);
     return false;
   }
-};
+}
 
 export default {
   migrateData,

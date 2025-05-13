@@ -4,14 +4,7 @@
  * Ensures robust client data management with backup and recovery mechanisms
  */
 
-import { Client, CompanyClient, IndividualClient, VendorClient } from "@/types/client";
-
-// Type for client state management
-export interface ClientsState {
-  companies: CompanyClient[];
-  individuals: IndividualClient[];
-  vendors: VendorClient[];
-}
+import { ClientsState } from "@/types/client";
 
 /**
  * Initialize client data persistence mechanisms

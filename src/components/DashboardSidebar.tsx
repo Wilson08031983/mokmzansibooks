@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -36,6 +37,22 @@ const DashboardSidebar = () => {
   const handleLogout = async () => {
     await signOut();
     navigate("/");
+  };
+
+  // Get display name safely from user object
+  const getUserDisplayName = () => {
+    if (!currentUser) return "User";
+    return currentUser.user_metadata?.display_name || currentUser.email?.split('@')[0] || "User";
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   const menuItems = [
@@ -84,10 +101,10 @@ const DashboardSidebar = () => {
           {currentUser && (
             <div className="flex items-center space-x-3 p-2">
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium">
-                {(currentUser?.displayName || currentUser?.user_metadata?.display_name || "U")[0]}
+                {getInitials(getUserDisplayName())}
               </div>
               <div className="flex-1 overflow-hidden">
-                <p className="truncate font-medium text-sm">{currentUser.displayName || currentUser?.user_metadata?.display_name || "User"}</p>
+                <p className="truncate font-medium text-sm">{getUserDisplayName()}</p>
                 <p className="truncate text-xs text-gray-500">{currentUser.email}</p>
               </div>
             </div>

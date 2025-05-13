@@ -1,93 +1,169 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
 
-interface StorageStatus {
-  localStorage: boolean;
-  sessionStorage: boolean;
-  indexedDB: boolean;
-  degradedMode: boolean;
+// Define the type for the persistence context
+export interface PersistenceContextType {
+  initialized: boolean;
+  status: {
+    localStorage: boolean;
+    sessionStorage: boolean;
+    indexedDB: boolean;
+    degradedMode: boolean;
+  };
+  initialize: () => Promise<boolean>;
+  isReady: boolean;
+  getItem: <T>(key: string, defaultValue: T | null) => Promise<T | null>;
+  saveItem: <T>(key: string, value: T) => Promise<boolean>;
+  removeItem: (key: string) => Promise<boolean>;
+  getStatus: () => {
+    localStorage: boolean;
+    sessionStorage: boolean;
+    indexedDB: boolean;
+    degradedMode: boolean;
+  };
 }
 
-interface PersistenceContextType {
-  isStorageAvailable: (type: string) => boolean;
-  storageStatus: StorageStatus;
-  checkAllStorage: () => void;
-  isDegraded: boolean;
+const PersistenceContext = createContext<PersistenceContextType>({
+  initialized: false,
+  status: {
+    localStorage: false,
+    sessionStorage: false,
+    indexedDB: false,
+    degradedMode: false,
+  },
+  initialize: async () => false,
+  isReady: false,
+  getItem: async () => null,
+  saveItem: async () => false,
+  removeItem: async () => false,
+  getStatus: () => ({
+    localStorage: false,
+    sessionStorage: false,
+    indexedDB: false,
+    degradedMode: false,
+  }),
+});
+
+export const usePersistence = () => useContext(PersistenceContext);
+
+interface PersistenceProviderProps {
+  children: React.ReactNode;
 }
 
-const PersistenceContext = createContext<PersistenceContextType | undefined>(undefined);
-
-export function PersistenceProvider({ children }: { children: React.ReactNode }) {
-  const [storageStatus, setStorageStatus] = useState<StorageStatus>({
-    localStorage: true,
-    sessionStorage: true,
-    indexedDB: true,
-    degradedMode: false
+export const PersistenceProvider: React.FC<PersistenceProviderProps> = ({ children }) => {
+  const [initialized, setInitialized] = useState(false);
+  const [status, setStatus] = useState({
+    localStorage: false,
+    sessionStorage: false,
+    indexedDB: false,
+    degradedMode: false,
   });
 
-  // Function to check if a storage type is available
-  const isStorageAvailable = (type: string): boolean => {
+  const checkStorage = (type: 'localStorage' | 'sessionStorage'): boolean => {
     try {
-      const storage = window[type as keyof Window];
-      const x = '__storage_test__';
-      storage.setItem(x, x);
-      storage.removeItem(x);
+      const storage = window[type];
+      const testKey = `test-${Math.random()}`;
+      storage.setItem(testKey, 'test');
+      storage.removeItem(testKey);
       return true;
     } catch (e) {
       return false;
     }
   };
 
-  // Check all storage types
-  const checkAllStorage = () => {
-    const localStorageAvailable = isStorageAvailable('localStorage');
-    const sessionStorageAvailable = isStorageAvailable('sessionStorage');
+  const checkIndexedDB = async (): Promise<boolean> => {
+    if (!window.indexedDB) return false;
     
-    // Basic check for IndexedDB
-    const indexedDBAvailable = 'indexedDB' in window;
-    
-    // Update storage status
-    const newStatus: StorageStatus = {
-      localStorage: localStorageAvailable,
-      sessionStorage: sessionStorageAvailable,
-      indexedDB: indexedDBAvailable,
-      degradedMode: !localStorageAvailable || !indexedDBAvailable
-    };
-    
-    setStorageStatus(newStatus);
-    
-    // If we're in degraded mode, show a toast
-    if (newStatus.degradedMode && (
-      storageStatus.localStorage !== newStatus.localStorage || 
-      storageStatus.indexedDB !== newStatus.indexedDB
-    )) {
-      toast({
-        title: 'Storage Warning',
-        description: 'Some storage features are not available. Your data may not persist between sessions.',
-        variant: 'destructive',
-        duration: 10000
+    try {
+      const request = window.indexedDB.open('test-db', 1);
+      return new Promise((resolve) => {
+        request.onerror = () => resolve(false);
+        request.onsuccess = () => {
+          const db = request.result;
+          db.close();
+          window.indexedDB.deleteDatabase('test-db');
+          resolve(true);
+        };
       });
+    } catch (e) {
+      return false;
     }
   };
 
-  // Check storage on component mount
+  const initialize = async (): Promise<boolean> => {
+    const localStorageAvailable = checkStorage('localStorage');
+    const sessionStorageAvailable = checkStorage('sessionStorage');
+    const indexedDBAvailable = await checkIndexedDB();
+    
+    const newStatus = {
+      localStorage: localStorageAvailable,
+      sessionStorage: sessionStorageAvailable,
+      indexedDB: indexedDBAvailable,
+      degradedMode: !localStorageAvailable || !indexedDBAvailable,
+    };
+    
+    setStatus(newStatus);
+    setInitialized(true);
+    return !newStatus.degradedMode;
+  };
+
   useEffect(() => {
-    checkAllStorage();
-    
-    // Setup periodic checks
-    const checkInterval = setInterval(() => {
-      checkAllStorage();
-    }, 30000); // Check every 30 seconds
-    
-    return () => clearInterval(checkInterval);
+    initialize();
   }, []);
 
-  const value = {
-    isStorageAvailable,
-    storageStatus,
-    checkAllStorage,
-    isDegraded: storageStatus.degradedMode
+  // Implementation of persistence functions
+  const getItem = async <T,>(key: string, defaultValue: T | null = null): Promise<T | null> => {
+    try {
+      if (status.localStorage) {
+        const item = localStorage.getItem(key);
+        if (item) {
+          return JSON.parse(item) as T;
+        }
+      }
+      return defaultValue;
+    } catch (e) {
+      console.error('Error getting item:', e);
+      return defaultValue;
+    }
+  };
+
+  const saveItem = async <T,>(key: string, value: T): Promise<boolean> => {
+    try {
+      if (status.localStorage) {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Error saving item:', e);
+      return false;
+    }
+  };
+
+  const removeItem = async (key: string): Promise<boolean> => {
+    try {
+      if (status.localStorage) {
+        localStorage.removeItem(key);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Error removing item:', e);
+      return false;
+    }
+  };
+
+  const getStatus = () => status;
+
+  const value: PersistenceContextType = {
+    initialized,
+    status,
+    initialize,
+    isReady: initialized && !status.degradedMode,
+    getItem,
+    saveItem,
+    removeItem,
+    getStatus,
   };
 
   return (
@@ -95,12 +171,6 @@ export function PersistenceProvider({ children }: { children: React.ReactNode })
       {children}
     </PersistenceContext.Provider>
   );
-}
+};
 
-export function usePersistence() {
-  const context = useContext(PersistenceContext);
-  if (context === undefined) {
-    throw new Error('usePersistence must be used within a PersistenceProvider');
-  }
-  return context;
-}
+export default PersistenceProvider;

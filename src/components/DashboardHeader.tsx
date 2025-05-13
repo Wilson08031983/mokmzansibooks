@@ -63,6 +63,12 @@ const DashboardHeader = () => {
       .substring(0, 2);
   };
 
+  // Get display name safely from user object
+  const getUserDisplayName = () => {
+    if (!currentUser) return "User";
+    return currentUser.user_metadata?.display_name || currentUser.email?.split('@')[0] || "User";
+  };
+
   return (
     <header className="h-16 px-4 border-b flex items-center justify-between bg-background">
       <div className="flex items-center">
@@ -100,14 +106,14 @@ const DashboardHeader = () => {
               <Avatar>
                 <AvatarImage src="" />
                 <AvatarFallback>
-                  {getInitials(currentUser?.displayName || currentUser?.user_metadata?.display_name || "User")}
+                  {getInitials(getUserDisplayName())}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
-              {currentUser?.displayName || currentUser?.user_metadata?.display_name || "User"}
+              {getUserDisplayName()}
               <p className="text-xs font-normal text-muted-foreground truncate max-w-[12rem]">
                 {currentUser?.email || "user@example.com"}
               </p>

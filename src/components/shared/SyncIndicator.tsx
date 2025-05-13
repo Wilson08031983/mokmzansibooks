@@ -1,120 +1,67 @@
 
-import React, { useState, useEffect } from 'react';
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CloudCog, CheckCircle2, AlertCircle, CloudOff } from "lucide-react";
+import React from 'react';
+import { Cloud, CloudOff, CloudSync, CheckCircle, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export enum SyncStatus {
+  IDLE = 'idle',
   SYNCING = 'syncing',
-  SYNCED = 'synced',
-  OFFLINE = 'offline',
+  SUCCESS = 'success',
   ERROR = 'error',
-  IDLE = 'idle'
+  OFFLINE = 'offline'
 }
 
 export interface SyncIndicatorProps {
-  status: SyncStatus | 'syncing' | 'synced' | 'offline' | 'error' | 'idle';
-  lastSynced?: string;
-  pendingChanges?: number;
+  status: SyncStatus;
+  message?: string;
+  className?: string;
 }
 
-export const SyncIndicator: React.FC<SyncIndicatorProps> = ({ 
+const SyncIndicator: React.FC<SyncIndicatorProps> = ({ 
   status, 
-  lastSynced, 
-  pendingChanges = 0 
+  message = '', 
+  className = '' 
 }) => {
-  const [formattedTime, setFormattedTime] = useState<string>('');
-  
-  useEffect(() => {
-    if (lastSynced) {
-      const formatTime = () => {
-        const synced = new Date(lastSynced);
-        const now = new Date();
-        const diffMs = now.getTime() - synced.getTime();
-        const diffMins = Math.floor(diffMs / 60000);
-        
-        if (diffMins < 1) {
-          return 'just now';
-        } else if (diffMins < 60) {
-          return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
-        } else {
-          const diffHours = Math.floor(diffMins / 60);
-          if (diffHours < 24) {
-            return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-          } else {
-            return synced.toLocaleDateString() + ' ' + synced.toLocaleTimeString();
-          }
-        }
-      };
-      
-      setFormattedTime(formatTime());
-      
-      const timer = setInterval(() => {
-        setFormattedTime(formatTime());
-      }, 60000); // Update every minute
-      
-      return () => clearInterval(timer);
+  const getIcon = () => {
+    switch (status) {
+      case SyncStatus.SYNCING:
+        return <CloudSync className="animate-spin" />;
+      case SyncStatus.SUCCESS:
+        return <CheckCircle className="text-green-500" />;
+      case SyncStatus.ERROR:
+        return <AlertCircle className="text-red-500" />;
+      case SyncStatus.OFFLINE:
+        return <CloudOff className="text-gray-500" />;
+      case SyncStatus.IDLE:
+      default:
+        return <Cloud className="text-blue-500" />;
     }
-  }, [lastSynced]);
-  
-  let icon;
-  let label;
-  let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "outline";
-  let tooltipText;
-  
-  switch (status) {
-    case SyncStatus.SYNCING:
-    case 'syncing':
-      icon = <CloudCog className="h-4 w-4 animate-spin" />;
-      label = 'Syncing';
-      badgeVariant = "secondary";
-      tooltipText = `Syncing your data${pendingChanges ? ` (${pendingChanges} changes pending)` : ''}`;
-      break;
-    case SyncStatus.SYNCED:
-    case 'synced':
-      icon = <CheckCircle2 className="h-4 w-4" />;
-      label = 'Synced';
-      badgeVariant = "outline";
-      tooltipText = `All changes saved${lastSynced ? ` (Last: ${formattedTime})` : ''}`;
-      break;
-    case SyncStatus.OFFLINE:
-    case 'offline':
-      icon = <CloudOff className="h-4 w-4" />;
-      label = 'Offline';
-      badgeVariant = "secondary";
-      tooltipText = `You're working offline${pendingChanges ? ` (${pendingChanges} changes will sync when you reconnect)` : ''}`;
-      break;
-    case SyncStatus.ERROR:
-    case 'error':
-      icon = <AlertCircle className="h-4 w-4" />;
-      label = 'Sync Error';
-      badgeVariant = "destructive";
-      tooltipText = `There was an error syncing your data${pendingChanges ? ` (${pendingChanges} changes pending)` : ''}`;
-      break;
-    case SyncStatus.IDLE:
-    case 'idle':
-    default:
-      icon = <CheckCircle2 className="h-4 w-4" />;
-      label = 'Ready';
-      badgeVariant = "outline";
-      tooltipText = 'Your data is ready';
-      break;
-  }
-  
+  };
+
+  const getStatusClass = () => {
+    switch (status) {
+      case SyncStatus.SYNCING:
+        return 'text-blue-600';
+      case SyncStatus.SUCCESS:
+        return 'text-green-600';
+      case SyncStatus.ERROR:
+        return 'text-red-600';
+      case SyncStatus.OFFLINE:
+        return 'text-gray-500';
+      default:
+        return 'text-gray-700';
+    }
+  };
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge variant={badgeVariant} className="gap-1.5">
-            {icon}
-            <span className="text-xs">{label}</span>
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{tooltipText}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className={cn(
+      'flex items-center gap-2 px-2 py-1 rounded-md text-xs', 
+      getStatusClass(),
+      className
+    )}>
+      {getIcon()}
+      {message && <span>{message}</span>}
+    </div>
   );
 };
 

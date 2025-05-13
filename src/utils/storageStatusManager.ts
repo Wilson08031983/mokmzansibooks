@@ -1,103 +1,144 @@
 
 /**
- * Utility for checking and managing storage status
+ * Storage Status Manager
+ * Monitors the availability and health of various storage mechanisms.
  */
 
-// Interface for storage status
-interface StorageStatus {
+// Storage types that we monitor
+export type StorageType = 'localStorage' | 'sessionStorage' | 'indexedDB';
+
+// Holds the current status of each storage mechanism
+export interface StorageStatus {
   localStorage: boolean;
   sessionStorage: boolean;
   indexedDB: boolean;
-  degradedMode: boolean;
+  degradedMode: boolean; // If true, we're falling back to alternative storage
 }
 
-// Singleton for managing storage status
-const storageStatusManager = {
-  initialized: false,
-  status: {
-    localStorage: false,
-    sessionStorage: false,
-    indexedDB: false,
-    degradedMode: false,
-  } as StorageStatus,
-  
-  /**
-   * Initialize storage status manager
-   * @returns Promise that resolves when initialization is complete
-   */
-  initialize: async (): Promise<boolean> => {
-    try {
-      // Check localStorage
-      try {
-        localStorage.setItem('test', 'test');
-        localStorage.removeItem('test');
-        storageStatusManager.status.localStorage = true;
-      } catch (e) {
-        console.error('localStorage not available:', e);
-        storageStatusManager.status.localStorage = false;
-      }
-      
-      // Check sessionStorage
-      try {
-        sessionStorage.setItem('test', 'test');
-        sessionStorage.removeItem('test');
-        storageStatusManager.status.sessionStorage = true;
-      } catch (e) {
-        console.error('sessionStorage not available:', e);
-        storageStatusManager.status.sessionStorage = false;
-      }
-      
-      // Check IndexedDB
-      try {
-        const request = indexedDB.open('test', 1);
-        let isAvailable = false;
-        
-        const checkPromise = new Promise<boolean>((resolve) => {
-          request.onerror = () => {
-            console.error('IndexedDB not available');
-            resolve(false);
-          };
-          
-          request.onsuccess = () => {
-            const db = request.result;
-            db.close();
-            
-            // Try to delete the test database
-            try {
-              indexedDB.deleteDatabase('test');
-            } catch (e) {
-              console.warn('Could not delete test IndexedDB database:', e);
-            }
-            
-            resolve(true);
-          };
-        });
-        
-        isAvailable = await checkPromise;
-        storageStatusManager.status.indexedDB = isAvailable;
-      } catch (e) {
-        console.error('Error checking IndexedDB availability:', e);
-        storageStatusManager.status.indexedDB = false;
-      }
-      
-      // Set degraded mode if needed storage mechanisms are unavailable
-      storageStatusManager.status.degradedMode = !storageStatusManager.status.localStorage || 
-                                                 !storageStatusManager.status.sessionStorage;
-      
-      // Store status in global object for debugging
-      if (typeof window !== 'undefined') {
-        (window as any).__STORAGE_STATUS__ = storageStatusManager.status;
-      }
-      
-      storageStatusManager.initialized = true;
-      console.log('Storage status initialized:', storageStatusManager.status);
-      
-      return true;
-    } catch (error) {
-      console.error('Error initializing storage status manager:', error);
-      return false;
-    }
-  },
+// Initialize with default values (all unknown)
+let currentStatus: StorageStatus = {
+  localStorage: false,
+  sessionStorage: false,
+  indexedDB: false,
+  degradedMode: false
 };
 
-export default storageStatusManager;
+// Check if a web storage type is available and working
+function isStorageAvailable(type: 'localStorage' | 'sessionStorage'): boolean {
+  try {
+    const storage = window[type];
+    const testKey = `test-${Math.random()}`;
+    storage.setItem(testKey, 'test');
+    storage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Check if IndexedDB is available and working
+async function isIndexedDBAvailable(): Promise<boolean> {
+  if (!window.indexedDB) return false;
+  
+  return new Promise((resolve) => {
+    try {
+      const request = window.indexedDB.open('test-db', 1);
+      
+      request.onerror = () => {
+        resolve(false);
+      };
+      
+      request.onsuccess = () => {
+        const db = request.result;
+        db.close();
+        
+        // Clean up test database
+        window.indexedDB.deleteDatabase('test-db');
+        resolve(true);
+      };
+    } catch (e) {
+      resolve(false);
+    }
+  });
+}
+
+// Initialize and check all storage mechanisms
+export async function initializeStorageStatus(): Promise<StorageStatus> {
+  try {
+    const localStorageAvailable = isStorageAvailable('localStorage');
+    const sessionStorageAvailable = isStorageAvailable('sessionStorage');
+    const indexedDBAvailable = await isIndexedDBAvailable();
+    
+    currentStatus = {
+      localStorage: localStorageAvailable,
+      sessionStorage: sessionStorageAvailable,
+      indexedDB: indexedDBAvailable,
+      // In degraded mode if primary storage options are unavailable
+      degradedMode: !localStorageAvailable || !indexedDBAvailable
+    };
+    
+    return currentStatus;
+  } catch (error) {
+    console.error('Error initializing storage status:', error);
+    
+    // If we can't check status, assume degraded mode
+    currentStatus = {
+      localStorage: false,
+      sessionStorage: false,
+      indexedDB: false,
+      degradedMode: true
+    };
+    
+    return currentStatus;
+  }
+}
+
+// Get the current storage status
+export function getStorageStatus(): StorageStatus {
+  return currentStatus;
+}
+
+// Check if we're in degraded mode
+export function isDegradedMode(): boolean {
+  return currentStatus.degradedMode;
+}
+
+// Check a specific storage type
+export function isStorageTypeAvailable(type: StorageType): boolean {
+  return currentStatus[type];
+}
+
+// Monitor for changes in storage availability
+export function startStorageMonitoring(intervalMs: number = 60000): () => void {
+  const intervalId = setInterval(async () => {
+    const previousStatus = { ...currentStatus };
+    await initializeStorageStatus();
+    
+    // If status changed, trigger an event
+    if (
+      previousStatus.localStorage !== currentStatus.localStorage ||
+      previousStatus.sessionStorage !== currentStatus.sessionStorage ||
+      previousStatus.indexedDB !== currentStatus.indexedDB ||
+      previousStatus.degradedMode !== currentStatus.degradedMode
+    ) {
+      const event = new CustomEvent('storageStatusChanged', { 
+        detail: { 
+          previousStatus, 
+          currentStatus 
+        } 
+      });
+      window.dispatchEvent(event);
+    }
+  }, intervalMs);
+  
+  // Return function to stop monitoring
+  return () => clearInterval(intervalId);
+}
+
+export default {
+  initializeStorageStatus,
+  getStorageStatus,
+  isDegradedMode,
+  isStorageTypeAvailable,
+  startStorageMonitoring
+};
