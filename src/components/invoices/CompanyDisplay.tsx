@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,7 +45,7 @@ const CompanyDisplay: React.FC<CompanyDisplayProps> = ({ variant = 'default' }) 
       } else {
         toast({
           title: 'Refresh Failed',
-          description: result.result?.error?.message || 'Could not refresh company data.',
+          description: (result.result?.error as Error)?.message || 'Could not refresh company data.',
           variant: 'destructive',
         });
       }

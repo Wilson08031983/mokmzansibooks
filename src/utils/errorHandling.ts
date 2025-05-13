@@ -1,89 +1,128 @@
+
 /**
- * Error handling utilities for MokMzansi Books
+ * Error handling utilities
  */
 
 /**
- * Safely parse JSON with error handling
- * @param jsonString The JSON string to parse
- * @param fallback Default value to return if parsing fails
- * @returns Parsed object or fallback value
+ * Safely parse JSON strings
+ * @param jsonString - The JSON string to parse
+ * @param fallback - Optional fallback value if parsing fails
+ * @returns The parsed object or the fallback value
  */
-export function safeJsonParse<T>(jsonString: string | null, fallback: T): T {
-  if (!jsonString) return fallback;
-  
+export function safeJsonParse<T>(jsonString: string, fallback: T): T {
   try {
+    if (!jsonString) return fallback;
     return JSON.parse(jsonString) as T;
   } catch (error) {
-    console.error('Error parsing JSON:', error);
+    console.error('Failed to parse JSON string:', error);
     return fallback;
   }
 }
 
 /**
- * Safely stringify an object to JSON with error handling
- * @param value The value to stringify
- * @returns JSON string or empty string if stringification fails
+ * Safely stringify an object to JSON
+ * @param value - The value to stringify
+ * @param fallback - Optional fallback string if stringification fails
+ * @returns The JSON string or the fallback value
  */
-export function safeJsonStringify(value: any): string {
+export function safeJsonStringify<T>(value: T, fallback = '{}'): string {
   try {
     return JSON.stringify(value);
   } catch (error) {
-    console.error('Error stringifying object:', error);
-    return '';
+    console.error('Failed to stringify object:', error);
+    return fallback;
   }
 }
 
 /**
- * Type guard to check if a value is not null or undefined
- * @param value The value to check
- * @returns Boolean indicating if value is defined
+ * Wrap a promise with a timeout
+ * @param promise - The promise to wrap
+ * @param timeoutMs - Timeout in milliseconds
+ * @param errorMessage - Optional error message
+ * @returns A new promise that rejects if the original promise doesn't resolve within the timeout
  */
-export function isDefined<T>(value: T | null | undefined): value is T {
-  return value !== null && value !== undefined;
+export function promiseWithTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMessage = 'Operation timed out'
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(errorMessage));
+    }, timeoutMs);
+
+    promise
+      .then((result) => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
 }
 
 /**
- * Safely access nested properties without causing errors
- * @param obj The object to access
- * @param path The path to the property (e.g., 'user.address.city')
- * @param defaultValue Default value if property doesn't exist
- * @returns The property value or default value
+ * Wrap a function call in a try-catch block and return a result object
+ * @param fn - The function to call
+ * @param args - Arguments to pass to the function
+ * @returns An object with success flag and either data or error
  */
-export function safeGet<T>(obj: any, path: string, defaultValue: T): T {
+export async function tryCatch<T, Args extends any[]>(
+  fn: (...args: Args) => Promise<T> | T,
+  ...args: Args
+): Promise<{ success: boolean; data?: T; error?: Error }> {
   try {
-    const keys = path.split('.');
-    let current = obj;
-    
-    for (const key of keys) {
-      if (current === null || current === undefined) {
-        return defaultValue;
-      }
-      current = current[key];
-    }
-    
-    return (current === undefined || current === null) ? defaultValue : current as T;
+    const data = await fn(...args);
+    return { success: true, data };
   } catch (error) {
-    console.error(`Error accessing path ${path}:`, error);
-    return defaultValue;
+    return { 
+      success: false, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
   }
 }
 
 /**
- * Wrap an async function with error handling
- * @param fn The async function to wrap
- * @param errorHandler Function to handle errors
- * @returns A wrapped function with error handling
+ * Retry a function multiple times before giving up
+ * @param fn - The function to retry
+ * @param retries - Number of retries
+ * @param delay - Delay between retries in milliseconds
+ * @param args - Arguments to pass to the function
+ * @returns The function result or throws after all retries fail
  */
-export function withErrorHandling<T extends any[], R>(
-  fn: (...args: T) => Promise<R>,
-  errorHandler: (error: any) => void
-): (...args: T) => Promise<R | undefined> {
-  return async (...args: T) => {
-    try {
-      return await fn(...args);
-    } catch (error) {
-      errorHandler(error);
-      return undefined;
-    }
-  };
+export async function retry<T, Args extends any[]>(
+  fn: (...args: Args) => Promise<T>,
+  retries = 3,
+  delay = 300,
+  ...args: Args
+): Promise<T> {
+  try {
+    return await fn(...args);
+  } catch (error) {
+    if (retries <= 1) throw error;
+    
+    // Wait for the delay
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    // Retry with one less retry and increased delay
+    return retry(fn, retries - 1, delay * 1.5, ...args);
+  }
+}
+
+/**
+ * Global error handler for unexpected errors
+ * @param error - The error to handle
+ * @param context - Optional context information
+ */
+export function handleGlobalError(error: unknown, context?: string): void {
+  const errorMessage = error instanceof Error 
+    ? error.message 
+    : 'Unknown error';
+    
+  console.error(`Global error${context ? ` in ${context}` : ''}:`, error);
+  
+  // In a real app, this could send errors to a monitoring service
+  // or display a user-friendly error message
 }

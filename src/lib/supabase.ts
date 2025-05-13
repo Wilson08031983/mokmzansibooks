@@ -51,12 +51,24 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
  */
 export const checkSupabaseConnection = async (): Promise<{ success: boolean; message: string }> => {
   try {
-    // Use a different approach to check connection - query an existing table
-    const { data, error } = await supabase.from('company_data').select('*').limit(1);
+    // Use a different approach to check connection - query an existing table with proper error handling
+    // Instead of a direct query to company_data, use a safe RPC call or a simple health check query
+    const { error } = await supabase.rpc('get_server_timestamp', {});
     
     if (error) {
-      console.error('Supabase connection check failed:', error.message);
-      return { success: false, message: `Connection failed: ${error.message}` };
+      // Fallback if RPC doesn't exist - try a simple query that should work on any Supabase project
+      try {
+        const { data, error: fallbackError } = await supabase.from('app_data').select('count(*)').limit(1);
+        
+        if (fallbackError) {
+          console.error('Supabase connection check failed:', fallbackError.message);
+          return { success: false, message: `Connection failed: ${fallbackError.message}` };
+        }
+        
+        return { success: true, message: 'Connection successful' };
+      } catch (fallbackErr) {
+        return { success: false, message: `Connection failed: ${error.message}` };
+      }
     }
     
     console.log('Supabase connection successful');

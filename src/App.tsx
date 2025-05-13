@@ -1,191 +1,73 @@
-import React, { Suspense, useState, useEffect, useRef } from 'react';
-import robustStorageMigrator from '@/utils/robustStorageMigrator';
-// Import persistence test for data retention verification
-import '@/utils/runPersistenceTest';
-// Import storage status manager and initialize it as early as possible
-import storageStatusManager from '@/utils/storageStatusManager';
-// Initialize storage status manager as early as possible
-const storageStatusPromise = storageStatusManager.initialize();
-// Initialize data recovery as early as possible
-const dataRecoveryPromise = robustStorageMigrator.migrateData({ sourceKey: 'oldStorage', targetKey: 'newStorage' });
-import { SyncProvider } from '@/contexts/SyncContext';
-import SyncIndicator, { SyncStatus } from '@/components/shared/SyncIndicator';
-import { initializeApp, debugHelpers } from '@/utils/initApp';
-import { initializeSupabaseForAllPages } from '@/utils/setupSupabaseForAllPages';
-import { GlobalAppProvider } from '@/contexts/GlobalAppContext';
-import { lazyWithRetry as lazy } from '@/utils/lazyWithRetry.tsx';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { ensureInitialized, migrateData } from '@/utils/robustStorageMigrator';
+import DashboardLayout from '@/layouts/DashboardLayout';
+import Clients from '@/pages/Clients';
+import Invoices from '@/pages/Invoices';
+import Quotes from '@/pages/Quotes';
+import Accounting from '@/pages/Accounting';
+import Settings from '@/pages/Settings';
+import MyCompany from '@/pages/MyCompany';
+import HR from '@/pages/HR';
+import Inventory from '@/pages/Inventory';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import RequireAuth from '@/components/auth/RequireAuth';
+import { useAuth } from '@/contexts/AuthContext';
+import PublicRoute from '@/components/auth/PublicRoute';
+import InvoiceDetails from '@/pages/InvoiceDetails';
+import QuoteDetails from '@/pages/QuoteDetails';
+import { useLoadingState } from '@/contexts/LoadingStateContext';
 import SuspenseFallback from '@/components/SuspenseFallback';
-import { RouterProvider } from "react-router-dom";
-import { router } from "@/routes";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { SupabaseAuthProvider } from "@/contexts/SupabaseAuthContext";
-import { I18nProvider } from "@/contexts/I18nContext";
-import { NotificationsProvider } from "@/contexts/NotificationsContext";
-import { FinancialDataProvider } from "@/contexts/FinancialDataContext";
-import { CompanyProvider } from "@/contexts/CompanyContext";
-import { Toaster } from "@/components/ui/toaster";
-import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
-import { AIAssistant } from "@/components/AIAssistant";
-import { UserBehaviorProvider } from "@/contexts/UserBehaviorContext";
-import ErrorBoundary from '@/components/ErrorBoundary';
-import { PersistenceProvider } from "@/contexts/PersistenceContext";
-// Import test utilities for development mode
-import { testPersistence } from '@/utils/testPersistence';
+import { lazy, Suspense } from 'react';
 
-function App() {
-  const [renderError, setRenderError] = useState(false);
-
-  // Track mounted state to prevent updates after unmount
-  const isMountedRef = useRef(true);
-  
+const App = () => {
   useEffect(() => {
-    let isMounted = true;
-    
-    const initializeApplication = async () => {
-      try {
-        // First check storage status and show notifications if needed
-        await storageStatusPromise;
-        console.log('App: Storage status check completed');
-        
-        // Then wait for data recovery system
-        await dataRecoveryPromise;
-        if (isMounted) console.log('App: Data recovery system initialized successfully');
-        
-        // Initialize the entire application with our enhanced persistence system
-        if (isMounted) {
-          await initializeApp();
-          console.log('App: Application initialized successfully');
-        }
-        
-        // Initialize Supabase integration for all pages
-        if (isMounted) {
-          await initializeSupabaseForAllPages();
-          console.log('App: Supabase integration initialized successfully for all pages');
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error('App: Initialization failed:', error);
-          
-          // Even if initialization fails, we want to continue with the app
-          // but we'll show a warning in the console
-          console.warn('App: Continuing despite initialization errors');
-        }
-      }
-    };
-    
-    initializeApplication();
-    
-    // Enhanced error handler for global errors
-    const handleGlobalError = (event: ErrorEvent) => {
-      console.error('Global error caught:', event);
-      
-      // Only update state if component is still mounted
-      if (isMountedRef.current) {
-        try {
-          setRenderError(true);
-          
-          // Force clear problematic localStorage items that might be causing issues
-          try {
-            localStorage.removeItem('COMPANY_DATA_CACHE');
-            localStorage.removeItem('COMPANY_DATA_FORCE_UPDATE_NOW');
-            // Clear session storage as well
-            sessionStorage.removeItem('COMPANY_DISPLAY_STATE');
-          } catch (e) {
-            console.error('Failed to clear problematic storage items:', e);
-          }
-        } catch (e) {
-          console.error('Error in error handler:', e);
-        }
-      }
-      
-      // Prevent the error from bubbling further and crashing the app completely
-      event.preventDefault();
-      event.stopPropagation();
-      return true;
-    };
-    
-    // Attach multiple listeners to ensure we catch all errors
-    window.addEventListener('error', handleGlobalError);
-    window.addEventListener('unhandledrejection', (event) => {
-      console.error('Unhandled Promise Rejection:', event.reason);
-      if (isMountedRef.current) setRenderError(true);
-    });
-    
-    // Setup cleanup
-    return () => {
-      isMountedRef.current = false;
-      window.removeEventListener('error', handleGlobalError);
-      window.removeEventListener('unhandledrejection', () => {});
-    };
+    // Initialize storage on app startup
+    ensureInitialized('MokMzansi Books', '1.0.0')
+      .then((success) => {
+        console.log(success ? 'Storage initialized successfully' : 'Storage initialization failed');
+      })
+      .catch((error) => {
+        console.error('Error initializing storage:', error);
+      });
   }, []);
 
-  // Check if we're in a degraded storage mode based on the status manager
-  const [degradedMode] = useState(
-    typeof window !== 'undefined' && (window as any).__STORAGE_STATUS__?.degradedMode
-  );
-
-  if (renderError) {
-    return (
-      <div className="bg-red-50 p-10 text-center min-h-screen flex items-center justify-center">
-        <div className="max-w-md">
-          <h1 className="text-3xl text-red-600 mb-4">Application Rendering Failed</h1>
-          <p className="text-lg text-red-500 mb-6">
-            We encountered a critical error while loading the application.
-          </p>
-          <div className="space-y-4">
-            <button 
-              onClick={() => window.location.reload()}
-              className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition"
-            >
-              Refresh Page
-            </button>
-            <p className="text-sm text-gray-600">
-              If the problem persists, please contact our support team.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const { isLoggedIn } = useAuth();
+  const { loadingState } = useLoadingState();
 
   return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <SupabaseAuthProvider>
-          <I18nProvider>
-            <SyncProvider>
-              <PersistenceProvider>
-                <GlobalAppProvider>
-                  <FinancialDataProvider>
-                    <NotificationsProvider>
-                      <UserBehaviorProvider>
-                        <CompanyProvider>
-                          <AIAssistantProvider>
-                            <Suspense 
-                              fallback={<SuspenseFallback message="Loading application..." />}>
-                              <RouterProvider router={router} />
-                            </Suspense>
-                            <AIAssistant />
-                            <Toaster />
-                            <SyncIndicator status={SyncStatus.IDLE} />
-                          </AIAssistantProvider>
-                        </CompanyProvider>
-                      </UserBehaviorProvider>
-                    </NotificationsProvider>
-                  </FinancialDataProvider>
-                </GlobalAppProvider>
-              </PersistenceProvider>
-            </SyncProvider>
-          </I18nProvider>
-        </SupabaseAuthProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
-}
+    <Suspense fallback={<SuspenseFallback />}>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
-// For debug purposes, expose these methods to the window object if needed
-if (process.env.NODE_ENV === 'development') {
-  (window as any).debugHelpers = debugHelpers;
-}
+        {/* Dashboard Routes - Requires Authentication */}
+        <Route path="/" element={<RequireAuth><DashboardLayout /></RequireAuth>}>
+          <Route index element={<RequireAuth><Accounting /></RequireAuth>} />
+          <Route path="dashboard" element={<RequireAuth><Accounting /></RequireAuth>} />
+          <Route path="clients" element={<RequireAuth><Clients /></RequireAuth>} />
+          <Route path="invoices" element={<RequireAuth><Invoices /></RequireAuth>} />
+          <Route path="invoices/:id" element={<RequireAuth><InvoiceDetails /></RequireAuth>} />
+          <Route path="quotes" element={<RequireAuth><Quotes /></RequireAuth>} />
+          <Route path="quotes/:id" element={<RequireAuth><QuoteDetails /></RequireAuth>} />
+          <Route path="accounting" element={<RequireAuth><Accounting /></RequireAuth>} />
+          <Route path="settings" element={<RequireAuth><Settings /></RequireAuth>} />
+          <Route path="my-company" element={<RequireAuth><MyCompany /></RequireAuth>} />
+          <Route path="hr" element={<RequireAuth><HR /></RequireAuth>} />
+          <Route path="inventory" element={<RequireAuth><Inventory /></RequireAuth>} />
+        </Route>
+
+        {/* Catch-all route for handling unknown paths */}
+        <Route path="*" element={<div>Page not found</div>} />
+      </Routes>
+    </Suspense>
+  );
+};
 
 export default App;

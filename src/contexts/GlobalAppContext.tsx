@@ -14,10 +14,9 @@
  * This ensures consistency across the application and prevents redundant data loading.
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Client } from '@/types/client';
-import { CompanyDetails } from '@/types/company';
-import { UserPreference, AppSettings } from '@/types/settings';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { ensureInitialized, migrateData, consolidateStorage } from '@/utils/robustStorageMigrator';
 import { 
   useAccountingWithSync,
   useHRWithSync,
@@ -33,7 +32,9 @@ import {
   loadClients,
   saveClients
 } from '@/utils/globalContextHelpers';
-import robustStorageMigrator from '@/utils/robustStorageMigrator';
+import { Client } from '@/types/client';
+import { CompanyDetails } from '@/types/company';
+import { UserPreference, AppSettings } from '@/types/settings';
 
 // Define app state interfaces
 interface GlobalAppState {
@@ -205,7 +206,7 @@ export const GlobalAppProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const initializeAppData = async () => {
       try {
         // Ensure storage is initialized properly
-        const isInitialized = await robustStorageMigrator.ensureInitialized("app", "1.0.0");
+        const isInitialized = await ensureInitialized("app", "1.0.0");
         if (!isInitialized) {
           console.error('Failed to initialize storage');
           return;
@@ -337,7 +338,7 @@ export const GlobalAppProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setIsLoading(true);
       
       // First ensure our robust storage migrator has recovered any lost data
-      await robustStorageMigrator.ensureInitialized("app", "1.0.0");
+      await ensureInitialized("app", "1.0.0");
       
       // Reload all data in parallel
       const [

@@ -1,163 +1,151 @@
 
 import React from 'react';
-import { Client, CompanyClient, IndividualClient, VendorClient } from '@/types/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Phone, Mail, MapPin, Calendar, DollarSign, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Client, isCompanyClient, isIndividualClient, isVendorClient } from '@/types/client';
+import { Separator } from '@/components/ui/separator';
+import { formatCurrency } from '@/utils/formatters';
+import { CalendarDays, Phone, Mail, MapPin, Building, User, Truck } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface ClientDetailsProps {
   client: Client;
 }
 
 const ClientDetails: React.FC<ClientDetailsProps> = ({ client }) => {
-  const getClientSpecificDetails = () => {
-    if (client.type === 'company') {
-      const companyClient = client as CompanyClient;
+  // Format date for display
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      return format(new Date(dateString), 'PP');
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  // Client type specific details
+  const renderClientTypeDetails = () => {
+    if (isCompanyClient(client)) {
       return (
-        <>
-          <div className="flex items-start space-x-2 mt-4">
-            <div className="w-32 flex-shrink-0 text-gray-500">Contact Person:</div>
-            <div>{companyClient.contactPerson}</div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Building className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium">Company Details</span>
           </div>
-          <div className="flex items-start space-x-2 mt-2">
-            <div className="w-32 flex-shrink-0 text-gray-500">VAT Number:</div>
-            <div>{companyClient.vatNumber || 'Not provided'}</div>
+          <div className="grid grid-cols-2 gap-1 text-sm">
+            <div className="text-gray-500">Contact Person:</div>
+            <div>{client.contactPerson || 'N/A'}</div>
+            <div className="text-gray-500">VAT Number:</div>
+            <div>{client.vatNumber || 'N/A'}</div>
+            <div className="text-gray-500">Registration:</div>
+            <div>{client.registrationNumber || 'N/A'}</div>
           </div>
-          <div className="flex items-start space-x-2 mt-2">
-            <div className="w-32 flex-shrink-0 text-gray-500">Registration:</div>
-            <div>{companyClient.registrationNumber || 'Not provided'}</div>
-          </div>
-        </>
+        </div>
       );
-    } else if (client.type === 'individual') {
-      const individualClient = client as IndividualClient;
+    } else if (isIndividualClient(client)) {
       return (
-        <>
-          <div className="flex items-start space-x-2 mt-4">
-            <div className="w-32 flex-shrink-0 text-gray-500">First Name:</div>
-            <div>{individualClient.firstName}</div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium">Individual Details</span>
           </div>
-          <div className="flex items-start space-x-2 mt-2">
-            <div className="w-32 flex-shrink-0 text-gray-500">Last Name:</div>
-            <div>{individualClient.lastName}</div>
+          <div className="grid grid-cols-2 gap-1 text-sm">
+            <div className="text-gray-500">First Name:</div>
+            <div>{client.firstName || 'N/A'}</div>
+            <div className="text-gray-500">Last Name:</div>
+            <div>{client.lastName || 'N/A'}</div>
           </div>
-        </>
+        </div>
       );
-    } else if (client.type === 'vendor') {
-      const vendorClient = client as VendorClient;
+    } else if (isVendorClient(client)) {
       return (
-        <>
-          <div className="flex items-start space-x-2 mt-4">
-            <div className="w-32 flex-shrink-0 text-gray-500">Contact Person:</div>
-            <div>{vendorClient.contactPerson}</div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Truck className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium">Vendor Details</span>
           </div>
-          <div className="flex items-start space-x-2 mt-2">
-            <div className="w-32 flex-shrink-0 text-gray-500">Category:</div>
-            <div>{vendorClient.vendorCategory || 'Not categorized'}</div>
+          <div className="grid grid-cols-2 gap-1 text-sm">
+            <div className="text-gray-500">Contact Person:</div>
+            <div>{client.contactPerson || 'N/A'}</div>
+            <div className="text-gray-500">Category:</div>
+            <div>{client.vendorCategory || 'N/A'}</div>
+            <div className="text-gray-500">Vendor Code:</div>
+            <div>{client.vendorCode || 'N/A'}</div>
           </div>
-          <div className="flex items-start space-x-2 mt-2">
-            <div className="w-32 flex-shrink-0 text-gray-500">Vendor Code:</div>
-            <div>{vendorClient.vendorCode || 'No code assigned'}</div>
-          </div>
-        </>
+        </div>
       );
     }
+    
     return null;
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>{client.name}</span>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            client.type === 'company' ? 'bg-blue-100 text-blue-800' :
-            client.type === 'individual' ? 'bg-green-100 text-green-800' :
-            'bg-purple-100 text-purple-800'
-          }`}>
-            {client.type}
-          </span>
-        </CardTitle>
-        <CardDescription>Client ID: {client.id.substring(0, 8)}...</CardDescription>
+        <CardTitle className="text-xl">{client.name}</CardTitle>
+        <div className="text-sm text-gray-500">
+          Client ID: {client.id.substring(0, 8)}...
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Contact Information</h3>
-            <div className="grid grid-cols-1 gap-2">
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-500" />
-                <span>{client.phone || 'No phone provided'}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-gray-500" />
-                <span>{client.email || 'No email provided'}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
-                <div>
-                  <div>{client.address}</div>
-                  {client.addressLine2 && <div>{client.addressLine2}</div>}
-                  <div>{client.city}, {client.province} {client.postalCode}</div>
-                </div>
-              </div>
+      <CardContent className="space-y-6">
+        {/* Contact Information */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-gray-500" />
+            <span className="text-sm">{client.email}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-gray-500" />
+            <span className="text-sm">{client.phone}</span>
+          </div>
+        </div>
+        
+        {/* Address */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium">Address</span>
+          </div>
+          <div className="text-sm">
+            <div>{client.address}</div>
+            {client.addressLine2 && <div>{client.addressLine2}</div>}
+            <div>{client.city}, {client.province}</div>
+            <div>{client.postalCode}</div>
+          </div>
+        </div>
+        
+        <Separator />
+        
+        {/* Type-specific details */}
+        {renderClientTypeDetails()}
+        
+        <Separator />
+        
+        {/* Financial Information */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">Financial Summary</h3>
+          <div className="grid grid-cols-2 gap-1 text-sm">
+            <div className="text-gray-500">Credit:</div>
+            <div className="text-green-600">{formatCurrency(client.credit)}</div>
+            <div className="text-gray-500">Outstanding:</div>
+            <div className="text-yellow-600">{formatCurrency(client.outstanding)}</div>
+            <div className="text-gray-500">Overdue:</div>
+            <div className="text-red-600">{formatCurrency(client.overdue)}</div>
+            <div className="text-gray-500">Balance:</div>
+            <div className={client.outstanding - client.credit > 0 ? 'text-red-600' : 'text-green-600'}>
+              {formatCurrency(client.outstanding - client.credit)}
             </div>
           </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Client Specific Details</h3>
-            {getClientSpecificDetails()}
+        </div>
+        
+        {/* Timestamps */}
+        <div className="text-xs text-gray-500">
+          <div className="flex items-center gap-1">
+            <CalendarDays className="h-3 w-3" />
+            <span>Created: {formatDate(client.createdAt)}</span>
           </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Financial Information</h3>
-            <div className="grid grid-cols-1 gap-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-green-500" />
-                  <span>Credit:</span>
-                </div>
-                <span className="font-medium">{client.credit.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-amber-500" />
-                  <span>Outstanding:</span>
-                </div>
-                <span className="font-medium">{client.outstanding.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-500" />
-                  <span>Overdue:</span>
-                </div>
-                <span className="font-medium">{client.overdue.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Timestamps</h3>
-            <div className="grid grid-cols-1 gap-2">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <span>Created: {new Date(client.createdAt).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <span>Last Updated: {new Date(client.updatedAt).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <span>Last Interaction: {client.lastInteraction ? new Date(client.lastInteraction).toLocaleDateString() : 'Never'}</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-1 mt-1">
+            <CalendarDays className="h-3 w-3" />
+            <span>Last Updated: {formatDate(client.updatedAt)}</span>
           </div>
         </div>
       </CardContent>

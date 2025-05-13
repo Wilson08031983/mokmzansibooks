@@ -48,3 +48,17 @@ export async function consolidateStorage(options?: any): Promise<{success: boole
     };
   }
 }
+
+// Export all functions as named exports
+export const robustStorageMigrator = {
+  ensureInitialized,
+  migrateData,
+  consolidateStorage
+};
+
+// Export default for backwards compatibility
+export default {
+  ensureInitialized,
+  migrateData,
+  consolidateStorage
+};
