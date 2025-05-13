@@ -120,8 +120,8 @@ const ClientForm: React.FC<ClientFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create base client object
-    const baseClient: Partial<Client> = {
+    // Create base client properties
+    const baseClientData = {
       type: clientType,
       name,
       email,
@@ -137,25 +137,31 @@ const ClientForm: React.FC<ClientFormProps> = ({
     let clientData: Partial<Client>;
     
     if (clientType === 'company') {
-      clientData = {
-        ...baseClient,
+      const companyData: Partial<CompanyClient> = {
+        ...baseClientData,
+        type: 'company',
         contactPerson,
         vatNumber,
         registrationNumber,
       };
+      clientData = companyData;
     } else if (clientType === 'individual') {
-      clientData = {
-        ...baseClient,
+      const individualData: Partial<IndividualClient> = {
+        ...baseClientData,
+        type: 'individual',
         firstName,
         lastName,
       };
+      clientData = individualData;
     } else {
-      clientData = {
-        ...baseClient,
+      const vendorData: Partial<VendorClient> = {
+        ...baseClientData,
+        type: 'vendor',
         contactPerson,
         vendorCategory,
         vendorCode: vendorCode || null,
       };
+      clientData = vendorData;
     }
 
     // If editing, keep the ID
@@ -184,7 +190,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
             <Tabs
               defaultValue="company"
               value={clientType}
-              onValueChange={(value) => setClientType(value as any)}
+              onValueChange={(value) => setClientType(value as 'company' | 'individual' | 'vendor')}
               className="mt-4"
             >
               <TabsList className="grid grid-cols-3 mb-4">

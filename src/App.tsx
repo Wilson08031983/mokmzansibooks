@@ -1,6 +1,7 @@
+
 import React, { useEffect } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { ensureInitialized, migrateData } from '@/utils/robustStorageMigrator';
+import { Routes, Route } from 'react-router-dom';
+import { ensureInitialized } from '@/utils/robustStorageMigrator';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import Clients from '@/pages/Clients';
 import Invoices from '@/pages/Invoices';
@@ -21,7 +22,7 @@ import InvoiceDetails from '@/pages/InvoiceDetails';
 import QuoteDetails from '@/pages/QuoteDetails';
 import { useLoadingState } from '@/contexts/LoadingStateContext';
 import SuspenseFallback from '@/components/SuspenseFallback';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 
 const App = () => {
   useEffect(() => {
@@ -35,7 +36,7 @@ const App = () => {
       });
   }, []);
 
-  const { isLoggedIn } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { loadingState } = useLoadingState();
 
   return (

@@ -4,11 +4,21 @@
  * Ensures robust client data management with backup and recovery mechanisms
  */
 
-import { Client, ClientsState } from "@/types/client";
+import { Client, CompanyClient, IndividualClient, VendorClient } from "@/types/client";
 
-// Safe storage keys
-const CLIENT_DATA_KEY = 'mok_mzansi_client_data';
-const CLIENT_DATA_BACKUP_KEY = 'mok_mzansi_client_data_backup';
+// Type for client state management
+export interface ClientsState {
+  companies: CompanyClient[];
+  individuals: IndividualClient[];
+  vendors: VendorClient[];
+}
+
+// Default state for clients
+export const defaultClientState: ClientsState = {
+  companies: [],
+  individuals: [],
+  vendors: []
+};
 
 /**
  * Initialize client data persistence mechanisms
@@ -40,7 +50,7 @@ export function initializeClientDataPersistence(): void {
  */
 export function createClientDataBackup(): boolean {
   try {
-    const clientData = localStorage.getItem(CLIENT_DATA_KEY);
+    const clientData = localStorage.getItem('mokClients');
     if (!clientData) return false;
     
     // Validate data before backup
@@ -52,10 +62,10 @@ export function createClientDataBackup(): boolean {
     }
     
     // Store the backup
-    localStorage.setItem(CLIENT_DATA_BACKUP_KEY, clientData);
+    localStorage.setItem('mokClientsBackup', clientData);
     
     // Also store to sessionStorage as another layer of protection
-    sessionStorage.setItem(CLIENT_DATA_BACKUP_KEY, clientData);
+    sessionStorage.setItem('mokClientsBackup', clientData);
     
     return true;
   } catch (error) {
@@ -71,11 +81,11 @@ export function createClientDataBackup(): boolean {
 export function restoreClientDataFromBackup(): boolean {
   try {
     // Try localStorage backup first
-    let backup = localStorage.getItem(CLIENT_DATA_BACKUP_KEY);
+    let backup = localStorage.getItem('mokClientsBackup');
     
     // If not found, try sessionStorage
     if (!backup) {
-      backup = sessionStorage.getItem(CLIENT_DATA_BACKUP_KEY);
+      backup = sessionStorage.getItem('mokClientsBackup');
     }
     
     if (!backup) return false;
@@ -89,7 +99,7 @@ export function restoreClientDataFromBackup(): boolean {
     }
     
     // Restore from backup
-    localStorage.setItem(CLIENT_DATA_KEY, backup);
+    localStorage.setItem('mokClients', backup);
     return true;
   } catch (error) {
     console.error('Error restoring client data from backup:', error);
@@ -103,7 +113,7 @@ export function restoreClientDataFromBackup(): boolean {
  */
 export function getSafeClientData(): ClientsState {
   try {
-    const clientData = localStorage.getItem(CLIENT_DATA_KEY);
+    const clientData = localStorage.getItem('mokClients');
     if (!clientData) return { companies: [], individuals: [], vendors: [] };
     
     const parsedData = JSON.parse(clientData) as ClientsState;
@@ -132,60 +142,11 @@ export function setSafeClientData(data: ClientsState): boolean {
     }
     
     // Save data and create backup
-    localStorage.setItem(CLIENT_DATA_KEY, JSON.stringify(data));
+    localStorage.setItem('mokClients', JSON.stringify(data));
     createClientDataBackup();
     return true;
   } catch (error) {
     console.error('Error setting client data safely:', error);
     return false;
   }
-}
-
-// For backward compatibility
-export const saveClientData = setSafeClientData;
-
-// Export the ClientsState type
-export { ClientsState };
-
-// Client operations
-export function addClient(client: Client, clientsData: ClientsState): ClientsState {
-  const newState = { ...clientsData };
-  
-  if (client.type === 'company') {
-    newState.companies = [...newState.companies, client];
-  } else if (client.type === 'individual') {
-    newState.individuals = [...newState.individuals, client];
-  } else if (client.type === 'vendor') {
-    newState.vendors = [...newState.vendors, client];
-  }
-  
-  return newState;
-}
-
-export function updateClient(id: string, updatedClient: Client, clientsData: ClientsState): ClientsState {
-  const newState = { ...clientsData };
-  
-  if (updatedClient.type === 'company') {
-    newState.companies = newState.companies.map(client => 
-      client.id === id ? updatedClient : client
-    );
-  } else if (updatedClient.type === 'individual') {
-    newState.individuals = newState.individuals.map(client => 
-      client.id === id ? updatedClient : client
-    );
-  } else if (updatedClient.type === 'vendor') {
-    newState.vendors = newState.vendors.map(client => 
-      client.id === id ? updatedClient : client
-    );
-  }
-  
-  return newState;
-}
-
-export function deleteClient(id: string, clientsData: ClientsState): ClientsState {
-  return {
-    companies: clientsData.companies.filter(client => client.id !== id),
-    individuals: clientsData.individuals.filter(client => client.id !== id),
-    vendors: clientsData.vendors.filter(client => client.id !== id)
-  };
 }

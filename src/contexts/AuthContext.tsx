@@ -1,337 +1,287 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { auth } from '@/lib/firebase';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User,
-  sendPasswordResetEmail,
-  updateProfile,
-  updateEmail,
-  updatePassword,
-} from 'firebase/auth';
-import { toast } from '@/components/ui/use-toast';
 
-interface AuthContextType {
-  currentUser: User | null;
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createClientDataBackup } from '@/utils/clientDataPersistence';
+
+// Define the auth context types
+export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updateUserProfile: (displayName: string) => Promise<void>;
-  updateUserEmail: (email: string) => Promise<void>;
-  updateUserPassword: (password: string) => Promise<void>;
+  user: User | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  register: (userData: RegisterData) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<boolean>;
+  resetPassword: (token: string, newPassword: string) => Promise<boolean>;
+  updateUser: (userData: Partial<User>) => Promise<boolean>;
+  error: string | null;
+  clearError: () => void;
 }
 
+// User object structure
+export interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+  company?: string;
+  createdAt?: string;
+}
+
+// Registration data
+interface RegisterData {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+}
+
+// Create auth context with undefined default
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Auth provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Check for persisted mock user in localStorage
-  const checkPersistedMockUser = () => {
-    try {
-      const mockUserJson = localStorage.getItem('mock_auth_user');
-      if (mockUserJson) {
-        const mockUser = JSON.parse(mockUserJson);
-        setCurrentUser(mockUser as unknown as User);
-        setUsingMockAuth(true);
-        return true;
-      }
-    } catch (e) {
-      console.error('Error checking persisted mock user:', e);
-    }
-    return false;
-  };
-
+  // Load auth state from localStorage on component mount
   useEffect(() => {
-    // First check if we have a persisted mock user
-    const hasMockUser = checkPersistedMockUser();
-    
-    // If no mock user, try regular Firebase auth
-    if (!hasMockUser && auth) {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setCurrentUser(user);
-        setIsLoading(false);
+    const checkAuthState = () => {
+      try {
+        const authData = localStorage.getItem('authData');
         
-        // Clear any mock user if we have a real Firebase user
-        if (user) {
-          localStorage.removeItem('mock_auth_user');
-          setUsingMockAuth(false);
+        if (authData) {
+          const parsedData = JSON.parse(authData);
+          
+          if (parsedData.user && parsedData.isAuthenticated) {
+            setUser(parsedData.user);
+            setIsAuthenticated(true);
+          }
         }
-      });
-      return unsubscribe;
-    } else {
-      // Just update loading state if we're using mock auth
-      setIsLoading(false);
-    }
+      } catch (err) {
+        console.error('Error checking auth state:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // No cleanup needed for mock auth
-    return () => {};
+    checkAuthState();
   }, []);
 
-  // Track if we're using mock authentication due to Firebase configuration issues
-  const [usingMockAuth, setUsingMockAuth] = useState(false);
-  
-  // Mock data for development/testing when Firebase is unavailable
-  const MOCK_USERS = [
-    { email: 'admin@example.com', password: 'password123', displayName: 'Admin User' },
-    { email: 'user@example.com', password: 'password123', displayName: 'Test User' },
-  ];
-  
-  const signIn = async (email: string, password: string): Promise<void> => {
-    try {
-      // First try regular Firebase authentication
-      if (auth && !usingMockAuth) {
-        try {
-          await signInWithEmailAndPassword(auth, email, password);
-          return; // Success, exit early
-        } catch (error: any) {
-          // Check for API key errors specifically
-          if (error?.code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.') {
-            console.warn('Firebase API key invalid, falling back to mock authentication');
-            setUsingMockAuth(true);
-            toast({
-              title: 'Authentication Notice',
-              description: 'Using development authentication mode. Some features may be limited.',
-              variant: 'default',
-            });
-            // Continue to mock auth below
-          } else {
-            // For other Firebase errors, throw normally
-            console.error('Error signing in:', error);
-            toast({
-              title: 'Authentication Failed',
-              description: error?.message || 'Invalid email or password',
-              variant: 'destructive',
-            });
-            throw error;
-          }
-        }
-      }
-      
-      // Fallback to mock authentication when Firebase is unavailable
-      if (usingMockAuth || !auth) {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Check against mock users
-        const mockUser = MOCK_USERS.find(u => u.email === email && u.password === password);
-        
-        if (mockUser) {
-          // Create a mock user object similar to Firebase User
-          const user = {
-            uid: btoa(email), // Simple mock uid from email
-            email,
-            displayName: mockUser.displayName,
-            emailVerified: true,
-            // Add other properties needed to simulate a Firebase User
-          };
-          
-          // Set as current user
-          setCurrentUser(user as unknown as User);
-          
-          toast({
-            title: 'Signed in (Development Mode)',
-            description: `Welcome, ${mockUser.displayName}`,
-          });
-          
-          return;
-        } else {
-          // Mock authentication failed
-          toast({
-            title: 'Authentication Failed',
-            description: 'Invalid email or password',
-            variant: 'destructive',
-          });
-          
-          throw new Error('Invalid email or password');
-        }
-      }
-    } catch (error) {
-      console.error('Error signing in:', error);
-      throw error;
-    }
-  };
-
-  const signUp = async (email: string, password: string, displayName: string): Promise<void> => {
-    try {
-      // Try real Firebase auth if available
-      if (auth && !usingMockAuth) {
-        try {
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          if (userCredential.user) {
-            await updateProfile(userCredential.user, { displayName });
-          }
-          return; // Success, exit early
-        } catch (error: any) {
-          // Check for API key errors specifically
-          if (error?.code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.') {
-            console.warn('Firebase API key invalid, falling back to mock authentication');
-            setUsingMockAuth(true);
-            // Continue to mock auth below
-          } else {
-            // For other Firebase errors, throw normally
-            console.error('Error signing up:', error);
-            toast({
-              title: 'Sign Up Failed',
-              description: error?.message || 'Unable to create account',
-              variant: 'destructive',
-            });
-            throw error;
-          }
-        }
-      }
-      
-      // Mock sign up when Firebase is unavailable
-      if (usingMockAuth || !auth) {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Check if email already exists
-        if (MOCK_USERS.some(u => u.email === email)) {
-          const error = new Error('Email already in use');
-          toast({
-            title: 'Sign Up Failed',
-            description: 'Email already in use',
-            variant: 'destructive',
-          });
-          throw error;
-        }
-        
-        // Create a new mock user
-        const newUser = { email, password, displayName };
-        MOCK_USERS.push(newUser);
-        
-        // Create a mock user object similar to Firebase User
-        const user = {
-          uid: btoa(email),
-          email,
-          displayName,
-          emailVerified: false,
+  // Save auth state to localStorage whenever it changes
+  useEffect(() => {
+    if (!isLoading) {
+      try {
+        const authData = {
+          isAuthenticated,
+          user
         };
         
-        // Set as current user
-        setCurrentUser(user as unknown as User);
-        
-        // Persist mock user to localStorage
-        localStorage.setItem('mock_auth_user', JSON.stringify(user));
-        
-        toast({
-          title: 'Account Created',
-          description: 'Your account has been created successfully',
-        });
+        localStorage.setItem('authData', JSON.stringify(authData));
+      } catch (err) {
+        console.error('Error saving auth state:', err);
       }
-    } catch (error) {
-      console.error('Error signing up:', error);
-      throw error;
+    }
+  }, [isAuthenticated, user, isLoading]);
+
+  // Mock login function (replace with actual API call later)
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Demo login (replace with actual API integration)
+      if (email && password) {
+        const mockUser: User = {
+          id: '1',
+          email,
+          firstName: 'Demo',
+          lastName: 'User',
+          createdAt: new Date().toISOString()
+        };
+        
+        setUser(mockUser);
+        setIsAuthenticated(true);
+        return true;
+      } else {
+        setError('Invalid email or password');
+        return false;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const signOut = async (): Promise<void> => {
+  // Mock logout function
+  const logout = useCallback(() => {
     try {
-      // Before signing out, ensure client data is backed up
-      const { createClientDataBackup } = await import('@/utils/clientDataPersistence');
+      // Backup client data before logout
       createClientDataBackup();
       
-      if (usingMockAuth || !auth) {
-        // Handle mock auth logout
-        setCurrentUser(null);
-        localStorage.removeItem('mock_auth_user'); // Clear persisted mock user
+      // Clear auth state
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      // Extra - remove sensitive data
+      localStorage.removeItem('authToken');
+      
+      // Note: We don't remove authData here since it's handled by the effect
+    } catch (err) {
+      console.error('Error during logout:', err);
+    }
+  }, []);
+
+  // Mock register function (replace with actual API call later)
+  const register = async (userData: RegisterData): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (userData.email && userData.password) {
+        const mockUser: User = {
+          id: '1',
+          email: userData.email,
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          company: userData.company,
+          createdAt: new Date().toISOString()
+        };
+        
+        setUser(mockUser);
+        setIsAuthenticated(true);
+        return true;
       } else {
-        // Real Firebase logout
-        await firebaseSignOut(auth);
+        setError('Missing required fields');
+        return false;
       }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      setError(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Mock forgotPassword function
+  const forgotPassword = async (email: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      setError(null);
       
-      // Navigate to sign in page
-      navigate('/signin');
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // After signing out, reinitialize app to ensure data is still available
-      const { reinitializeAfterLogout } = await import('@/utils/initApp');
-      reinitializeAfterLogout();
+      if (email) {
+        // In a real app, this would send a reset email
+        return true;
+      } else {
+        setError('Email is required');
+        return false;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Password reset request failed';
+      setError(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Mock resetPassword function
+  const resetPassword = async (token: string, newPassword: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      setError(null);
       
-      toast({
-        title: 'Signed Out',
-        description: 'You have been signed out successfully',
-      });
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
-  };
-
-  const resetPassword = async (email: string): Promise<void> => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      throw error;
-    }
-  };
-
-  const updateUserProfile = async (displayName: string): Promise<void> => {
-    try {
-      if (currentUser) {
-        await updateProfile(currentUser, { displayName });
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (token && newPassword) {
+        // In a real app, this would verify token and update password
+        return true;
+      } else {
+        setError('Invalid reset token or password');
+        return false;
       }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      throw error;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Password reset failed';
+      setError(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const updateUserEmail = async (email: string): Promise<void> => {
+  // Mock updateUser function
+  const updateUser = async (userData: Partial<User>): Promise<boolean> => {
     try {
-      if (currentUser) {
-        await updateEmail(currentUser, email);
+      setIsLoading(true);
+      setError(null);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      if (user && userData) {
+        const updatedUser = { ...user, ...userData };
+        setUser(updatedUser);
+        return true;
+      } else {
+        setError('User not found');
+        return false;
       }
-    } catch (error) {
-      console.error('Error updating email:', error);
-      throw error;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Update user failed';
+      setError(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const updateUserPassword = async (password: string): Promise<void> => {
-    try {
-      if (currentUser) {
-        await updatePassword(currentUser, password);
-      }
-    } catch (error) {
-      console.error('Error updating password:', error);
-      throw error;
-    }
+  // Clear error state
+  const clearError = () => {
+    setError(null);
   };
 
-  const value = {
-    currentUser,
-    isAuthenticated: !!currentUser,
+  // Context value
+  const value: AuthContextType = {
+    isAuthenticated,
     isLoading,
-    signIn,
-    signUp,
-    signOut,
+    user,
+    login,
+    logout,
+    register,
+    forgotPassword,
     resetPassword,
-    updateUserProfile,
-    updateUserEmail,
-    updateUserPassword,
+    updateUser,
+    error,
+    clearError
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!isLoading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// Custom hook to use the auth context
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) {
+  
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
 };
