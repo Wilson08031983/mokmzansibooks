@@ -1,7 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import { useClient } from '@/contexts/ClientContext';
-import { Client, CompanyClient, IndividualClient, VendorClient, ClientType } from '@/types/client';
-import { addClient, updateClient, deleteClient } from '@/utils/clientDataPersistence';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Client, ClientType } from '@/types/client';
+import { useGlobalClientData } from '@/hooks/useGlobalClientData';
+import { useToast } from '@/hooks/use-toast';
+import ClientErrorBoundary from '@/components/clients/ClientErrorBoundary';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { 
+  FilterIcon, 
+  PlusIcon, 
+  RefreshCw, 
+  Search as SearchIcon 
+} from 'lucide-react';
 
 export interface ClientFilter {
   type?: ClientType | 'all';
@@ -11,49 +39,27 @@ export interface ClientFilter {
 }
 
 const Clients = () => {
-  const [clients, setClients] = useState<ClientsState>({
-    companies: [],
-    individuals: [],
-    vendors: [],
-  });
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<ClientFilter>({ type: 'all', search: '', sortBy: 'name', sortDirection: 'asc' });
+  const [filter, setFilter] = useState<ClientFilter>({ 
+    type: 'all', 
+    search: '', 
+    sortBy: 'name', 
+    sortDirection: 'asc' 
+  });
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  
   const { toast } = useToast();
-  const {
+  const { 
+    clients, 
+    isLoading, 
+    error,
     addClient: addGlobalClient,
     updateClient: updateGlobalClient,
     deleteClient: deleteGlobalClient,
+    refreshClients
   } = useGlobalClientData();
-  const persistence = usePersistence();
-
-  // Update to use our safe client data functions
-  useEffect(() => {
-    try {
-      const loadedData = getSafeClientData();
-      setClients(loadedData);
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error loading clients:", error);
-      setError("Failed to load clients.");
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Save clients with redundancy
-  const handleSaveClients = useCallback((updatedClients: ClientsState) => {
-    try {
-      saveClientData(updatedClients);
-      setClients(updatedClients);
-    } catch (error) {
-      console.error("Error saving clients:", error);
-      setError("Failed to save client data.");
-    }
-  }, []);
 
   const handleClientSelect = (client: Client) => {
     setSelectedClient(client);
@@ -77,7 +83,7 @@ const Clients = () => {
     setIsEditing(false);
   };
 
-  const handleClientAdd = async (clientData: any) => {
+  const handleClientAdd = async (clientData: Partial<Client>) => {
     try {
       if (!clientData.type) {
         throw new Error("Client type is required");
@@ -88,7 +94,9 @@ const Clients = () => {
         toast({
           title: "Success",
           description: "Client added successfully",
+          variant: "success",
         });
+        setIsFormOpen(false);
       } else {
         toast({
           title: "Error",
@@ -96,7 +104,6 @@ const Clients = () => {
           variant: "destructive",
         });
       }
-      setIsFormOpen(false);
     } catch (error: any) {
       console.error("Error adding client:", error);
       toast({
@@ -107,14 +114,17 @@ const Clients = () => {
     }
   };
 
-  const handleClientUpdate = async (id: string, updatedClientData: any) => {
+  const handleClientUpdate = async (id: string, updatedClientData: Partial<Client>) => {
     try {
       const success = await updateGlobalClient(id, updatedClientData);
       if (success) {
         toast({
           title: "Success",
           description: "Client updated successfully",
+          variant: "success",
         });
+        setIsFormOpen(false);
+        setSelectedClient(null);
       } else {
         toast({
           title: "Error",
@@ -122,8 +132,6 @@ const Clients = () => {
           variant: "destructive",
         });
       }
-      setIsFormOpen(false);
-      setSelectedClient(null);
     } catch (error: any) {
       console.error("Error updating client:", error);
       toast({
@@ -141,7 +149,9 @@ const Clients = () => {
         toast({
           title: "Success",
           description: "Client deleted successfully",
+          variant: "success",
         });
+        setSelectedClient(null);
       } else {
         toast({
           title: "Error",
@@ -149,7 +159,6 @@ const Clients = () => {
           variant: "destructive",
         });
       }
-      setSelectedClient(null);
     } catch (error: any) {
       console.error("Error deleting client:", error);
       toast({
@@ -160,15 +169,11 @@ const Clients = () => {
     }
   };
 
-  const handleFilterChange = (newFilter: ClientFilter) => {
-    setFilter(newFilter);
-  };
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilter({ ...filter, search: e.target.value });
   };
 
-  const handleSortChange = (sortBy: ClientFilter['sortBy']) => {
+  const handleSortChange = (sortBy: 'name' | 'createdAt' | 'updatedAt') => {
     if (filter.sortBy === sortBy) {
       setFilter({ ...filter, sortDirection: filter.sortDirection === 'asc' ? 'desc' : 'asc' });
     } else {
@@ -202,16 +207,10 @@ const Clients = () => {
         switch (filter.sortBy) {
           case 'name':
             return a.name.localeCompare(b.name) * sortDirection;
-          case 'balance':
-            const balanceA = (a.outstanding || 0) - (a.credit || 0);
-            const balanceB = (b.outstanding || 0) - (b.credit || 0);
-            return (balanceA - balanceB) * sortDirection;
-          case 'lastInteraction':
-            const dateA = a.lastInteraction ? new Date(a.lastInteraction).getTime() : 0;
-            const dateB = b.lastInteraction ? new Date(b.lastInteraction).getTime() : 0;
-            return (dateA - dateB) * sortDirection;
           case 'createdAt':
             return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * sortDirection;
+          case 'updatedAt':
+            return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * sortDirection;
           default:
             return 0;
         }
@@ -220,43 +219,6 @@ const Clients = () => {
 
     return allClients;
   }, [clients, filter]);
-
-  const handleRefresh = () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const loadedData = getSafeClientData();
-      setClients(loadedData);
-      setIsLoading(false);
-      toast({
-        title: "Success",
-        description: "Clients refreshed successfully",
-      });
-    } catch (error: any) {
-      console.error("Error refreshing clients:", error);
-      setError(error.message || "Failed to refresh clients.");
-      setIsLoading(false);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to refresh clients",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleAddClient = (clientData: Partial<Client>) => {
-    const result = addClient(clientData);
-    return result !== null;
-  };
-
-  const handleUpdateClient = (id: string, clientData: Partial<Client>) => {
-    const result = updateClient(id, clientData);
-    return result !== null;
-  };
-
-  const handleDeleteClient = (id: string, type: ClientType) => {
-    return deleteClient(id, type);
-  };
 
   return (
     <ClientErrorBoundary>
@@ -279,7 +241,7 @@ const Clients = () => {
               <FilterIcon className="h-4 w-4 mr-2" />
               Filter
             </Button>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
+            <Button variant="outline" size="sm" onClick={refreshClients} disabled={isLoading}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
@@ -293,40 +255,97 @@ const Clients = () => {
         {error && <div className="text-red-500 mb-4">{error}</div>}
 
         {isLoading ? (
-          <div className="text-center">Loading clients...</div>
+          <div className="text-center py-8">Loading clients...</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="col-span-1 md:col-span-2 lg:col-span-2">
-              <ClientTable
-                clients={filteredClients()}
-                onClientSelect={handleClientSelect}
-                onClientEdit={handleClientEdit}
-                onClientDelete={handleClientDelete}
-                onSortChange={handleSortChange}
-                sortBy={filter.sortBy}
-                sortDirection={filter.sortDirection}
-              />
-            </div>
-
-            <div className="col-span-1">
-              {selectedClient ? (
-                <ClientDetails client={selectedClient} />
-              ) : (
-                <div className="text-gray-500 text-center">Select a client to view details</div>
-              )}
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSortChange('name')}
+                    >
+                      Name
+                      {filter.sortBy === 'name' && (
+                        <span>{filter.sortDirection === 'asc' ? ' ↑' : ' ↓'}</span>
+                      )}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSortChange('updatedAt')}
+                    >
+                      Last Updated
+                      {filter.sortBy === 'updatedAt' && (
+                        <span>{filter.sortDirection === 'asc' ? ' ↑' : ' ↓'}</span>
+                      )}
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredClients().length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                        No clients found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredClients().map((client) => (
+                      <tr 
+                        key={client.id} 
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => handleClientSelect(client)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                            ${client.type === 'company' ? 'bg-blue-100 text-blue-800' : 
+                            client.type === 'individual' ? 'bg-green-100 text-green-800' : 
+                            'bg-purple-100 text-purple-800'}`}>
+                            {client.type}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.phone}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(client.updatedAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mr-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClientEdit(client);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClientDelete(client.id);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        )}
-
-        {isFormOpen && (
-          <ClientForm
-            isOpen={isFormOpen}
-            isEditing={isEditing}
-            client={selectedClient}
-            onClose={handleFormClose}
-            onClientAdd={handleClientAdd}
-            onClientUpdate={handleClientUpdate}
-          />
         )}
 
         <AlertDialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
@@ -342,7 +361,10 @@ const Clients = () => {
                 <Label htmlFor="type" className="text-right">
                   Type
                 </Label>
-                <Select onValueChange={(value) => setFilter({ ...filter, type: value as ClientFilter['type'] })} defaultValue={filter.type || 'all'}>
+                <Select 
+                  onValueChange={(value) => setFilter({ ...filter, type: value as ClientFilter['type'] })} 
+                  defaultValue={filter.type || 'all'}
+                >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="All" />
                   </SelectTrigger>
@@ -356,11 +378,29 @@ const Clients = () => {
               </div>
             </div>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setIsFilterDialogOpen(false)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => setIsFilterDialogOpen(false)}>Apply filters</AlertDialogAction>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction>Apply Filters</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Placeholder for ClientForm component */}
+        {isFormOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
+              <h2 className="text-xl font-semibold mb-4">{isEditing ? 'Edit Client' : 'Add New Client'}</h2>
+              <p className="mb-4">Form placeholder - you need to create a ClientForm component</p>
+              <div className="flex justify-end">
+                <Button variant="outline" className="mr-2" onClick={handleFormClose}>
+                  Cancel
+                </Button>
+                <Button onClick={handleFormClose}>
+                  {isEditing ? 'Save Changes' : 'Add Client'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </ClientErrorBoundary>
   );

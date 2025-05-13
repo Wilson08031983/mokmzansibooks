@@ -3,26 +3,27 @@ import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ensureInitialized } from '@/utils/robustStorageMigrator';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import Clients from '@/pages/Clients';
-import Invoices from '@/pages/Invoices';
-import Quotes from '@/pages/Quotes';
 import Accounting from '@/pages/Accounting';
 import Settings from '@/pages/Settings';
 import MyCompany from '@/pages/MyCompany';
 import HR from '@/pages/HR';
 import Inventory from '@/pages/Inventory';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
-import RequireAuth from '@/components/auth/RequireAuth';
-import { useAuth } from '@/contexts/AuthContext';
-import PublicRoute from '@/components/auth/PublicRoute';
-import InvoiceDetails from '@/pages/InvoiceDetails';
-import QuoteDetails from '@/pages/QuoteDetails';
 import { useLoadingState } from '@/contexts/LoadingStateContext';
 import SuspenseFallback from '@/components/SuspenseFallback';
 import { Suspense } from 'react';
+
+// Use lazy loading for non-critical components
+const Clients = React.lazy(() => import('@/pages/Clients'));
+const Invoices = React.lazy(() => import('@/pages/Invoices'));
+const Quotes = React.lazy(() => import('@/pages/Quotes'));
+const Login = React.lazy(() => import('@/pages/Login'));
+const Register = React.lazy(() => import('@/pages/Register'));
+const ForgotPassword = React.lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
+const RequireAuth = React.lazy(() => import('@/components/auth/RequireAuth'));
+const PublicRoute = React.lazy(() => import('@/components/auth/PublicRoute'));
+const InvoiceDetails = React.lazy(() => import('@/pages/InvoiceDetails'));
+const QuoteDetails = React.lazy(() => import('@/pages/QuoteDetails'));
 
 const App = () => {
   useEffect(() => {
@@ -36,7 +37,6 @@ const App = () => {
       });
   }, []);
 
-  const { isAuthenticated } = useAuth();
   const { loadingState } = useLoadingState();
 
   return (

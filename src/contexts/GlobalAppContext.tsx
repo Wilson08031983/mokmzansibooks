@@ -1,489 +1,193 @@
-/**
- * GlobalAppContext.tsx
- * 
- * This context provides a central hub for sharing critical information across all pages
- * in the MokMzansi Books application. It aggregates data from all modules including:
- * - Company information
- * - Clients data
- * - Accounting data
- * - HR & Payroll data
- * - Inventory data
- * - Reports settings
- * - User preferences
- * 
- * This ensures consistency across the application and prevents redundant data loading.
- */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { ensureInitialized, migrateData, consolidateStorage } from '@/utils/robustStorageMigrator';
-import { 
-  useAccountingWithSync,
-  useHRWithSync,
-  useInventoryWithSync,
-  useReportsWithSync,
-  useSettingsWithSync,
-  useSyncStatus
-} from '@/types/sync';
-import { 
-  initializeAllStorageAdapters,
-  loadCompanyDetails,
-  saveCompanyDetails,
-  loadClients,
-  saveClients
-} from '@/utils/globalContextHelpers';
-import { Client } from '@/types/client';
-import { CompanyDetails } from '@/types/company';
-import { UserPreference, AppSettings } from '@/types/settings';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { ensureInitialized } from '@/utils/robustStorageMigrator';
+import { toast } from '@/hooks/use-toast';
 
-// Define app state interfaces
-interface GlobalAppState {
-  // Company information
-  companyDetails: CompanyDetails | null;
-  updateCompanyDetails: (details: CompanyDetails) => Promise<boolean>;
-  
-  // Clients information
-  clients: Client[];
-  clientCount: number;
-  activeClientCount: number;
-  updateClients: (clients: Client[]) => Promise<boolean>;
-  
-  // Accounting summary
-  accountingSummary: {
-    totalRevenue: number;
-    totalExpenses: number;
-    balance: number;
-    recentTransactions: any[];
-  };
-  
-  // HR & Payroll summary
-  hrSummary: {
-    employeeCount: number;
-    onLeaveCount: number;
-    upcomingPayroll: any[];
-    recentPayments: any[];
-  };
-  
-  // Inventory summary 
-  inventorySummary: {
-    totalItems: number;
-    lowStockItems: number;
-    totalValue: number;
-    recentMovements: any[];
-  };
-  
-  // Reports summary
-  reportsSummary: {
-    savedReports: number;
-    recentReports: any[];
-  };
-  
-  // User settings
-  userPreferences: UserPreference | null;
-  appSettings: AppSettings | null;
-  updateUserPreferences: (preferences: Partial<UserPreference>) => Promise<boolean>;
-  
-  // Global app state
-  isLoading: boolean;
+interface GlobalAppContextType {
   isInitialized: boolean;
-  lastUpdated: Date | null;
-  refreshAllData: () => Promise<void>;
+  initializeApp: () => Promise<boolean>;
+  isOnline: boolean;
+  lastSyncTime: Date | null;
+  triggerSync: () => Promise<boolean>;
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+  isMaintenanceMode: boolean;
 }
 
-// Use GlobalAppState as the context type
-const GlobalAppContext = createContext<GlobalAppState>({
-  // Company information
-  companyDetails: null,
-  updateCompanyDetails: async () => false,
-  
-  // Clients information
-  clients: [],
-  clientCount: 0,
-  activeClientCount: 0,
-  updateClients: async () => false,
-  
-  // Accounting summary
-  accountingSummary: {
-    totalRevenue: 0,
-    totalExpenses: 0,
-    balance: 0,
-    recentTransactions: [],
-  },
-  
-  // HR & Payroll summary
-  hrSummary: {
-    employeeCount: 0,
-    onLeaveCount: 0,
-    upcomingPayroll: [],
-    recentPayments: [],
-  },
-  
-  // Inventory summary 
-  inventorySummary: {
-    totalItems: 0,
-    lowStockItems: 0,
-    totalValue: 0,
-    recentMovements: [],
-  },
-  
-  // Reports summary
-  reportsSummary: {
-    savedReports: 0,
-    recentReports: [],
-  },
-  
-  // User settings
-  userPreferences: null,
-  appSettings: null,
-  updateUserPreferences: async () => false,
-  
-  // Global app state
-  isLoading: true,
+const GlobalAppContext = createContext<GlobalAppContextType>({
   isInitialized: false,
-  lastUpdated: null,
-  refreshAllData: async () => {},
+  initializeApp: async () => false,
+  isOnline: true,
+  lastSyncTime: null,
+  triggerSync: async () => false,
+  isDarkMode: false,
+  toggleDarkMode: () => {},
+  isMaintenanceMode: false,
 });
 
-// Provider component
-export const GlobalAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // State for company details
-  const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
-  
-  // State for clients
-  const [clients, setClients] = useState<Client[]>([]);
-  
-  // State for accounting summary
-  const [accountingSummary, setAccountingSummary] = useState({
-    totalRevenue: 0,
-    totalExpenses: 0,
-    balance: 0,
-    recentTransactions: [],
-  });
-  
-  // State for HR summary
-  const [hrSummary, setHRSummary] = useState({
-    employeeCount: 0,
-    onLeaveCount: 0,
-    upcomingPayroll: [],
-    recentPayments: [],
-  });
-  
-  // State for inventory summary
-  const [inventorySummary, setInventorySummary] = useState({
-    totalItems: 0,
-    lowStockItems: 0,
-    totalValue: 0,
-    recentMovements: [],
-  });
-  
-  // State for reports summary
-  const [reportsSummary, setReportsSummary] = useState({
-    savedReports: 0,
-    recentReports: [],
-  });
-  
-  // State for user preferences and app settings
-  const [userPreferences, setUserPreferences] = useState<UserPreference | null>(null);
-  const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
-  
-  // Loading and initialization states
-  const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  
-  // Get storage adapters with sync status
-  const accountingAdapter = useAccountingWithSync();
-  const hrAdapter = useHRWithSync();
-  const inventoryAdapter = useInventoryWithSync();
-  const reportsAdapter = useReportsWithSync();
-  const settingsAdapter = useSettingsWithSync();
-  
-  // Get sync status for visual feedback
-  const syncStatus = useSyncStatus();
-  
-  // Initialize app data and load settings
-  useEffect(() => {
-    const initializeAppData = async () => {
-      try {
-        // Ensure storage is initialized properly
-        const isInitialized = await ensureInitialized("app", "1.0.0");
-        if (!isInitialized) {
-          console.error('Failed to initialize storage');
-          return;
-        }
+export const useGlobalApp = () => useContext(GlobalAppContext);
 
-        // Perform any other initialization
-        setIsLoading(true);
-        
-        // Initialize all storage adapters
-        await initializeAllStorageAdapters();
-        
-        // Load all critical data in parallel
-        const results = await Promise.allSettled([
-          loadCompanyDetails().catch(err => {
-            console.error('Error loading company details:', err);
-            return null;
-          }),
-          loadClients().catch(err => {
-            console.error('Error loading clients:', err);
-            return [];
-          }),
-          accountingAdapter.loadAccountingData().catch(err => {
-            console.error('Error loading accounting data:', err);
-            return null;
-          }),
-          hrAdapter.loadHRData().catch(err => {
-            console.error('Error loading HR data:', err);
-            return null;
-          }),
-          inventoryAdapter.loadInventoryData().catch(err => {
-            console.error('Error loading inventory data:', err);
-            return null;
-          }),
-          reportsAdapter.loadReportsData().catch(err => {
-            console.error('Error loading reports data:', err);
-            return null;
-          }),
-          settingsAdapter.loadSettings().catch(err => {
-            console.error('Error loading settings data:', err);
-            return null;
-          }),
-        ]);
-        
-        // Process results
-        if (results[0].status === 'fulfilled' && results[0].value) {
-          setCompanyDetails(results[0].value);
-        }
-        
-        if (results[1].status === 'fulfilled') {
-          const clientsData = results[1].value || [];
-          setClients(clientsData);
-        }
-        
-        if (results[2].status === 'fulfilled' && results[2].value) {
-          const accounting = results[2].value;
-          // Calculate accounting summary
-          const totalRevenue = accounting.transactions?.reduce((sum: number, tx: any) => 
-            tx.type === 'income' ? sum + (tx.amount || 0) : sum, 0) || 0;
-          
-          const totalExpenses = accounting.transactions?.reduce((sum: number, tx: any) => 
-            tx.type === 'expense' ? sum + (tx.amount || 0) : sum, 0) || 0;
-          
-          const recentTransactions = accounting.transactions?.slice(0, 5) || [];
-          
-          setAccountingSummary({
-            totalRevenue,
-            totalExpenses,
-            balance: totalRevenue - totalExpenses,
-            recentTransactions
-          });
-        }
-        
-        if (results[3].status === 'fulfilled' && results[3].value) {
-          const hr = results[3].value;
-          setHRSummary({
-            employeeCount: hr.employees?.length || 0,
-            onLeaveCount: hr.leaveRequests?.filter((req: any) => req.status === 'approved').length || 0,
-            upcomingPayroll: hr.payrollRecords?.slice(0, 3) || [],
-            recentPayments: hr.payrollRecords?.slice(0, 5) || []
-          });
-        }
-        
-        if (results[4].status === 'fulfilled' && results[4].value) {
-          const inventory = results[4].value;
-          const lowStockItems = inventory.items?.filter((item: any) => 
-            item.quantity <= (item.reorderLevel || 5)).length || 0;
-          
-          const totalValue = inventory.items?.reduce((sum: number, item: any) => 
-            sum + ((item.quantity || 0) * (item.costPrice || 0)), 0) || 0;
-          
-          setInventorySummary({
-            totalItems: inventory.items?.length || 0,
-            lowStockItems,
-            totalValue,
-            recentMovements: inventory.transactions?.slice(0, 5) || []
-          });
-        }
-        
-        if (results[5].status === 'fulfilled' && results[5].value) {
-          const reports = results[5].value;
-          setReportsSummary({
-            savedReports: reports.reports?.length || 0,
-            recentReports: reports.reports?.slice(0, 5) || []
-          });
-        }
-        
-        if (results[6].status === 'fulfilled' && results[6].value) {
-          const settings = results[6].value;
-          setUserPreferences(settings.userPreferences);
-          setAppSettings(settings.appSettings);
-        }
-        
-        setLastUpdated(new Date());
-        setIsInitialized(true);
-      } catch (error) {
-        console.error('Error initializing global app context:', error);
-      } finally {
-        setIsLoading(false);
-      }
+interface GlobalAppProviderProps {
+  children: ReactNode;
+}
+
+export const GlobalAppProvider: React.FC<GlobalAppProviderProps> = ({ children }) => {
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Check localStorage or system preference
+    const saved = localStorage.getItem('color-theme');
+    if (saved === 'dark') return true;
+    if (saved === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+
+  // Handle online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast({
+        title: "You're back online",
+        description: "Connection restored",
+        variant: "success",
+      });
     };
 
-    initializeAppData();
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast({
+        title: "You're offline",
+        description: "Changes will be saved locally",
+        variant: "destructive",
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
-  // Function to refresh all data
-  const refreshAllData = async () => {
+  // Initialize app
+  const initializeApp = async (): Promise<boolean> => {
     try {
-      syncStatus.showSyncing('Refreshing all application data...');
-      setIsLoading(true);
+      const success = await ensureInitialized('MokMzansi Books', '1.0.0');
+      setIsInitialized(success);
       
-      // First ensure our robust storage migrator has recovered any lost data
-      await ensureInitialized("app", "1.0.0");
+      // Check if maintenance mode is active
+      checkMaintenanceMode();
       
-      // Reload all data in parallel
-      const [
-        companyResult, 
-        clientsResult, 
-        accountingResult,
-        hrResult,
-        inventoryResult,
-        reportsResult,
-        settingsResult
-      ] = await Promise.allSettled([
-        loadCompanyDetails(),
-        loadClients(),
-        accountingAdapter.loadAccountingData(),
-        hrAdapter.loadHRData(),
-        inventoryAdapter.loadInventoryData(),
-        reportsAdapter.loadReportsData(),
-        settingsAdapter.loadSettings()
-      ]);
-      
-      // Update state with new data
-      if (companyResult.status === 'fulfilled') {
-        setCompanyDetails(companyResult.value);
-      }
-      
-      if (clientsResult.status === 'fulfilled') {
-        setClients(clientsResult.value || []);
-      }
-      
-      // Process other results similarly...
-      // (omitting duplicate code for brevity)
-      
-      setLastUpdated(new Date());
-      syncStatus.showSuccess('All application data refreshed');
+      return success;
     } catch (error) {
-      console.error('Error refreshing global app data:', error);
-      syncStatus.showError('Failed to refresh application data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Update company details
-  const updateCompanyDetails = async (details: CompanyDetails): Promise<boolean> => {
-    try {
-      syncStatus.showSyncing('Updating company details...');
-      const success = await saveCompanyDetails(details);
-      
-      if (success) {
-        setCompanyDetails(details);
-        setLastUpdated(new Date());
-        syncStatus.showSuccess('Company details updated');
-        return true;
-      } else {
-        syncStatus.showError('Failed to update company details');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error updating company details:', error);
-      syncStatus.showError('Error updating company details');
+      console.error('Error initializing app:', error);
       return false;
     }
   };
-  
-  // Update clients
-  const updateClients = async (newClients: Client[]): Promise<boolean> => {
+
+  // Check if server is in maintenance mode
+  const checkMaintenanceMode = async () => {
     try {
-      syncStatus.showSyncing('Updating clients...');
-      const success = await saveClients(newClients);
-      
-      if (success) {
-        setClients(newClients);
-        setLastUpdated(new Date());
-        syncStatus.showSuccess('Clients updated successfully');
-        return true;
-      } else {
-        syncStatus.showError('Failed to update clients');
-        return false;
-      }
+      // This would typically check with a backend API
+      // For now, just simulate with a local check
+      const isInMaintenance = localStorage.getItem('maintenance-mode') === 'true';
+      setIsMaintenanceMode(isInMaintenance);
     } catch (error) {
-      console.error('Error updating clients:', error);
-      syncStatus.showError('Error updating clients');
-      return false;
+      console.error('Error checking maintenance mode:', error);
     }
   };
-  
-  // Update user preferences
-  const updateUserPreferences = async (preferences: Partial<UserPreference>): Promise<boolean> => {
+
+  // Trigger data sync with server
+  const triggerSync = async (): Promise<boolean> => {
     try {
-      const success = await settingsAdapter.updateUserPreferences(preferences);
-      
-      if (success && userPreferences) {
-        setUserPreferences({
-          ...userPreferences,
-          ...preferences
+      if (!isOnline) {
+        toast({
+          title: "Sync failed",
+          description: "You're currently offline",
+          variant: "destructive",
         });
-        setLastUpdated(new Date());
-        return true;
+        return false;
       }
+
+      // Here you would implement actual sync logic with your backend
+      // For now, just simulate a successful sync
+      console.log('Syncing data with server...');
       
-      return false;
+      // Update last sync time
+      const syncTime = new Date();
+      setLastSyncTime(syncTime);
+      localStorage.setItem('last-sync-time', syncTime.toISOString());
+      
+      toast({
+        title: "Sync complete",
+        description: "Your data is up to date",
+        variant: "success",
+      });
+      
+      return true;
     } catch (error) {
-      console.error('Error updating user preferences:', error);
+      console.error('Error syncing data:', error);
+      
+      toast({
+        title: "Sync failed",
+        description: "Could not sync with server",
+        variant: "destructive",
+      });
+      
       return false;
     }
   };
-  
-  // Calculate derived values
-  const clientCount = clients.length;
-  // Consider all clients as active for now, as the Client type doesn't have a status field
-  // This can be refined when client status tracking is implemented
-  const activeClientCount = clients.filter(client => {
-    // Filter out clients with negative credit as potentially inactive
-    return client.credit >= 0;
-  }).length;
-  
-  // Global app state value
-  const value: GlobalAppState = {
-    companyDetails,
-    updateCompanyDetails,
-    clients,
-    clientCount,
-    activeClientCount,
-    updateClients,
-    accountingSummary,
-    hrSummary,
-    inventorySummary,
-    reportsSummary,
-    userPreferences,
-    appSettings,
-    updateUserPreferences,
-    isLoading,
-    isInitialized,
-    lastUpdated,
-    refreshAllData
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    
+    // Update localStorage and document class
+    localStorage.setItem('color-theme', newMode ? 'dark' : 'light');
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
-  
+
+  useEffect(() => {
+    // Set initial dark mode class on document
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Initialize the app on mount
+    initializeApp();
+    
+    // Load last sync time from localStorage
+    const lastSync = localStorage.getItem('last-sync-time');
+    if (lastSync) {
+      setLastSyncTime(new Date(lastSync));
+    }
+  }, []);
+
   return (
-    <GlobalAppContext.Provider value={value}>
+    <GlobalAppContext.Provider
+      value={{
+        isInitialized,
+        initializeApp,
+        isOnline,
+        lastSyncTime,
+        triggerSync,
+        isDarkMode,
+        toggleDarkMode,
+        isMaintenanceMode,
+      }}
+    >
       {children}
     </GlobalAppContext.Provider>
   );
 };
-
-// Custom hook to use the global app context
-export const useGlobalApp = () => useContext(GlobalAppContext);
-
-export default GlobalAppContext;

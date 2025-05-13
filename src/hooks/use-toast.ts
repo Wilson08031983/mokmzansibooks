@@ -1,191 +1,149 @@
+
 import * as React from "react"
+import { toast as sonnerToast, Toaster as Sonner } from "sonner"
 
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast"
-
-const TOAST_LIMIT = 1
+const TOAST_LIMIT = 5
 const TOAST_REMOVE_DELAY = 1000000
 
-type ToasterToast = ToastProps & {
-  id: string
-  title?: React.ReactNode
+type ToastActionElement = React.ReactElement<any, string | React.JSXElementConstructor<any>>
+
+type ToastProps = React.ComponentPropsWithoutRef<typeof Sonner>
+
+type ToastActionProps = {
+  altText: string
+  onClick: () => void
+  children?: React.ReactNode
+}
+
+type ToastVariants = "default" | "destructive" | "outline" | "secondary" | "client" | "credit" | "overdue" | "outstanding" | "bank" | "success"
+
+const actionClassName = "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive"
+
+const toastVariants = {
+  default: {
+    title: "text-foreground",
+    description: "text-muted-foreground",
+    container: "bg-background border",
+  },
+  destructive: {
+    title: "text-destructive-foreground",
+    description: "text-destructive-foreground/90",
+    container: "bg-destructive border-destructive border text-white",
+  },
+  outline: {
+    title: "text-foreground",
+    description: "text-muted-foreground",
+    container: "bg-transparent border",
+  },
+  secondary: {
+    title: "text-secondary-foreground",
+    description: "text-secondary-foreground/90",
+    container: "bg-secondary border-secondary border",
+  },
+  client: {
+    title: "text-blue-800",
+    description: "text-blue-700",
+    container: "bg-blue-50 border-blue-200 border",
+  },
+  credit: {
+    title: "text-green-800",
+    description: "text-green-700",
+    container: "bg-green-50 border-green-200 border",
+  },
+  overdue: {
+    title: "text-red-800",
+    description: "text-red-700",
+    container: "bg-red-50 border-red-200 border",
+  },
+  outstanding: {
+    title: "text-orange-800",
+    description: "text-orange-700",
+    container: "bg-orange-50 border-orange-200 border",
+  },
+  bank: {
+    title: "text-emerald-800",
+    description: "text-emerald-700",
+    container: "bg-emerald-50 border-emerald-200 border",
+  },
+  success: {
+    title: "text-green-800",
+    description: "text-green-700",
+    container: "bg-green-50 border-green-200 border",
+  },
+}
+
+export type ToastActionType = React.FC<ToastActionProps>
+
+export type ToastT = Sonner
+
+type ToastOptions = {
+  title?: string
   description?: React.ReactNode
+  variant?: ToastVariants
   action?: ToastActionElement
 }
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const
-
-let count = 0
-
-function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER
-  return count.toString()
+const Toast: React.FC<ToastProps> = ({
+  className,
+  ...props
+}) => {
+  return (
+    <Sonner
+      className={className}
+      toastOptions={{
+        classNames: {
+          toast: "group flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+          title: "text-sm font-semibold",
+          description: "text-sm opacity-90",
+          actionButton: actionClassName,
+          cancelButton: actionClassName,
+        },
+      }}
+      {...props}
+    />
+  )
 }
 
-type ActionType = typeof actionTypes
+export const useToast = () => {
+  const [toasts, setToasts] = React.useState<ToastOptions[]>([])
 
-type Action =
-  | {
-      type: ActionType["ADD_TOAST"]
-      toast: ToasterToast
-    }
-  | {
-      type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast>
-    }
-  | {
-      type: ActionType["DISMISS_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
-  | {
-      type: ActionType["REMOVE_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
+  const toast = (options: ToastOptions) => {
+    const { title, description, variant = "default", action } = options
+    const titleClass = toastVariants[variant]?.title
+    const descriptionClass = toastVariants[variant]?.description
+    const containerClass = toastVariants[variant]?.container
 
-interface State {
-  toasts: ToasterToast[]
-}
-
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
-
-const addToRemoveQueue = (toastId: string) => {
-  if (toastTimeouts.has(toastId)) {
-    return
-  }
-
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId)
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    })
-  }, TOAST_REMOVE_DELAY)
-
-  toastTimeouts.set(toastId, timeout)
-}
-
-export const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case "ADD_TOAST":
-      return {
-        ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
-      }
-
-    case "UPDATE_TOAST":
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t
-        ),
-      }
-
-    case "DISMISS_TOAST": {
-      const { toastId } = action
-
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId)
-      } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
-        })
-      }
-
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
-            : t
-        ),
-      }
-    }
-    case "REMOVE_TOAST":
-      if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        }
-      }
-      return {
-        ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
-      }
-  }
-}
-
-const listeners: Array<(state: State) => void> = []
-
-let memoryState: State = { toasts: [] }
-
-function dispatch(action: Action) {
-  memoryState = reducer(memoryState, action)
-  listeners.forEach((listener) => {
-    listener(memoryState)
-  })
-}
-
-type Toast = Omit<ToasterToast, "id">
-
-function toast({ ...props }: Toast) {
-  const id = genId()
-
-  const update = (props: ToasterToast) =>
-    dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
-    })
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
-
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
+    sonnerToast(title, {
+      description,
+      action,
+      className: containerClass,
+      classNames: {
+        title: titleClass,
+        description: descriptionClass,
       },
+    })
+
+    setToasts((prevToasts) => [...prevToasts, options])
+  }
+
+  return { toast, toasts, setToasts, dismiss: sonnerToast.dismiss }
+}
+
+export { Toast, toast as sonnerToast }
+
+export const toast = (options: ToastOptions) => {
+  const { title, description, variant = "default", action } = options
+  const titleClass = toastVariants[variant]?.title
+  const descriptionClass = toastVariants[variant]?.description
+  const containerClass = toastVariants[variant]?.container
+
+  sonnerToast(title, {
+    description,
+    action,
+    className: containerClass,
+    classNames: {
+      title: titleClass,
+      description: descriptionClass,
     },
   })
-
-  return {
-    id: id,
-    dismiss,
-    update,
-  }
 }
-
-function useToast() {
-  const [state, setState] = React.useState<State>(memoryState)
-
-  React.useEffect(() => {
-    listeners.push(setState)
-    return () => {
-      const index = listeners.indexOf(setState)
-      if (index > -1) {
-        listeners.splice(index, 1)
-      }
-    }
-  }, [state])
-
-  return {
-    ...state,
-    toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
-  }
-}
-
-export { useToast, toast }

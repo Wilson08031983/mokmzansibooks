@@ -20,11 +20,8 @@ export async function testConnection(): Promise<boolean> {
       return false;
     }
 
-    // Test database connection by querying the instruments table
-    const { data, error } = await supabase
-      .from('instruments')
-      .select('*')
-      .limit(1);
+    // Test database connection with a simple health check
+    const { data, error } = await supabase.from('instruments').select('count').single();
 
     if (error) {
       console.error('Error connecting to Supabase:', error.message);
@@ -50,8 +47,7 @@ export async function checkForRequiredTables(): Promise<string[]> {
 
     for (const table of requiredTables) {
       try {
-        // Try to query the table to see if it exists
-        // Use a dynamic query as a workaround for type safety issues
+        // Try to query each table with a count to see if it exists
         const { error } = await supabase.rpc('check_table_exists', { table_name: table });
         
         if (error) {

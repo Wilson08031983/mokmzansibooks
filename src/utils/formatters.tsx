@@ -1,9 +1,6 @@
 
 import React from 'react';
-import { formatCurrency, formatDate } from './numberUtils';
-
-// Export the basic formatters
-export { formatCurrency, formatDate };
+import { formatCurrency, formatDate, formatPercentage } from './formatters';
 
 /**
  * Renders company logo with proper fallbacks
@@ -80,26 +77,5 @@ export function renderSignature(signatureSrc?: string | null): React.ReactNode {
   );
 }
 
-// Format a string for display with proper fallback
-export function formatDisplayText(text?: string): string {
-  return text || '--';
-}
-
-// Format an address for display
-export function formatAddress(address: string, city?: string, province?: string, postalCode?: string): string {
-  let formattedAddress = address;
-  
-  if (city) {
-    formattedAddress += `, ${city}`;
-  }
-  
-  if (province) {
-    formattedAddress += `, ${province}`;
-  }
-  
-  if (postalCode) {
-    formattedAddress += ` ${postalCode}`;
-  }
-  
-  return formattedAddress;
-}
+// Re-export the formatter functions from formatters.ts
+export { formatCurrency, formatDate, formatPercentage };

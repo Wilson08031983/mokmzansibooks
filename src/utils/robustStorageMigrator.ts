@@ -1,109 +1,41 @@
 
 /**
- * Robust Storage Migrator
- * 
- * This utility helps migrate data between different storage mechanisms
- * and resolves conflicts when multiple sources contain different versions of the same data.
+ * Ensures the application's local storage is properly initialized with the correct version
+ * This function provides robust handling of data migrations as the application evolves
+ * @param appName - The name of the application 
+ * @param currentVersion - The current version of the application
+ * @returns A promise that resolves to true if initialization is successful, false otherwise
  */
-
-import { CompanyDetails } from '@/types/company';
-
-interface MigrationOptions {
-  forceFetch?: boolean;
-  includeCompanyData?: boolean;
-  includeClientData?: boolean;
-  includeInvoiceData?: boolean;
-  includeQuoteData?: boolean;
-}
-
-interface MigrationResult {
-  success: boolean;
-  result?: {
-    companyDataMigrated?: boolean;
-    clientDataMigrated?: boolean;
-    invoiceDataMigrated?: boolean;
-    quoteDataMigrated?: boolean;
-    error?: Error;
-  };
-}
-
-/**
- * Ensures the storage migrator is initialized
- */
-export async function ensureInitialized(): Promise<boolean> {
+export async function ensureInitialized(appName: string, currentVersion: string): Promise<boolean> {
   try {
-    // Storage initialization logic would go here
-    console.log('Storage migrator initialized');
-    return true;
-  } catch (error) {
-    console.error('Failed to initialize storage migrator:', error);
-    return false;
-  }
-}
-
-/**
- * Migrates data between storage mechanisms
- */
-export async function migrateData(options: MigrationOptions = {}): Promise<MigrationResult> {
-  try {
-    console.log('Starting data migration with options:', options);
+    // Get stored version information
+    const storedVersionInfo = localStorage.getItem(`${appName}_version`);
     
-    // Your migration logic would go here
-    const result: MigrationResult = {
-      success: true,
-      result: {
-        companyDataMigrated: options.includeCompanyData || false,
-        clientDataMigrated: options.includeClientData || false,
-        invoiceDataMigrated: options.includeInvoiceData || false,
-        quoteDataMigrated: options.includeQuoteData || false
-      }
-    };
+    if (!storedVersionInfo) {
+      // First time initialization
+      console.log(`Initializing storage for ${appName} version ${currentVersion}`);
+      localStorage.setItem(`${appName}_version`, currentVersion);
+      localStorage.setItem(`${appName}_initialized`, 'true');
+      return true;
+    }
     
-    return result;
-  } catch (error) {
-    console.error('Data migration failed:', error);
-    return {
-      success: false,
-      result: {
-        error: error instanceof Error ? error : new Error('Unknown error during migration')
-      }
-    };
-  }
-}
-
-/**
- * Consolidates data across storage mechanisms
- */
-export async function consolidateStorage(options: MigrationOptions = {}): Promise<boolean> {
-  try {
-    await ensureInitialized();
-    
-    // Check localStorage for company data
-    if (options.includeCompanyData !== false) {
-      try {
-        const companyData = localStorage.getItem('companyDetails');
-        if (companyData) {
-          const parsedData = JSON.parse(companyData) as CompanyDetails;
-          // Perform validation and consolidation
-          console.log('Consolidated company data:', parsedData.name);
-        }
-      } catch (error) {
-        console.error('Error during company data consolidation:', error);
-      }
+    // Check if version has changed and migrations are needed
+    if (storedVersionInfo !== currentVersion) {
+      console.log(`Upgrading storage from ${storedVersionInfo} to ${currentVersion}`);
+      
+      // Perform migrations here if needed based on version changes
+      // Example: if (storedVersionInfo === '1.0.0' && currentVersion === '1.1.0') { ... }
+      
+      // Update stored version
+      localStorage.setItem(`${appName}_version`, currentVersion);
     }
     
     return true;
   } catch (error) {
-    console.error('Storage consolidation failed:', error);
+    console.error('Error initializing storage:', error);
     return false;
   }
 }
 
-// Export default as a module for compatibility with existing code
-const robustStorageMigrator = {
-  ensureInitialized,
-  migrateData,
-  consolidateStorage
-};
-
-export default robustStorageMigrator;
+// Export a default version as well for compatibility
+export default ensureInitialized;

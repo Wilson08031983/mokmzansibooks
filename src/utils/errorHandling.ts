@@ -1,28 +1,32 @@
 
 /**
- * Error handling utilities for the application
+ * Safely stringifies an object, handling circular references
+ * @param obj - The object to stringify
+ * @returns A JSON string representation of the object
  */
-
-/**
- * Safely parse JSON with a fallback value
- * @param json The JSON string to parse
- * @param fallback A fallback value if parsing fails
- * @returns The parsed JSON object or the fallback value
- */
-export function safeJsonParse<T>(json: string, fallback: T): T {
+export function safeJsonStringify(obj: any): string {
   try {
-    return JSON.parse(json) as T;
+    const seen = new WeakSet();
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+      }
+      return value;
+    });
   } catch (error) {
-    console.error('Error parsing JSON:', error);
-    return fallback;
+    console.error("Failed to stringify object:", error);
+    return '{"error": "Failed to stringify object"}';
   }
 }
 
 /**
- * Wrap a function with error handling
- * @param fn The function to wrap
- * @param errorHandler Optional custom error handler
- * @returns The wrapped function
+ * Higher-order function that wraps a function with error handling
+ * @param fn - The function to wrap
+ * @param errorHandler - Optional custom error handler
+ * @returns A wrapped function with error handling
  */
 export function withErrorHandling<T extends (...args: any[]) => any>(
   fn: T,
@@ -32,58 +36,26 @@ export function withErrorHandling<T extends (...args: any[]) => any>(
     try {
       return fn(...args);
     } catch (error) {
-      console.error('Error in function:', error);
+      console.error(`Error in function ${fn.name || 'anonymous'}:`, error);
       
       if (errorHandler) {
-        return errorHandler(error instanceof Error ? error : new Error(String(error)), ...args);
+        return errorHandler(error as Error, ...args);
       }
       
-      // Default error handling if no custom handler provided
+      // Default error handling behavior
       throw error;
     }
   };
 }
 
 /**
- * Try to execute an asynchronous function and handle errors
- * @param fn The async function to execute
- * @param fallback Optional fallback value if the function fails
- * @returns The result of the function or the fallback value
+ * Logs errors to the console and optionally to a service
+ * @param error - The error to log
+ * @param context - Additional context about where the error occurred
  */
-export async function tryAsync<T>(
-  fn: () => Promise<T>,
-  fallback?: T
-): Promise<T> {
-  try {
-    return await fn();
-  } catch (error) {
-    console.error('Error in async function:', error);
-    
-    if (fallback !== undefined) {
-      return fallback;
-    }
-    
-    throw error;
-  }
-}
-
-/**
- * Validate an email address
- * @param email The email address to validate
- * @returns True if the email is valid, false otherwise
- */
-export function isValidEmail(email: string): boolean {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
-}
-
-/**
- * Validate a phone number
- * @param phone The phone number to validate
- * @returns True if the phone number is valid, false otherwise
- */
-export function isValidPhone(phone: string): boolean {
-  // Allow digits, spaces, dashes, and parentheses
-  const re = /^[\d\s\-()]+$/;
-  return re.test(phone) && phone.length >= 10;
+export function logError(error: Error, context?: string): void {
+  console.error(`Error${context ? ` in ${context}` : ''}:`, error);
+  
+  // Here you could add code to log to an external service
+  // Example: sendToErrorLoggingService(error, context);
 }
