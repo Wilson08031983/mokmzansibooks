@@ -1,78 +1,79 @@
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Shield, RotateCcw, Save } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { createClientDataBackup, restoreClientDataFromBackup } from "@/utils/clientDataPersistence";
+import { Shield, Download, Upload, RefreshCw } from "lucide-react";
+import { createClientDataBackup, restoreClientDataFromBackup } from '@/utils/clientDataPersistence';
+import { useToast } from '@/hooks/use-toast';
 
-/**
- * Component for client data protection features
- */
-const ClientDataProtection: React.FC = () => {
-  const [isBackupInProgress, setIsBackupInProgress] = useState(false);
-  const [isRestoreInProgress, setIsRestoreInProgress] = useState(false);
+interface ClientDataProtectionProps {
+  onRefresh?: () => void;
+}
+
+const ClientDataProtection: React.FC<ClientDataProtectionProps> = ({ onRefresh }) => {
+  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const { toast } = useToast();
 
-  const handleBackup = async () => {
-    setIsBackupInProgress(true);
+  const handleCreateBackup = async () => {
     try {
-      // Create backup
+      setIsCreatingBackup(true);
       const success = createClientDataBackup();
       
       if (success) {
         toast({
-          title: "Backup successful",
-          description: "Client data has been backed up successfully.",
+          title: "Backup created",
+          description: "Your client data has been backed up successfully.",
         });
       } else {
         toast({
           title: "Backup failed",
-          description: "There was an error backing up client data.",
+          description: "There was an issue creating the backup.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Error backing up client data:", error);
+      console.error("Error creating backup:", error);
       toast({
-        title: "Backup failed",
-        description: "There was an error backing up client data.",
+        title: "Error",
+        description: "Failed to create backup",
         variant: "destructive",
       });
     } finally {
-      setIsBackupInProgress(false);
+      setIsCreatingBackup(false);
     }
   };
 
-  const handleRestore = async () => {
-    setIsRestoreInProgress(true);
+  const handleRestoreBackup = async () => {
     try {
-      // Attempt to restore
+      setIsRestoring(true);
       const success = restoreClientDataFromBackup();
       
       if (success) {
         toast({
-          title: "Restore successful",
-          description: "Client data has been restored. Please refresh the page to see the changes.",
+          title: "Backup restored",
+          description: "Your client data has been restored successfully.",
         });
-        // Force a page reload to reflect restored data
-        window.location.reload();
+        
+        if (onRefresh) {
+          onRefresh();
+        }
       } else {
         toast({
           title: "Restore failed",
-          description: "No backup data found or restoration failed.",
+          description: "There was no backup found or the backup is invalid.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Error restoring client data:", error);
+      console.error("Error restoring backup:", error);
       toast({
-        title: "Restore failed",
-        description: "There was an error restoring client data.",
+        title: "Error",
+        description: "Failed to restore backup",
         variant: "destructive",
       });
     } finally {
-      setIsRestoreInProgress(false);
+      setIsRestoring(false);
     }
   };
 
@@ -82,29 +83,44 @@ const ClientDataProtection: React.FC = () => {
         <Shield className="h-4 w-4" />
         <AlertTitle>Data Protection</AlertTitle>
         <AlertDescription>
-          Protect your client data by creating backups and restoring if needed.
+          Create a backup of your client data or restore from a previous backup.
         </AlertDescription>
       </Alert>
       
       <div className="flex flex-wrap gap-2">
-        <Button 
-          onClick={handleBackup} 
-          disabled={isBackupInProgress}
+        <Button
+          variant="outline"
+          size="sm"
           className="flex items-center gap-2"
+          onClick={handleCreateBackup}
+          disabled={isCreatingBackup}
         >
-          <Save className="h-4 w-4" />
-          {isBackupInProgress ? "Backing up..." : "Backup Data"}
+          <Download className="h-4 w-4" />
+          {isCreatingBackup ? "Creating Backup..." : "Create Backup"}
         </Button>
         
-        <Button 
-          onClick={handleRestore} 
-          disabled={isRestoreInProgress}
+        <Button
           variant="outline"
+          size="sm"
           className="flex items-center gap-2"
+          onClick={handleRestoreBackup}
+          disabled={isRestoring}
         >
-          <RotateCcw className="h-4 w-4" />
-          {isRestoreInProgress ? "Restoring..." : "Restore from Backup"}
+          <Upload className="h-4 w-4" />
+          {isRestoring ? "Restoring..." : "Restore Backup"}
         </Button>
+        
+        {onRefresh && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={onRefresh}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh Data
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -1,167 +1,178 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createClientDataBackup } from '@/utils/clientDataPersistence';
+import { supabase } from '@/integrations/supabase/client';
+import { Session, User } from '@supabase/supabase-js';
+import { useToast } from '@/components/ui/use-toast';
 
-interface User {
-  id: string;
-  email?: string;
-  user_metadata?: {
-    name?: string;
-  };
-}
-
-interface AuthState {
-  user: User | null;
-  session: any | null;
+export interface AuthContextProps {
+  currentUser: User | null;
+  isAuthenticated: boolean;
   isLoading: boolean;
-  error: string | null;
-}
-
-interface AuthContextProps {
-  authState: AuthState;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, options?: object) => Promise<void>;
+  signUp: (email: string, password: string, metadata: any) => Promise<void>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updateUserProfile: (data: object) => Promise<boolean>;
+  updateUserPassword: (password: string) => Promise<void>;
 }
 
-// Create context
 const SupabaseAuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-// Provider component
 export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    session: null,
-    isLoading: true,
-    error: null
-  });
-
+  const [session, setSession] = useState<Session | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  // Setup auth state listener
   useEffect(() => {
-    // Simulated auth state check
-    setAuthState(prevState => ({
-      ...prevState,
-      isLoading: false
-    }));
-
-    // Create backup on mount
-    createClientDataBackup();
+    setIsLoading(true);
+    
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setCurrentUser(session?.user ?? null);
+        setIsLoading(false);
+      }
+    );
+    
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setCurrentUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
-
-  // Authentication methods
+  
   const signIn = async (email: string, password: string) => {
     try {
-      setAuthState(prevState => ({
-        ...prevState,
-        isLoading: true,
-        error: null
-      }));
-
-      // Mock auth logic
-      console.log(`Sign in attempt with ${email}`);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       
-      // Update state after "authentication"
-      setAuthState({
-        user: { id: 'mock-user-id', email },
-        session: { access_token: 'mock-token' },
-        isLoading: false,
-        error: null
+      if (error) {
+        console.error('Error signing in:', error.message);
+        toast({
+          title: 'Error signing in',
+          description: error.message,
+          variant: 'destructive',
+        });
+        throw error;
+      }
+      
+      toast({
+        title: 'Welcome back!',
+        description: 'You have successfully signed in.',
       });
-    } catch (error) {
-      setAuthState(prevState => ({
-        ...prevState,
-        isLoading: false,
-        error: 'Authentication failed'
-      }));
-    }
-  };
-
-  const signUp = async (email: string, password: string, options?: object) => {
-    try {
-      setAuthState(prevState => ({
-        ...prevState,
-        isLoading: true,
-        error: null
-      }));
-
-      // Mock signup logic
-      console.log(`Sign up attempt with ${email}`, options);
       
-      // Usually new users don't get logged in automatically
-      setAuthState(prevState => ({
-        ...prevState,
-        isLoading: false
-      }));
+      navigate('/dashboard');
     } catch (error) {
-      setAuthState(prevState => ({
-        ...prevState,
-        isLoading: false,
-        error: 'Registration failed'
-      }));
+      console.error('Error signing in:', error);
+      throw error;
     }
   };
-
+  
+  const signUp = async (email: string, password: string, metadata: any) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+        },
+      });
+      
+      if (error) {
+        console.error('Error signing up:', error.message);
+        toast({
+          title: 'Error signing up',
+          description: error.message,
+          variant: 'destructive',
+        });
+        throw error;
+      }
+      
+      toast({
+        title: 'Account created',
+        description: 'Please check your email to verify your account.',
+      });
+      
+      // In development, we might want to automatically sign in
+      if (process.env.NODE_ENV === 'development') {
+        navigate('/dashboard');
+      } else {
+        navigate('/signin');
+      }
+    } catch (error) {
+      console.error('Error signing up:', error);
+      throw error;
+    }
+  };
+  
   const signOut = async () => {
     try {
-      setAuthState(prevState => ({
-        ...prevState,
-        isLoading: true,
-        error: null
-      }));
+      // Before signing out, ensure client data is backed up
+      if (typeof createClientDataBackup === 'function') {
+        createClientDataBackup();
+      }
       
-      // Backup data before logout
-      await createClientDataBackup();
-
-      // Mock signout
-      console.log('Signing out');
+      const { error } = await supabase.auth.signOut();
       
-      // Clear auth state
-      setAuthState({
-        user: null,
-        session: null,
-        isLoading: false,
-        error: null
+      if (error) {
+        console.error('Error signing out:', error.message);
+        toast({
+          title: 'Error signing out',
+          description: error.message,
+          variant: 'destructive',
+        });
+        throw error;
+      }
+      
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+  };
+  
+  const updateUserPassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      
+      if (error) {
+        console.error('Error updating password:', error.message);
+        toast({
+          title: 'Error updating password',
+          description: error.message,
+          variant: 'destructive',
+        });
+        throw error;
+      }
+      
+      toast({
+        title: 'Password updated',
+        description: 'Your password has been updated successfully.',
       });
     } catch (error) {
-      setAuthState(prevState => ({
-        ...prevState,
-        isLoading: false,
-        error: 'Error signing out'
-      }));
+      console.error('Error updating password:', error);
+      throw error;
     }
   };
-
-  const resetPassword = async (email: string) => {
-    try {
-      console.log(`Password reset requested for ${email}`);
-    } catch (error) {
-      setAuthState(prevState => ({
-        ...prevState,
-        error: 'Error resetting password'
-      }));
-    }
-  };
-
-  const updateUserProfile = async (data: object): Promise<boolean> => {
-    try {
-      console.log('Updating user profile', data);
-      return true;
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      return false;
-    }
-  };
-
-  const value = {
-    authState,
+  
+  const value: AuthContextProps = {
+    currentUser,
+    isAuthenticated: !!currentUser,
+    isLoading,
     signIn,
     signUp,
     signOut,
-    resetPassword,
-    updateUserProfile
+    updateUserPassword,
   };
-
+  
   return (
     <SupabaseAuthContext.Provider value={value}>
       {children}
@@ -169,10 +180,9 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   );
 };
 
-// Custom hook for using the auth context
-export const useSupabaseAuth = () => {
+export const useSupabaseAuth = (): AuthContextProps => {
   const context = useContext(SupabaseAuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useSupabaseAuth must be used within a SupabaseAuthProvider');
   }
   return context;

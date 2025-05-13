@@ -114,7 +114,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (partialClient.type === 'company') {
       return {
         ...baseClient,
-        type: 'company',
+        type: 'company' as const,
         vatNumber: (partialClient as Partial<CompanyClient>).vatNumber || "",
         registrationNumber: (partialClient as Partial<CompanyClient>).registrationNumber || "",
         contactPerson: (partialClient as Partial<CompanyClient>).contactPerson || "",
@@ -123,7 +123,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     else if (partialClient.type === 'individual') {
       return {
         ...baseClient,
-        type: 'individual',
+        type: 'individual' as const,
         firstName: (partialClient as Partial<IndividualClient>).firstName || "",
         lastName: (partialClient as Partial<IndividualClient>).lastName || "",
       } as IndividualClient;
@@ -131,10 +131,10 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     else if (partialClient.type === 'vendor') {
       return {
         ...baseClient,
-        type: 'vendor',
+        type: 'vendor' as const,
         contactPerson: (partialClient as Partial<VendorClient>).contactPerson || "",
         vendorCategory: (partialClient as Partial<VendorClient>).vendorCategory || "",
-        vendorCode: (partialClient as Partial<VendorClient>).vendorCode || undefined,
+        vendorCode: (partialClient as Partial<VendorClient>).vendorCode,
       } as VendorClient;
     }
     
@@ -215,8 +215,8 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...updatedClientData, 
             updatedAt: new Date().toISOString(),
             // Ensure type is maintained
-            type: 'company'
-          } as CompanyClient;
+            type: 'company' as const
+          };
         }
         return client;
       });
@@ -230,8 +230,8 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...updatedClientData, 
             updatedAt: new Date().toISOString(),
             // Ensure type is maintained
-            type: 'individual'
-          } as IndividualClient;
+            type: 'individual' as const
+          };
         }
         return client;
       });
@@ -245,8 +245,8 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...updatedClientData, 
             updatedAt: new Date().toISOString(),
             // Ensure type is maintained
-            type: 'vendor'
-          } as VendorClient;
+            type: 'vendor' as const
+          };
         }
         return client;
       });
@@ -328,17 +328,17 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Get company clients
   const getCompanyClients = useCallback((): CompanyClient[] => {
-    return [...clients.companies];
+    return clients.companies;
   }, [clients]);
 
   // Get individual clients
   const getIndividualClients = useCallback((): IndividualClient[] => {
-    return [...clients.individuals];
+    return clients.individuals;
   }, [clients]);
 
   // Get vendor clients
   const getVendorClients = useCallback((): VendorClient[] => {
-    return [...clients.vendors];
+    return clients.vendors;
   }, [clients]);
 
   // Context value

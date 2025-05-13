@@ -13,6 +13,7 @@ const dataService = {
 
 interface CompanyDisplaySafeProps {
   companyDetails?: CompanyDetails;
+  company?: any; // Added to support backward compatibility with existing components
 }
 
 /**
@@ -20,16 +21,20 @@ interface CompanyDisplaySafeProps {
  */
 const CompanyDisplaySafe: React.FC<CompanyDisplaySafeProps> = ({
   companyDetails,
+  company,
 }) => {
-  const [company, setCompany] = useState<CompanyDetails | null>(companyDetails || null);
-  const [isLoading, setIsLoading] = useState<boolean>(!companyDetails);
+  // Use either companyDetails or company prop, for backward compatibility
+  const companyData = companyDetails || company;
+  
+  const [companyState, setCompanyState] = useState<CompanyDetails | null>(companyData || null);
+  const [isLoading, setIsLoading] = useState<boolean>(!companyData);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // If no company details are provided, try to fetch them
   useEffect(() => {
-    if (companyDetails) {
-      setCompany(companyDetails);
+    if (companyData) {
+      setCompanyState(companyData);
       setIsLoading(false);
       return;
     }
@@ -39,12 +44,12 @@ const CompanyDisplaySafe: React.FC<CompanyDisplaySafeProps> = ({
         setIsLoading(true);
         const data = await dataService.fetchCompanyDetails();
         if (data) {
-          setCompany(data);
+          setCompanyState(data);
         } else {
           // Use locally stored company data as fallback
           const localData = localStorage.getItem('companyDetails');
           if (localData) {
-            setCompany(JSON.parse(localData));
+            setCompanyState(JSON.parse(localData));
           } else {
             setError('No company details found');
           }
@@ -63,7 +68,7 @@ const CompanyDisplaySafe: React.FC<CompanyDisplaySafeProps> = ({
     };
 
     fetchCompany();
-  }, [companyDetails, toast]);
+  }, [companyData, toast]);
 
   if (isLoading) {
     return (
@@ -76,7 +81,7 @@ const CompanyDisplaySafe: React.FC<CompanyDisplaySafeProps> = ({
     );
   }
 
-  if (error || !company) {
+  if (error || !companyState) {
     return (
       <div className="p-4 border rounded-md bg-red-50 text-red-800">
         <p className="font-medium">Company Information Not Available</p>
@@ -87,29 +92,29 @@ const CompanyDisplaySafe: React.FC<CompanyDisplaySafeProps> = ({
 
   return (
     <div className="space-y-1">
-      <h3 className="font-semibold text-lg">{company.name}</h3>
-      {company.address && (
-        <p className="text-sm text-gray-600">{company.address}</p>
+      <h3 className="font-semibold text-lg">{companyState.name}</h3>
+      {companyState.address && (
+        <p className="text-sm text-gray-600">{companyState.address}</p>
       )}
-      {company.addressLine2 && (
-        <p className="text-sm text-gray-600">{company.addressLine2}</p>
+      {companyState.addressLine2 && (
+        <p className="text-sm text-gray-600">{companyState.addressLine2}</p>
       )}
-      {company.city && company.province && company.postalCode && (
+      {companyState.city && companyState.province && companyState.postalCode && (
         <p className="text-sm text-gray-600">
-          {company.city}, {company.province}, {company.postalCode}
+          {companyState.city}, {companyState.province}, {companyState.postalCode}
         </p>
       )}
-      {company.contactEmail && (
-        <p className="text-sm text-gray-600">Email: {company.contactEmail}</p>
+      {companyState.contactEmail && (
+        <p className="text-sm text-gray-600">Email: {companyState.contactEmail}</p>
       )}
-      {company.contactPhone && (
-        <p className="text-sm text-gray-600">Phone: {company.contactPhone}</p>
+      {companyState.contactPhone && (
+        <p className="text-sm text-gray-600">Phone: {companyState.contactPhone}</p>
       )}
-      {company.registrationNumber && (
-        <p className="text-sm text-gray-600">Reg: {company.registrationNumber}</p>
+      {companyState.registrationNumber && (
+        <p className="text-sm text-gray-600">Reg: {companyState.registrationNumber}</p>
       )}
-      {company.vatNumber && (
-        <p className="text-sm text-gray-600">VAT: {company.vatNumber}</p>
+      {companyState.vatNumber && (
+        <p className="text-sm text-gray-600">VAT: {companyState.vatNumber}</p>
       )}
     </div>
   );

@@ -125,8 +125,38 @@ export const consolidateStorage = (
   }
 };
 
+/**
+ * Ensure storage migrator is initialized
+ * @returns Promise that resolves when initialization is complete
+ */
+export const ensureInitialized = async (): Promise<boolean> => {
+  try {
+    // Run any necessary initialization tasks
+    const legacyKeys = ['old-client-data', 'legacy-company-data', 'mok-clients-old'];
+    const modernKeys = ['mok-clients', 'company-data'];
+    
+    // Check if we need to migrate legacy data
+    for (let i = 0; i < legacyKeys.length; i++) {
+      if (needsMigration(legacyKeys[i], modernKeys[i % modernKeys.length])) {
+        console.log(`Migrating from ${legacyKeys[i]} to ${modernKeys[i % modernKeys.length]}`);
+        migrateData({
+          sourceKey: legacyKeys[i],
+          targetKey: modernKeys[i % modernKeys.length],
+          deleteSource: false // Keep legacy data as backup
+        });
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize storage migrator:', error);
+    return false;
+  }
+};
+
 export default {
   migrateData,
   needsMigration,
-  consolidateStorage
+  consolidateStorage,
+  ensureInitialized
 };

@@ -1,9 +1,7 @@
 
-// Adding missing properties to match the usage in ClientContext.tsx
-
 export interface Client {
   id: string;
-  type: 'company' | 'individual' | 'vendor';
+  type: "company" | "individual" | "vendor";
   name: string;
   email: string;
   phone: string;
@@ -15,26 +13,27 @@ export interface Client {
   credit: number;
   outstanding: number;
   overdue: number;
-  lastInteraction: string | null;
+  lastInteraction?: string | null;
   createdAt: string;
   updatedAt: string;
+  contactPerson?: string;
 }
 
 export interface CompanyClient extends Client {
-  type: 'company';
+  type: "company";
   vatNumber: string;
   registrationNumber: string;
   contactPerson: string;
 }
 
 export interface IndividualClient extends Client {
-  type: 'individual';
+  type: "individual";
   firstName: string;
   lastName: string;
 }
 
 export interface VendorClient extends Client {
-  type: 'vendor';
+  type: "vendor";
   contactPerson: string;
   vendorCategory: string;
   vendorCode?: string;

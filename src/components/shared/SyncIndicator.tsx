@@ -2,10 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CloudOff, CloudSync, CheckCircle2, AlertCircle } from "lucide-react";
+import { CloudCog, CheckCircle2, AlertCircle, CloudOff } from "lucide-react";
+
+export enum SyncStatus {
+  SYNCING = 'syncing',
+  SYNCED = 'synced',
+  OFFLINE = 'offline',
+  ERROR = 'error',
+  IDLE = 'idle'
+}
 
 export interface SyncIndicatorProps {
-  status: 'syncing' | 'synced' | 'offline' | 'error';
+  status: SyncStatus | 'syncing' | 'synced' | 'offline' | 'error' | 'idle';
   lastSynced?: string;
   pendingChanges?: number;
 }
@@ -55,29 +63,41 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
   let tooltipText;
   
   switch (status) {
+    case SyncStatus.SYNCING:
     case 'syncing':
-      icon = <CloudSync className="h-4 w-4 animate-spin" />;
+      icon = <CloudCog className="h-4 w-4 animate-spin" />;
       label = 'Syncing';
       badgeVariant = "secondary";
       tooltipText = `Syncing your data${pendingChanges ? ` (${pendingChanges} changes pending)` : ''}`;
       break;
+    case SyncStatus.SYNCED:
     case 'synced':
       icon = <CheckCircle2 className="h-4 w-4" />;
       label = 'Synced';
       badgeVariant = "outline";
       tooltipText = `All changes saved${lastSynced ? ` (Last: ${formattedTime})` : ''}`;
       break;
+    case SyncStatus.OFFLINE:
     case 'offline':
       icon = <CloudOff className="h-4 w-4" />;
       label = 'Offline';
       badgeVariant = "secondary";
       tooltipText = `You're working offline${pendingChanges ? ` (${pendingChanges} changes will sync when you reconnect)` : ''}`;
       break;
+    case SyncStatus.ERROR:
     case 'error':
       icon = <AlertCircle className="h-4 w-4" />;
       label = 'Sync Error';
       badgeVariant = "destructive";
       tooltipText = `There was an error syncing your data${pendingChanges ? ` (${pendingChanges} changes pending)` : ''}`;
+      break;
+    case SyncStatus.IDLE:
+    case 'idle':
+    default:
+      icon = <CheckCircle2 className="h-4 w-4" />;
+      label = 'Ready';
+      badgeVariant = "outline";
+      tooltipText = 'Your data is ready';
       break;
   }
   
