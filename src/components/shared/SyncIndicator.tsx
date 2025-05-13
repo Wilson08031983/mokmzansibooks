@@ -10,7 +10,7 @@ export enum SyncStatus {
   ERROR = 'error'
 }
 
-interface SyncIndicatorProps {
+export interface SyncIndicatorProps {
   status: SyncStatus;
   message?: string;
   className?: string;

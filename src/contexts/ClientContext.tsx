@@ -115,8 +115,8 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return {
         ...baseClient,
         type: 'company',
-        vat_number: (partialClient as Partial<CompanyClient>).vat_number || "",
-        registration_number: (partialClient as Partial<CompanyClient>).registration_number || "",
+        vatNumber: (partialClient as Partial<CompanyClient>).vatNumber || "",
+        registrationNumber: (partialClient as Partial<CompanyClient>).registrationNumber || "",
         contactPerson: (partialClient as Partial<CompanyClient>).contactPerson || "",
       } as CompanyClient;
     } 
@@ -124,8 +124,8 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return {
         ...baseClient,
         type: 'individual',
-        first_name: (partialClient as Partial<IndividualClient>).first_name || "",
-        last_name: (partialClient as Partial<IndividualClient>).last_name || "",
+        firstName: (partialClient as Partial<IndividualClient>).firstName || "",
+        lastName: (partialClient as Partial<IndividualClient>).lastName || "",
       } as IndividualClient;
     }
     else if (partialClient.type === 'vendor') {
@@ -133,8 +133,8 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         ...baseClient,
         type: 'vendor',
         contactPerson: (partialClient as Partial<VendorClient>).contactPerson || "",
-        vendor_category: (partialClient as Partial<VendorClient>).vendor_category || "",
-        vendor_code: (partialClient as Partial<VendorClient>).vendor_code || undefined,
+        vendorCategory: (partialClient as Partial<VendorClient>).vendorCategory || "",
+        vendorCode: (partialClient as Partial<VendorClient>).vendorCode || undefined,
       } as VendorClient;
     }
     

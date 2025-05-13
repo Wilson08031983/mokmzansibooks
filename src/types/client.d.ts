@@ -1,10 +1,14 @@
 
-export interface BaseClient {
+// Adding missing properties to match the usage in ClientContext.tsx
+
+export interface Client {
   id: string;
+  type: 'company' | 'individual' | 'vendor';
   name: string;
   email: string;
   phone: string;
   address: string;
+  addressLine2?: string;
   city: string;
   province: string;
   postalCode: string;
@@ -16,51 +20,28 @@ export interface BaseClient {
   updatedAt: string;
 }
 
-export interface CompanyClient extends BaseClient {
+export interface CompanyClient extends Client {
   type: 'company';
-  contactPerson: string;
   vatNumber: string;
   registrationNumber: string;
+  contactPerson: string;
 }
 
-export interface IndividualClient extends BaseClient {
+export interface IndividualClient extends Client {
   type: 'individual';
   firstName: string;
   lastName: string;
 }
 
-export interface VendorClient extends BaseClient {
+export interface VendorClient extends Client {
   type: 'vendor';
   contactPerson: string;
-  category: string;
+  vendorCategory: string;
   vendorCode?: string;
 }
-
-export type Client = CompanyClient | IndividualClient | VendorClient;
 
 export interface ClientsState {
   companies: CompanyClient[];
   individuals: IndividualClient[];
   vendors: VendorClient[];
 }
-
-// Helper type guards
-export function isCompanyClient(client: Client): client is CompanyClient {
-  return client.type === 'company';
-}
-
-export function isIndividualClient(client: Client): client is IndividualClient {
-  return client.type === 'individual';
-}
-
-export function isVendorClient(client: Client): client is VendorClient {
-  return client.type === 'vendor';
-}
-
-// Filter types
-export type ClientFilter = {
-  type?: 'all' | 'company' | 'individual' | 'vendor';
-  search?: string;
-  sortBy?: 'name' | 'balance' | 'lastInteraction' | 'createdAt';
-  sortDirection?: 'asc' | 'desc';
-};

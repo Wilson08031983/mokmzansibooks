@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import robustStorageMigrator from '@/utils/robustStorageMigrator';
 // Import persistence test for data retention verification
@@ -9,7 +10,7 @@ const storageStatusPromise = storageStatusManager.initialize();
 // Initialize data recovery as early as possible
 const dataRecoveryPromise = robustStorageMigrator.ensureInitialized();
 import { SyncProvider } from '@/contexts/SyncContext';
-import SyncIndicator from '@/components/shared/SyncIndicator';
+import SyncIndicator, { SyncStatus } from '@/components/shared/SyncIndicator';
 import { initializeApp, debugHelpers } from '@/utils/initApp';
 import { initializeSupabaseForAllPages } from '@/utils/setupSupabaseForAllPages';
 import { GlobalAppProvider } from '@/contexts/GlobalAppContext';
@@ -301,7 +302,7 @@ function App() {
                               </Suspense>
                               <AIAssistant />
                               <Toaster />
-                              <SyncIndicator />
+                              <SyncIndicator status={SyncStatus.IDLE} />
                             </AIAssistantProvider>
                           </CompanyProvider>
                         </UserBehaviorProvider>
