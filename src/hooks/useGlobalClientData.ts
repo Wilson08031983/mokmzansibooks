@@ -1,3 +1,4 @@
+
 /**
  * Hook for accessing client data throughout the application
  * This provides a consistent way to access client information
@@ -16,7 +17,7 @@ import {
   VendorClient,
   ClientsState
 } from '@/types/client';
-import { getClientsData, saveClientsData, defaultClientsState } from '@/utils/clientContextStorage';
+import { getClientsData, saveClientsData, defaultClientsState } from '@/utils/clientStorage';
 import permanentStorage, { StorageNamespace } from '@/utils/permanentStorage';
 import { toast } from '@/hooks/use-toast';
 import { usePersistence } from '@/contexts/PersistenceContext';
@@ -33,14 +34,10 @@ async function getSafeClientDataAsync(): Promise<ClientsState> {
     }
     
     // First try our bombproof storage system
-    const persistentData = await getClientsData();
-    if (persistentData && (
-      persistentData.companies?.length > 0 || 
-      persistentData.individuals?.length > 0 || 
-      persistentData.vendors?.length > 0
-    )) {
+    const result = await getClientsData();
+    if (result.success && result.data) {
       console.log('Client data loaded from bombproof storage');
-      return persistentData;
+      return result.data;
     }
     
     // Check legacy keys in order of preference
@@ -317,43 +314,43 @@ export const useGlobalClientData = () => {
     addClient: async (client: Client) => {
       const newClientsState = { ...clientsState };
       if (client.type === 'company') {
-        newClientsState.companies.push(client);
+        newClientsState.companies.push(client as CompanyClient);
       } else if (client.type === 'individual') {
-        newClientsState.individuals.push(client);
+        newClientsState.individuals.push(client as IndividualClient);
       } else if (client.type === 'vendor') {
-        newClientsState.vendors.push(client);
+        newClientsState.vendors.push(client as VendorClient);
       }
       await saveClientData(newClientsState);
     },
     updateClient: async (id: string, client: Client) => {
       const newClientsState = { ...clientsState };
-      const index = allClients.findIndex(c => c.id === id);
-      if (index !== -1) {
-        allClients[index] = client;
-        if (client.type === 'company') {
-          newClientsState.companies[index] = client;
-        } else if (client.type === 'individual') {
-          newClientsState.individuals[index] = client;
-        } else if (client.type === 'vendor') {
-          newClientsState.vendors[index] = client;
+      if (client.type === 'company') {
+        const index = newClientsState.companies.findIndex(c => c.id === id);
+        if (index !== -1) {
+          newClientsState.companies[index] = client as CompanyClient;
+          await saveClientData(newClientsState);
         }
-        await saveClientData(newClientsState);
+      } else if (client.type === 'individual') {
+        const index = newClientsState.individuals.findIndex(c => c.id === id);
+        if (index !== -1) {
+          newClientsState.individuals[index] = client as IndividualClient;
+          await saveClientData(newClientsState);
+        }
+      } else if (client.type === 'vendor') {
+        const index = newClientsState.vendors.findIndex(c => c.id === id);
+        if (index !== -1) {
+          newClientsState.vendors[index] = client as VendorClient;
+          await saveClientData(newClientsState);
+        }
       }
     },
     deleteClient: async (id: string) => {
-      const newClientsState = { ...clientsState };
-      const index = allClients.findIndex(c => c.id === id);
-      if (index !== -1) {
-        allClients.splice(index, 1);
-        if (allClients[index].type === 'company') {
-          newClientsState.companies.splice(index, 1);
-        } else if (allClients[index].type === 'individual') {
-          newClientsState.individuals.splice(index, 1);
-        } else if (allClients[index].type === 'vendor') {
-          newClientsState.vendors.splice(index, 1);
-        }
-        await saveClientData(newClientsState);
-      }
+      const newClientsState = { 
+        companies: clientsState.companies.filter(c => c.id !== id),
+        individuals: clientsState.individuals.filter(c => c.id !== id),
+        vendors: clientsState.vendors.filter(c => c.id !== id)
+      };
+      await saveClientData(newClientsState);
     },
     
     // Client types

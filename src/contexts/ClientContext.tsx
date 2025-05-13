@@ -1,8 +1,16 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useToast } from "@/hooks/use-toast";
 import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from "@/types/client";
-import { getSafeClientData, setSafeClientData } from "@/utils/clientDataPersistence";
+import { 
+  getClientsData, 
+  saveClientsData,
+  addClient as storageAddClient,
+  updateClient as storageUpdateClient,
+  deleteClient as storageDeleteClient,
+  defaultClientsState
+} from "@/utils/clientStorage";
 
 // Define the interface for the client context
 interface ClientContextProps {
@@ -25,69 +33,52 @@ interface ClientContextProps {
 
 const ClientContext = createContext<ClientContextProps | undefined>(undefined);
 
-// Default empty state
-const defaultState: ClientsState = {
-  companies: [],
-  individuals: [],
-  vendors: []
-};
-
 export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [clients, setClients] = useState<ClientsState>(defaultState);
+  const [clients, setClients] = useState<ClientsState>(defaultClientsState);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   // Load clients from storage on mount
   useEffect(() => {
-    try {
-      const savedClients = getSafeClientData();
-      setClients(savedClients);
-    } catch (error) {
-      console.error("Error loading clients:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load client data",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    const loadClients = async () => {
+      try {
+        const { success, data, error } = await getClientsData();
+        if (success && data) {
+          setClients(data);
+        } else if (error) {
+          console.error("Error loading clients:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load client data",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading clients:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load client data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadClients();
   }, [toast]);
 
   // Save clients whenever they change
   useEffect(() => {
-    if (!isLoading && clients !== defaultState) {
-      try {
-        setSafeClientData(clients);
-      } catch (error) {
+    if (!isLoading && clients !== defaultClientsState) {
+      saveClientsData(clients).catch((error) => {
         console.error("Error saving clients:", error);
-      }
+      });
     }
   }, [clients, isLoading]);
 
-  // Handle storage events (for cross-tab sync)
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'clients' || e.key === 'mokClients' || e.key === 'mok-mzansi-books-clients') {
-        try {
-          if (e.newValue) {
-            const updatedClients = JSON.parse(e.newValue) as ClientsState;
-            setClients(updatedClients);
-          }
-        } catch (error) {
-          console.error("Error processing storage event:", error);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-
   // Base client creation function with proper typing
-  const createBaseClient = (partialClient: Partial<Client>): Client => {
+  const createBaseClient = useCallback((partialClient: Partial<Client>): Client => {
     const now = new Date().toISOString();
     
     // Create a basic client object with required properties
@@ -114,9 +105,9 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return {
         ...baseClient,
         type: 'company' as const,
+        contactPerson: (partialClient as Partial<CompanyClient>).contactPerson || "",
         vatNumber: (partialClient as Partial<CompanyClient>).vatNumber || "",
         registrationNumber: (partialClient as Partial<CompanyClient>).registrationNumber || "",
-        contactPerson: (partialClient as Partial<CompanyClient>).contactPerson || "",
       } as CompanyClient;
     } 
     else if (partialClient.type === 'individual') {
@@ -139,7 +130,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     // Default fallback (should not happen)
     return baseClient as Client;
-  };
+  }, []);
 
   // Add a new client
   const addClient = useCallback(async (clientData: Partial<Client>): Promise<boolean> => {
@@ -162,7 +153,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       setClients(updatedClients);
-      setSafeClientData(updatedClients);
+      await saveClientsData(updatedClients);
       
       toast({
         title: "Success",
@@ -181,7 +172,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       return false;
     }
-  }, [clients, toast]);
+  }, [clients, createBaseClient, toast]);
 
   // Type-specific client addition functions
   const addCompanyClient = useCallback((client: Partial<CompanyClient>): Promise<boolean> => {
@@ -204,6 +195,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const updatedClients = { ...clients };
       let clientFound = false;
+      const now = new Date().toISOString();
 
       // Update in companies array
       updatedClients.companies = updatedClients.companies.map(client => {
@@ -212,7 +204,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           return { 
             ...client, 
             ...updatedClientData, 
-            updatedAt: new Date().toISOString(),
+            updatedAt: now,
             // Ensure type is maintained
             type: 'company' as const
           };
@@ -227,7 +219,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           return { 
             ...client, 
             ...updatedClientData, 
-            updatedAt: new Date().toISOString(),
+            updatedAt: now,
             // Ensure type is maintained
             type: 'individual' as const
           };
@@ -242,7 +234,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           return { 
             ...client, 
             ...updatedClientData, 
-            updatedAt: new Date().toISOString(),
+            updatedAt: now,
             // Ensure type is maintained
             type: 'vendor' as const
           };
@@ -255,7 +247,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       setClients(updatedClients);
-      setSafeClientData(updatedClients);
+      await saveClientsData(updatedClients);
 
       toast({
         title: "Success",
@@ -286,7 +278,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setClients(updatedClients);
-      setSafeClientData(updatedClients);
+      await saveClientsData(updatedClients);
 
       toast({
         title: "Success",

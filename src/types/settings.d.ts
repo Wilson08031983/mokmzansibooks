@@ -1,43 +1,28 @@
 
 /**
- * Type definitions for user preferences and app settings
+ * Type definitions for application settings
  */
 
-export interface UserPreference {
-  theme: string;
-  language: string;
-  notificationsEnabled: boolean;
-  dashboardLayout: string;
-  colorScheme: string;
-  fontSize: string;
-  [key: string]: any;
-}
-
 export interface AppSettings {
-  companyInfoRequired: boolean;
-  taxPercentage: number;
+  theme: 'light' | 'dark' | 'system';
+  fontSize: 'small' | 'medium' | 'large';
+  language: string;
   currencyFormat: string;
   dateFormat: string;
-  backupFrequency: string;
-  showLegalDisclaimer: boolean;
+  notifications: boolean;
+  autoSave: boolean;
+  backupFrequency: 'daily' | 'weekly' | 'monthly' | 'never';
   [key: string]: any;
 }
 
-export interface GlobalAppState {
-  isReady: boolean;
-  isLoading: {
-    company: boolean;
-    clients: boolean;
-    settings: boolean;
-  };
-  company: any;
-  clients: {
-    companies: any[];
-    individuals: any[];
-    vendors: any[];
-  };
-  settings: {
-    userPreferences: UserPreference;
-    appSettings: AppSettings;
-  };
+export interface UserPreference {
+  userId: string;
+  lastVisitedPage: string;
+  recentSearches: string[];
+  favoriteClients: string[];
+  favoriteItems: string[];
+  dashboardLayout: string[];
+  hiddenWidgets: string[];
+  customTheme: Record<string, string> | null;
+  [key: string]: any;
 }

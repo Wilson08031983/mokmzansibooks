@@ -1,68 +1,41 @@
 
 /**
- * Type definitions for synchronization and storage adapters
+ * Type definitions for synchronization
  */
 
-export interface SyncCallbacks {
-  onSyncStart?: (message?: string) => void;
-  onSyncSuccess?: (message?: string) => void;
-  onSyncError?: (message?: string) => void;
-}
-
 export interface SyncStatus {
-  status: 'idle' | 'syncing' | 'success' | 'error';
-  message: string;
-  timestamp: number;
+  lastSynced: string | null;
+  inProgress: boolean;
+  error: Error | null;
+  syncQueue: string[];
 }
 
-export interface SyncContextType {
+export interface GlobalAppState {
+  companyDetails: CompanyDetails | null;
+  clients: Client[];
+  settings: AppSettings;
+  userPreferences: UserPreference;
   syncStatus: SyncStatus;
-  showSyncing: (message?: string) => void;
-  showSuccess: (message?: string) => void;
-  showError: (message?: string) => void;
-  resetStatus: () => void;
 }
 
-// Adapter interface types
-export interface StorageAdapter<T> {
-  load: (callbacks?: SyncCallbacks) => Promise<T>;
-  save: (data: T, callbacks?: SyncCallbacks) => Promise<boolean>;
-}
+// Sync hook interfaces
+export interface AccountingSyncData {}
+export interface HRSyncData {}
+export interface InventorySyncData {}
+export interface ReportsSyncData {}
+export interface SettingsSyncData {}
 
-// Type declarations for the specific hooks
-export interface AccountingWithSync extends StorageAdapter<any> {
-  addAccount: (account: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  updateAccount: (account: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  addTransaction: (transaction: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  updateTransaction: (transaction: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-}
+// Declare sync hook types
+export function useAccountingWithSync(): { data: AccountingSyncData, sync: () => Promise<boolean> };
+export function useHRWithSync(): { data: HRSyncData, sync: () => Promise<boolean> };
+export function useInventoryWithSync(): { data: InventorySyncData, sync: () => Promise<boolean> };
+export function useReportsWithSync(): { data: ReportsSyncData, sync: () => Promise<boolean> };
+export function useSettingsWithSync(): { data: SettingsSyncData, sync: () => Promise<boolean> };
+export function useSyncStatus(): SyncStatus;
 
-export interface HRWithSync extends StorageAdapter<any> {
-  addEmployee: (employee: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  updateEmployee: (employee: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  addLeaveRequest: (request: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  addPayrollRecord: (record: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-}
-
-export interface InventoryWithSync extends StorageAdapter<any> {
-  addItem: (item: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  updateItem: (item: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  recordTransaction: (transaction: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-}
-
-export interface ReportsWithSync extends StorageAdapter<any> {
-  saveReport: (report: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  saveDashboard: (dashboard: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-}
-
-export interface SettingsWithSync extends StorageAdapter<any> {
-  updateUserPreferences: (prefs: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  updateAppSettings: (settings: any, callbacks?: SyncCallbacks) => Promise<boolean>;
-  reset: (callbacks?: SyncCallbacks) => Promise<boolean>;
-}
-
-export interface MigrationResult {
-  success: boolean;
-  result?: any;
-  error?: string;
-}
+// Storage adapter initialization
+export function initializeAllStorageAdapters(): Promise<void>;
+export function loadCompanyDetails(): Promise<CompanyDetails | null>;
+export function loadClients(): Promise<Client[]>;
+export function saveCompanyDetails(data: CompanyDetails): Promise<boolean>;
+export function saveClients(clients: Client[]): Promise<boolean>;
