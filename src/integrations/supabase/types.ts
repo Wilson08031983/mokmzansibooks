@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_data: {
+        Row: {
+          created_at: string | null
+          data: Json
+          data_id: string | null
+          id: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          data_id?: string | null
+          id?: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          data_id?: string | null
+          id?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           created_at: string | null
@@ -83,6 +110,30 @@ export type Database = {
           total_transactions?: number | null
           updated_at?: string
           upload_date?: string
+        }
+        Relationships: []
+      }
+      company_data: {
+        Row: {
+          created_at: string | null
+          data: Json
+          id: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          id?: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

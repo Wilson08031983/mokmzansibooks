@@ -4,8 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Shield, RefreshCw, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createClientDataBackup, restoreClientDataFromBackup } from '@/utils/clientDataPersistence';
-import { clientStorageAdapter } from '@/utils/clientDataPersistence';
+import { createClientDataBackup, restoreClientDataFromBackup, clientStorageAdapter } from '@/utils/clientDataPersistence';
 
 /**
  * Component to handle client data protection and backup.
@@ -71,7 +70,7 @@ export const ClientDataProtection = () => {
   // Function to restore data from backup
   const handleRestoreFromBackup = async () => {
     try {
-      // Use direct restore function or fallback to adapter
+      // Use direct restore function
       const success = restoreClientDataFromBackup();
       
       if (success) {
@@ -84,8 +83,7 @@ export const ClientDataProtection = () => {
         window.location.reload();
       } else {
         // Try using the adapter as fallback if available
-        const adapterSuccess = clientStorageAdapter.restoreFromBackup ? 
-          clientStorageAdapter.restoreFromBackup() : false;
+        const adapterSuccess = clientStorageAdapter.restoreFromBackup();
           
         if (adapterSuccess) {
           toast({

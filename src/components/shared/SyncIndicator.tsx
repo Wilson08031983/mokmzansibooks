@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Fade, Tooltip } from '@mui/material';
-import { SyncOutlined, CheckCircleOutlined, ErrorOutline } from '@mui/icons-material';
+
+import React from 'react';
+import { Loader2, Check, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export enum SyncStatus {
   IDLE = 'idle',
@@ -10,136 +11,60 @@ export enum SyncStatus {
 }
 
 interface SyncIndicatorProps {
-  status?: SyncStatus;
+  status: SyncStatus;
   message?: string;
-  position?: 'top-right' | 'bottom-right' | 'top-left' | 'bottom-left' | 'fixed';
+  className?: string;
 }
 
-const SyncIndicator: React.FC<SyncIndicatorProps> = ({
-  status = SyncStatus.IDLE,
-  message,
-  position = 'bottom-right'
+export const SyncIndicator: React.FC<SyncIndicatorProps> = ({ 
+  status, 
+  message = '', 
+  className 
 }) => {
-  const [visible, setVisible] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<SyncStatus>(status);
-  const [statusMessage, setStatusMessage] = useState<string | undefined>(message);
-
-  // Position styles
-  const getPositionStyles = () => {
-    switch (position) {
-      case 'top-right':
-        return { top: 16, right: 16 };
-      case 'top-left':
-        return { top: 16, left: 16 };
-      case 'bottom-left':
-        return { bottom: 16, left: 16 };
-      case 'fixed':
-        return { position: 'static' };
-      case 'bottom-right':
-      default:
-        return { bottom: 16, right: 16 };
-    }
-  };
-
-  // Update status and visibility when props change
-  useEffect(() => {
-    setCurrentStatus(status);
-    
-    if (message) {
-      setStatusMessage(message);
-    }
-
-    // Show indicator when syncing, success, or error
-    if (status !== SyncStatus.IDLE) {
-      setVisible(true);
-      
-      // Auto-hide after success or error
-      if (status === SyncStatus.SUCCESS || status === SyncStatus.ERROR) {
-        const timer = setTimeout(() => {
-          setVisible(false);
-        }, 3000);
-        
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [status, message]);
-
-  // Get the appropriate icon based on status
-  const getStatusIcon = () => {
-    switch (currentStatus) {
-      case SyncStatus.SYNCING:
-        return <CircularProgress size={20} color="inherit" />;
-      case SyncStatus.SUCCESS:
-        return <CheckCircleOutlined color="success" />;
-      case SyncStatus.ERROR:
-        return <ErrorOutline color="error" />;
-      case SyncStatus.IDLE:
-      default:
-        return <SyncOutlined />;
-    }
-  };
-
-  // Get the appropriate text color based on status
-  const getTextColor = () => {
-    switch (currentStatus) {
-      case SyncStatus.SUCCESS:
-        return 'success.main';
-      case SyncStatus.ERROR:
-        return 'error.main';
-      case SyncStatus.SYNCING:
-        return 'info.main';
-      case SyncStatus.IDLE:
-      default:
-        return 'text.secondary';
-    }
-  };
-
-  // Get the default status message if none provided
-  const getDefaultMessage = () => {
-    switch (currentStatus) {
-      case SyncStatus.SYNCING:
-        return 'Saving data...';
-      case SyncStatus.SUCCESS:
-        return 'Data saved successfully';
-      case SyncStatus.ERROR:
-        return 'Error saving data';
-      case SyncStatus.IDLE:
-      default:
-        return 'All changes saved';
-    }
-  };
+  // Don't show anything if idle and no message
+  if (status === SyncStatus.IDLE && !message) {
+    return null;
+  }
 
   return (
-    <Fade in={visible}>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          padding: '8px 12px',
-          borderRadius: '4px',
-          backgroundColor: 'background.paper',
-          boxShadow: 2,
-          position: position === 'fixed' ? 'static' : 'fixed',
-          zIndex: 9999,
-          ...getPositionStyles(),
-        }}
-      >
-        <Tooltip title={getDefaultMessage()}>
-          {getStatusIcon()}
-        </Tooltip>
-        
-        {statusMessage && (
-          <Typography
-            variant="body2"
-            sx={{ color: getTextColor() }}
-          >
-            {statusMessage}
-          </Typography>
-        )}
-      </Box>
-    </Fade>
+    <div className={cn(
+      "flex items-center gap-2 text-sm rounded-md py-1 px-2",
+      status === SyncStatus.SYNCING && "bg-blue-50 text-blue-700",
+      status === SyncStatus.SUCCESS && "bg-green-50 text-green-700",
+      status === SyncStatus.ERROR && "bg-red-50 text-red-700",
+      className
+    )}>
+      {status === SyncStatus.SYNCING && (
+        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+      )}
+      
+      {status === SyncStatus.SUCCESS && (
+        <Check className="h-4 w-4 text-green-600" />
+      )}
+      
+      {status === SyncStatus.ERROR && (
+        <AlertCircle className="h-4 w-4 text-red-600" />
+      )}
+      
+      <span>
+        {message || getDefaultMessage(status)}
+      </span>
+    </div>
   );
 };
+
+// Get default message based on status
+function getDefaultMessage(status: SyncStatus): string {
+  switch (status) {
+    case SyncStatus.SYNCING:
+      return 'Syncing...';
+    case SyncStatus.SUCCESS:
+      return 'Sync successful';
+    case SyncStatus.ERROR:
+      return 'Sync failed';
+    default:
+      return '';
+  }
+}
 
 export default SyncIndicator;

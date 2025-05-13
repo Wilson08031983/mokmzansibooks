@@ -530,7 +530,7 @@ const SavedInvoices: React.FC<SavedInvoicesProps> = ({ onCreateNew, showCreateBu
                     templateNumber={selectedInvoice.template} 
                   />
                 ) : (
-                  <Template1 data={selectedInvoice} />
+                  <Template1 {...selectedInvoice} />
                 )}
               </div>
             )}

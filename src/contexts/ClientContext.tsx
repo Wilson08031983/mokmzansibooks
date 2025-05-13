@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { v4 as uuidv4 } from "uuid";
 import { useToast } from "@/hooks/use-toast";
 import { Client, CompanyClient, IndividualClient, VendorClient, ClientsState } from "@/types/client";
-import { getSafeClientData, saveClientData } from "@/utils/clientDataPersistence";
+import { getSafeClientData, setSafeClientData } from "@/utils/clientDataPersistence";
 
 // Define the interface for the client context
 interface ClientContextProps {
@@ -59,7 +59,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     if (!isLoading && clients !== defaultState) {
       try {
-        saveClientData(clients);
+        setSafeClientData(clients);
       } catch (error) {
         console.error("Error saving clients:", error);
       }
@@ -90,7 +90,9 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Base client creation function with proper typing
   const createBaseClient = (partialClient: Partial<Client>): Client => {
     const now = new Date().toISOString();
-    return {
+    
+    // Create a basic client object with required properties
+    const baseClient = {
       id: uuidv4(),
       name: "",
       email: "",
@@ -106,7 +108,38 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       createdAt: now,
       updatedAt: now,
       ...partialClient,
-    } as Client;
+    };
+
+    // Return the client as the correct type based on the provided type property
+    if (partialClient.type === 'company') {
+      return {
+        ...baseClient,
+        type: 'company',
+        vat_number: (partialClient as Partial<CompanyClient>).vat_number || "",
+        registration_number: (partialClient as Partial<CompanyClient>).registration_number || "",
+        contactPerson: (partialClient as Partial<CompanyClient>).contactPerson || "",
+      } as CompanyClient;
+    } 
+    else if (partialClient.type === 'individual') {
+      return {
+        ...baseClient,
+        type: 'individual',
+        first_name: (partialClient as Partial<IndividualClient>).first_name || "",
+        last_name: (partialClient as Partial<IndividualClient>).last_name || "",
+      } as IndividualClient;
+    }
+    else if (partialClient.type === 'vendor') {
+      return {
+        ...baseClient,
+        type: 'vendor',
+        contactPerson: (partialClient as Partial<VendorClient>).contactPerson || "",
+        vendor_category: (partialClient as Partial<VendorClient>).vendor_category || "",
+        vendor_code: (partialClient as Partial<VendorClient>).vendor_code || undefined,
+      } as VendorClient;
+    }
+    
+    // Default fallback (should not happen)
+    return baseClient as Client;
   };
 
   // Add a new client
@@ -120,28 +153,17 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const updatedClients = { ...clients };
 
       if (clientData.type === 'company') {
-        const companyClient = newClient as CompanyClient;
-        companyClient.vatNumber = (clientData as Partial<CompanyClient>).vatNumber || "";
-        companyClient.registrationNumber = (clientData as Partial<CompanyClient>).registrationNumber || "";
-        companyClient.contactPerson = (clientData as Partial<CompanyClient>).contactPerson || "";
-        updatedClients.companies = [...updatedClients.companies, companyClient];
+        updatedClients.companies = [...updatedClients.companies, newClient as CompanyClient];
       } 
       else if (clientData.type === 'individual') {
-        const individualClient = newClient as IndividualClient;
-        individualClient.firstName = (clientData as Partial<IndividualClient>).firstName || "";
-        individualClient.lastName = (clientData as Partial<IndividualClient>).lastName || "";
-        updatedClients.individuals = [...updatedClients.individuals, individualClient];
+        updatedClients.individuals = [...updatedClients.individuals, newClient as IndividualClient];
       }
       else if (clientData.type === 'vendor') {
-        const vendorClient = newClient as VendorClient;
-        vendorClient.contactPerson = (clientData as Partial<VendorClient>).contactPerson || "";
-        vendorClient.category = (clientData as Partial<VendorClient>).category || "";
-        vendorClient.vendorCode = (clientData as Partial<VendorClient>).vendorCode || undefined;
-        updatedClients.vendors = [...updatedClients.vendors, vendorClient];
+        updatedClients.vendors = [...updatedClients.vendors, newClient as VendorClient];
       }
 
       setClients(updatedClients);
-      saveClientData(updatedClients);
+      setSafeClientData(updatedClients);
       
       toast({
         title: "Success",
@@ -188,7 +210,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       updatedClients.companies = updatedClients.companies.map(client => {
         if (client.id === id) {
           clientFound = true;
-          return { ...client, ...updatedClientData, updatedAt: new Date().toISOString() };
+          return { ...client, ...updatedClientData, updatedAt: new Date().toISOString() } as CompanyClient;
         }
         return client;
       });
@@ -197,7 +219,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       updatedClients.individuals = updatedClients.individuals.map(client => {
         if (client.id === id) {
           clientFound = true;
-          return { ...client, ...updatedClientData, updatedAt: new Date().toISOString() };
+          return { ...client, ...updatedClientData, updatedAt: new Date().toISOString() } as IndividualClient;
         }
         return client;
       });
@@ -206,7 +228,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       updatedClients.vendors = updatedClients.vendors.map(client => {
         if (client.id === id) {
           clientFound = true;
-          return { ...client, ...updatedClientData, updatedAt: new Date().toISOString() };
+          return { ...client, ...updatedClientData, updatedAt: new Date().toISOString() } as VendorClient;
         }
         return client;
       });
@@ -216,7 +238,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       setClients(updatedClients);
-      saveClientData(updatedClients);
+      setSafeClientData(updatedClients);
 
       toast({
         title: "Success",
@@ -247,7 +269,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setClients(updatedClients);
-      saveClientData(updatedClients);
+      setSafeClientData(updatedClients);
 
       toast({
         title: "Success",

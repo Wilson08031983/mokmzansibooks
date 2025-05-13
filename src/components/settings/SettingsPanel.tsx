@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, RotateLeft } from 'lucide-react';
+import { Save, RotateCcw } from 'lucide-react';
 
 interface UserPreference {
   theme: 'light' | 'dark' | 'system';
@@ -64,7 +64,7 @@ const useSettingsWithSync = () => {
     return true;
   };
 
-  const updateUserPreferences = async (): Promise<boolean> => {
+  const updateUserPreferences = async (preferences: UserPreference): Promise<boolean> => {
     return true;
   };
 
@@ -375,7 +375,17 @@ const SettingsPanel: React.FC = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="time-format-select">Time Format</Label>
-                <Select value={preferences.timeFormat}>
+                <Select 
+                  value={preferences.timeFormat}
+                  onValueChange={(value) => {
+                    if (preferences) {
+                      setPreferences({
+                        ...preferences,
+                        timeFormat: value
+                      });
+                    }
+                  }}
+                >
                   <SelectTrigger id="time-format-select">
                     <SelectValue placeholder="Select time format" />
                   </SelectTrigger>
@@ -428,7 +438,7 @@ const SettingsPanel: React.FC = () => {
             onClick={handleResetSettings}
             className="flex items-center gap-2"
           >
-            <RotateLeft className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" />
             Reset to Defaults
           </Button>
           

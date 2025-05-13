@@ -14,6 +14,49 @@ export interface ClientsState {
 }
 
 /**
+ * Storage adapter for client data operations
+ * Provides methods for managing client data persistence
+ */
+export const clientStorageAdapter = {
+  saveData: (data: ClientsState): boolean => {
+    try {
+      localStorage.setItem('mokClients', JSON.stringify(data));
+      return true;
+    } catch (error) {
+      console.error('Error saving client data with adapter:', error);
+      return false;
+    }
+  },
+  
+  loadData: (): ClientsState | null => {
+    try {
+      const clientData = localStorage.getItem('mokClients');
+      if (!clientData) return null;
+      
+      return JSON.parse(clientData) as ClientsState;
+    } catch (error) {
+      console.error('Error loading client data with adapter:', error);
+      return null;
+    }
+  },
+  
+  restoreFromBackup: (): boolean => {
+    try {
+      // Try to get from backup
+      const backup = localStorage.getItem('mokClientsBackup');
+      if (!backup) return false;
+      
+      // Restore from backup
+      localStorage.setItem('mokClients', backup);
+      return true;
+    } catch (error) {
+      console.error('Error restoring client data with adapter:', error);
+      return false;
+    }
+  }
+};
+
+/**
  * Initialize client data persistence mechanisms
  * This should be called early in the application lifecycle
  */
@@ -143,3 +186,8 @@ export function setSafeClientData(data: ClientsState): boolean {
     return false;
   }
 }
+
+/**
+ * For backward compatibility with existing code
+ */
+export const saveClientData = setSafeClientData;
