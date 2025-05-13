@@ -1,5 +1,5 @@
 
-// If you already have this file, make sure it includes these types
+// Base client interface
 export interface Client {
   id: string;
   name: string;
@@ -19,26 +19,30 @@ export interface Client {
   updatedAt: string;
 }
 
+// Company client type
 export interface CompanyClient extends Client {
   type: 'company';
+  contactPerson: string;
   vatNumber: string;
   registrationNumber: string;
-  contactPerson: string;
 }
 
+// Individual client type
 export interface IndividualClient extends Client {
   type: 'individual';
   firstName: string;
   lastName: string;
 }
 
+// Vendor client type
 export interface VendorClient extends Client {
   type: 'vendor';
+  contactPerson: string;
   vendorCategory: string;
   vendorCode: string | null;
-  contactPerson: string;
 }
 
+// State for storing all client types
 export interface ClientsState {
   companies: CompanyClient[];
   individuals: IndividualClient[];

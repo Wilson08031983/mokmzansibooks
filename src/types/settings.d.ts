@@ -3,26 +3,36 @@
  * Type definitions for application settings
  */
 
-export interface AppSettings {
+export interface UserPreference {
   theme: 'light' | 'dark' | 'system';
   fontSize: 'small' | 'medium' | 'large';
-  language: string;
-  currencyFormat: string;
+  compactMode: boolean;
+  notifications: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+  };
+  defaultCurrency: string;
   dateFormat: string;
-  notifications: boolean;
-  autoSave: boolean;
-  backupFrequency: 'daily' | 'weekly' | 'monthly' | 'never';
-  [key: string]: any;
+  language: string;
 }
 
-export interface UserPreference {
-  userId: string;
-  lastVisitedPage: string;
-  recentSearches: string[];
-  favoriteClients: string[];
-  favoriteItems: string[];
-  dashboardLayout: string[];
-  hiddenWidgets: string[];
-  customTheme: Record<string, string> | null;
-  [key: string]: any;
+export interface AppSettings {
+  version: string;
+  apiEndpoint?: string;
+  features: {
+    enableInventory: boolean;
+    enableHR: boolean;
+    enableClients: boolean;
+    enableQuotes: boolean;
+    enableInvoices: boolean;
+    enableReports: boolean;
+    enablePayments: boolean;
+  };
+  maintenance?: {
+    scheduled: boolean;
+    startTime?: string;
+    endTime?: string;
+    message?: string;
+  };
 }

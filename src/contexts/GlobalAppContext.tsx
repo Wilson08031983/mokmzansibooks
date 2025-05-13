@@ -15,6 +15,24 @@
  */
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Client } from '@/types/client';
+import { CompanyDetails } from '@/types/company';
+import { UserPreference, AppSettings } from '@/types/settings';
+import { 
+  useAccountingWithSync,
+  useHRWithSync,
+  useInventoryWithSync,
+  useReportsWithSync,
+  useSettingsWithSync,
+  useSyncStatus
+} from '@/types/sync';
+import { 
+  initializeAllStorageAdapters,
+  loadCompanyDetails,
+  saveCompanyDetails,
+  loadClients,
+  saveClients
+} from '@/utils/globalContextHelpers';
 import robustStorageMigrator from '@/utils/robustStorageMigrator';
 
 // Define app state interfaces
@@ -226,7 +244,7 @@ export const GlobalAppProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const initializeAppData = async () => {
       try {
         // Ensure storage is initialized properly
-        const isInitialized = await robustStorageMigrator.ensureInitialized();
+        const isInitialized = await robustStorageMigrator.ensureInitialized("app", "1.0.0");
         if (!isInitialized) {
           console.error('Failed to initialize storage');
           return;
@@ -358,7 +376,7 @@ export const GlobalAppProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setIsLoading(true);
       
       // First ensure our robust storage migrator has recovered any lost data
-      await robustStorageMigrator.ensureInitialized();
+      await robustStorageMigrator.ensureInitialized("app", "1.0.0");
       
       // Reload all data in parallel
       const [

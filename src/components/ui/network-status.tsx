@@ -1,3 +1,4 @@
+
 /**
  * NetworkStatusIndicator Component
  * 
@@ -6,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Wifi, WifiOff, CloudCog } from 'lucide-react';
-import syncManager from '@/utils/syncManager';
+import { syncManager } from '@/utils/syncManager';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
