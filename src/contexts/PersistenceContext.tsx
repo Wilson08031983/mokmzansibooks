@@ -1,129 +1,106 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initPersistenceService, saveData, getData, removeData } from '@/services/persistenceService';
-import storageStatusManager from '@/utils/storageStatusManager';
 
-// Define the context interface
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from '@/hooks/use-toast';
+
+interface StorageStatus {
+  localStorage: boolean;
+  sessionStorage: boolean;
+  indexedDB: boolean;
+  degradedMode: boolean;
+}
+
 interface PersistenceContextType {
-  saveItem: (key: string, data: any) => Promise<void>;
-  getItem: (key: string, defaultValue?: any) => Promise<any>;
-  removeItem: (key: string) => Promise<void>;
-  isReady: boolean;
+  isStorageAvailable: (type: string) => boolean;
+  storageStatus: StorageStatus;
+  checkAllStorage: () => void;
+  isDegraded: boolean;
 }
 
-// Create the context with default values
-const PersistenceContext = createContext<PersistenceContextType>({
-  saveItem: async () => {},
-  getItem: async () => null,
-  removeItem: async () => {},
-  isReady: false,
-});
+const PersistenceContext = createContext<PersistenceContextType | undefined>(undefined);
 
-export const usePersistence = () => useContext(PersistenceContext);
+export function PersistenceProvider({ children }: { children: React.ReactNode }) {
+  const [storageStatus, setStorageStatus] = useState<StorageStatus>({
+    localStorage: true,
+    sessionStorage: true,
+    indexedDB: true,
+    degradedMode: false
+  });
 
-interface PersistenceProviderProps {
-  children: React.ReactNode;
-}
+  // Function to check if a storage type is available
+  const isStorageAvailable = (type: string): boolean => {
+    try {
+      const storage = window[type as keyof Window];
+      const x = '__storage_test__';
+      storage.setItem(x, x);
+      storage.removeItem(x);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
 
-export const PersistenceProvider: React.FC<PersistenceProviderProps> = ({ children }) => {
-  const [isReady, setIsReady] = useState(false);
+  // Check all storage types
+  const checkAllStorage = () => {
+    const localStorageAvailable = isStorageAvailable('localStorage');
+    const sessionStorageAvailable = isStorageAvailable('sessionStorage');
+    
+    // Basic check for IndexedDB
+    const indexedDBAvailable = 'indexedDB' in window;
+    
+    // Update storage status
+    const newStatus: StorageStatus = {
+      localStorage: localStorageAvailable,
+      sessionStorage: sessionStorageAvailable,
+      indexedDB: indexedDBAvailable,
+      degradedMode: !localStorageAvailable || !indexedDBAvailable
+    };
+    
+    setStorageStatus(newStatus);
+    
+    // If we're in degraded mode, show a toast
+    if (newStatus.degradedMode && (
+      storageStatus.localStorage !== newStatus.localStorage || 
+      storageStatus.indexedDB !== newStatus.indexedDB
+    )) {
+      toast({
+        title: 'Storage Warning',
+        description: 'Some storage features are not available. Your data may not persist between sessions.',
+        variant: 'destructive',
+        duration: 10000
+      });
+    }
+  };
 
-  // Initialize the persistence service on component mount
+  // Check storage on component mount
   useEffect(() => {
-    let isMounted = true;
-    let initTimeout: NodeJS.Timeout | null = null;
+    checkAllStorage();
     
-    const initialize = async () => {
-      try {
-        // First make sure our storage status is checked
-        await storageStatusManager.initialize();
-        
-        // Then initialize the persistence service with the storage status
-        await initPersistenceService();
-        
-        // Only update state if component is still mounted
-        if (isMounted) {
-          console.log('PersistenceContext: Service initialized successfully');
-          setIsReady(true);
-        }
-      } catch (error) {
-        console.error('PersistenceContext: Failed to initialize persistence service:', error);
-        
-        // Try to continue even if initialization fails
-        if (isMounted) {
-          // Set a delayed ready state to prevent UI blocking
-          initTimeout = setTimeout(() => {
-            if (isMounted) {
-              console.log('PersistenceContext: Continuing despite initialization failure');
-              setIsReady(true);
-            }
-          }, 1000);
-        }
-      }
-    };
-
-    initialize();
+    // Setup periodic checks
+    const checkInterval = setInterval(() => {
+      checkAllStorage();
+    }, 30000); // Check every 30 seconds
     
-    // Cleanup function to prevent state updates after unmount
-    return () => {
-      isMounted = false;
-      if (initTimeout) clearTimeout(initTimeout);
-    };
+    return () => clearInterval(checkInterval);
   }, []);
 
-  // Create the context value object with the wrapped functions
-  const contextValue = {
-    saveItem: async (key: string, data: any) => {
-      try {
-        // Get current storage status
-        const status = storageStatusManager.getStatus();
-        
-        // Use the persistence service first
-        await saveData(key, data);
-        
-        // For compatibility with existing code, also try localStorage if available
-        if (status.localStorageAvailable) {
-          try {
-            localStorage.setItem(key, JSON.stringify(data));
-          } catch (e) {
-            console.warn(`Failed to save to localStorage for key ${key}:`, e);
-            // Non-critical error, continue
-          }
-        }
-      } catch (error) {
-        console.error(`Error saving item with key ${key}:`, error);
-        throw error;
-      }
-    },
-
-    getItem: async (key: string, defaultValue: any = null) => {
-      try {
-        return await getData(key, defaultValue);
-      } catch (error) {
-        console.error(`Error getting item with key ${key}:`, error);
-        return defaultValue;
-      }
-    },
-
-    removeItem: async (key: string) => {
-      try {
-        await removeData(key);
-        
-        // For compatibility with existing code, also remove from localStorage
-        localStorage.removeItem(key);
-      } catch (error) {
-        console.error(`Error removing item with key ${key}:`, error);
-        throw error;
-      }
-    },
-
-    isReady,
+  const value = {
+    isStorageAvailable,
+    storageStatus,
+    checkAllStorage,
+    isDegraded: storageStatus.degradedMode
   };
 
   return (
-    <PersistenceContext.Provider value={contextValue}>
+    <PersistenceContext.Provider value={value}>
       {children}
     </PersistenceContext.Provider>
   );
-};
+}
 
-export default PersistenceProvider;
+export function usePersistence() {
+  const context = useContext(PersistenceContext);
+  if (context === undefined) {
+    throw new Error('usePersistence must be used within a PersistenceProvider');
+  }
+  return context;
+}

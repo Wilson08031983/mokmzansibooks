@@ -1,70 +1,101 @@
 
-import React from 'react';
-import { Loader2, Check, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-export enum SyncStatus {
-  IDLE = 'idle',
-  SYNCING = 'syncing',
-  SUCCESS = 'success',
-  ERROR = 'error'
-}
+import React, { useState, useEffect } from 'react';
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CloudOff, CloudSync, CheckCircle2, AlertCircle } from "lucide-react";
 
 export interface SyncIndicatorProps {
-  status: SyncStatus;
-  message?: string;
-  className?: string;
+  status: 'syncing' | 'synced' | 'offline' | 'error';
+  lastSynced?: string;
+  pendingChanges?: number;
 }
 
 export const SyncIndicator: React.FC<SyncIndicatorProps> = ({ 
   status, 
-  message = '', 
-  className 
+  lastSynced, 
+  pendingChanges = 0 
 }) => {
-  // Don't show anything if idle and no message
-  if (status === SyncStatus.IDLE && !message) {
-    return null;
+  const [formattedTime, setFormattedTime] = useState<string>('');
+  
+  useEffect(() => {
+    if (lastSynced) {
+      const formatTime = () => {
+        const synced = new Date(lastSynced);
+        const now = new Date();
+        const diffMs = now.getTime() - synced.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        
+        if (diffMins < 1) {
+          return 'just now';
+        } else if (diffMins < 60) {
+          return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+        } else {
+          const diffHours = Math.floor(diffMins / 60);
+          if (diffHours < 24) {
+            return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+          } else {
+            return synced.toLocaleDateString() + ' ' + synced.toLocaleTimeString();
+          }
+        }
+      };
+      
+      setFormattedTime(formatTime());
+      
+      const timer = setInterval(() => {
+        setFormattedTime(formatTime());
+      }, 60000); // Update every minute
+      
+      return () => clearInterval(timer);
+    }
+  }, [lastSynced]);
+  
+  let icon;
+  let label;
+  let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "outline";
+  let tooltipText;
+  
+  switch (status) {
+    case 'syncing':
+      icon = <CloudSync className="h-4 w-4 animate-spin" />;
+      label = 'Syncing';
+      badgeVariant = "secondary";
+      tooltipText = `Syncing your data${pendingChanges ? ` (${pendingChanges} changes pending)` : ''}`;
+      break;
+    case 'synced':
+      icon = <CheckCircle2 className="h-4 w-4" />;
+      label = 'Synced';
+      badgeVariant = "outline";
+      tooltipText = `All changes saved${lastSynced ? ` (Last: ${formattedTime})` : ''}`;
+      break;
+    case 'offline':
+      icon = <CloudOff className="h-4 w-4" />;
+      label = 'Offline';
+      badgeVariant = "secondary";
+      tooltipText = `You're working offline${pendingChanges ? ` (${pendingChanges} changes will sync when you reconnect)` : ''}`;
+      break;
+    case 'error':
+      icon = <AlertCircle className="h-4 w-4" />;
+      label = 'Sync Error';
+      badgeVariant = "destructive";
+      tooltipText = `There was an error syncing your data${pendingChanges ? ` (${pendingChanges} changes pending)` : ''}`;
+      break;
   }
-
+  
   return (
-    <div className={cn(
-      "flex items-center gap-2 text-sm rounded-md py-1 px-2",
-      status === SyncStatus.SYNCING && "bg-blue-50 text-blue-700",
-      status === SyncStatus.SUCCESS && "bg-green-50 text-green-700",
-      status === SyncStatus.ERROR && "bg-red-50 text-red-700",
-      className
-    )}>
-      {status === SyncStatus.SYNCING && (
-        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-      )}
-      
-      {status === SyncStatus.SUCCESS && (
-        <Check className="h-4 w-4 text-green-600" />
-      )}
-      
-      {status === SyncStatus.ERROR && (
-        <AlertCircle className="h-4 w-4 text-red-600" />
-      )}
-      
-      <span>
-        {message || getDefaultMessage(status)}
-      </span>
-    </div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge variant={badgeVariant} className="gap-1.5">
+            {icon}
+            <span className="text-xs">{label}</span>
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltipText}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
-
-// Get default message based on status
-function getDefaultMessage(status: SyncStatus): string {
-  switch (status) {
-    case SyncStatus.SYNCING:
-      return 'Syncing...';
-    case SyncStatus.SUCCESS:
-      return 'Sync successful';
-    case SyncStatus.ERROR:
-      return 'Sync failed';
-    default:
-      return '';
-  }
-}
 
 export default SyncIndicator;

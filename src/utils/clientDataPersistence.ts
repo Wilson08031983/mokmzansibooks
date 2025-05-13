@@ -1,4 +1,11 @@
 
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 /**
  * Utilities for persisting client data
  */
@@ -15,6 +22,7 @@ export const defaultClientsState: ClientsState = {
 // Storage keys for client data
 const CLIENT_DATA_PRIMARY_KEY = 'mok-mzansi-books-clients';
 const CLIENT_DATA_BACKUP_KEYS = ['mokClients', 'clients'];
+const CLIENT_DATA_BACKUP_KEY = 'client-data-backup';
 
 /**
  * Get client data with fallbacks for different storage keys
@@ -80,6 +88,42 @@ export const setSafeClientData = (clientsState: ClientsState): void => {
 };
 
 /**
+ * Create a backup of client data
+ * @returns True if backup was successful
+ */
+export const createClientDataBackup = (): boolean => {
+  try {
+    const currentData = getSafeClientData();
+    localStorage.setItem(CLIENT_DATA_BACKUP_KEY, JSON.stringify(currentData));
+    return true;
+  } catch (error) {
+    console.error('Error creating client data backup:', error);
+    return false;
+  }
+};
+
+/**
+ * Restore client data from backup
+ * @returns True if restoration was successful
+ */
+export const restoreClientDataFromBackup = (): boolean => {
+  try {
+    const backupDataStr = localStorage.getItem(CLIENT_DATA_BACKUP_KEY);
+    if (backupDataStr) {
+      const backupData = JSON.parse(backupDataStr);
+      if (isValidClientData(backupData)) {
+        setSafeClientData(backupData);
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Error restoring client data from backup:', error);
+    return false;
+  }
+};
+
+/**
  * Validate client data structure
  * @param data The data to validate
  * @returns True if the data is valid
@@ -94,33 +138,15 @@ const isValidClientData = (data: any): boolean => {
   );
 };
 
+// For backward compatibility
+export const saveClientData = setSafeClientData;
+
 // Export adapter for backward compatibility
 export const clientStorageAdapter = {
   getClientData: getSafeClientData,
   saveClientData: setSafeClientData,
   
   restoreClientDataFromBackup: (): boolean => {
-    try {
-      // Try backup keys
-      for (const key of CLIENT_DATA_BACKUP_KEYS) {
-        try {
-          const backupDataStr = localStorage.getItem(key);
-          if (backupDataStr) {
-            const parsedData = JSON.parse(backupDataStr);
-            if (isValidClientData(parsedData)) {
-              // Save to primary key
-              setSafeClientData(parsedData);
-              return true;
-            }
-          }
-        } catch (e) {
-          console.warn(`Error restoring client data from ${key}:`, e);
-        }
-      }
-      return false;
-    } catch (error) {
-      console.error('Error restoring client data:', error);
-      return false;
-    }
+    return restoreClientDataFromBackup();
   }
 };

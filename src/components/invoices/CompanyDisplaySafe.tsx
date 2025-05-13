@@ -1,143 +1,116 @@
-import React, { useEffect, useState } from "react";
-import { useCompany } from "@/contexts/CompanyContext";
-import { getSharedCompanyData } from "@/utils/companyDataSync";
-import dataService from "@/services/supabase/dataService";
+
+import React, { useState, useEffect } from 'react';
+import { CompanyDetails } from '@/contexts/CompanyContext';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Mock dataService temporarily
+const dataService = {
+  fetchCompanyDetails: async () => {
+    return null;
+  }
+};
+
+interface CompanyDisplaySafeProps {
+  companyDetails?: CompanyDetails;
+}
 
 /**
- * Enhanced CompanyDisplay component that syncs with My Company page
- * This version pulls data from multiple sources to ensure consistency
+ * A safe version of CompanyDisplay that handles missing data gracefully
  */
-const CompanyDisplaySafe = ({ company }: any) => {
-  // Initialize with the passed company data or defaults
-  const [displayCompany, setDisplayCompany] = useState(company || {
-    name: "Your Company",
-    address: "Company Address",
-    email: "company@example.com",
-    phone: "Phone Number",
-    vatNumber: "",
-    registrationNumber: "",
-    website: ""
-  });
-  
-  // Sync with company data from all available sources
+const CompanyDisplaySafe: React.FC<CompanyDisplaySafeProps> = ({
+  companyDetails,
+}) => {
+  const [company, setCompany] = useState<CompanyDetails | null>(companyDetails || null);
+  const [isLoading, setIsLoading] = useState<boolean>(!companyDetails);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // If no company details are provided, try to fetch them
   useEffect(() => {
-    const syncCompanyData = async () => {
-      try {
-        // Try to get company data from Context first
-        try {
-          const { companyDetails } = useCompany();
-          if (companyDetails && companyDetails.name) {
-            setDisplayCompany(companyDetails);
-            return;
-          }
-        } catch (err) {
-          console.log('CompanyContext not available, trying other sources');
-        }
-        
-        // Try to get from shared data
-        const sharedData = getSharedCompanyData();
-        if (sharedData && sharedData.name) {
-          setDisplayCompany(sharedData);
-          return;
-        }
-        
-        // Try to get from Supabase
-        const supabaseData = await dataService.getAllData('company');
-        if (supabaseData && supabaseData.length > 0) {
-          setDisplayCompany(supabaseData[0]);
-          return;
-        }
-        
-        // Try to get from localStorage as last resort
-        const localData = localStorage.getItem('companyDetails');
-        if (localData) {
-          try {
-            const parsedData = JSON.parse(localData);
-            if (parsedData && parsedData.name) {
-              setDisplayCompany(parsedData);
-              return;
-            }
-          } catch (e) {
-            console.error('Error parsing company data from localStorage', e);
-          }
-        }
-      } catch (error) {
-        console.error('Error syncing company data:', error);
-      }
-    };
-    
-    syncCompanyData();
-    
-    // Listen for company data changes
-    const handleCompanyDataChange = (event: Event) => {
-      const customEvent = event as CustomEvent<any>;
-      if (customEvent.detail && customEvent.detail.name) {
-        setDisplayCompany(customEvent.detail);
-      }
-    };
-    
-    window.addEventListener('company-data-changed', handleCompanyDataChange);
-    
-    return () => {
-      window.removeEventListener('company-data-changed', handleCompanyDataChange);
-    };
-  }, []);
-  
-  // Update when the passed company prop changes
-  useEffect(() => {
-    if (company && company.name) {
-      setDisplayCompany(company);
+    if (companyDetails) {
+      setCompany(companyDetails);
+      setIsLoading(false);
+      return;
     }
-  }, [company]);
+
+    const fetchCompany = async () => {
+      try {
+        setIsLoading(true);
+        const data = await dataService.fetchCompanyDetails();
+        if (data) {
+          setCompany(data);
+        } else {
+          // Use locally stored company data as fallback
+          const localData = localStorage.getItem('companyDetails');
+          if (localData) {
+            setCompany(JSON.parse(localData));
+          } else {
+            setError('No company details found');
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching company details:', err);
+        setError('Failed to load company details');
+        toast({
+          title: 'Error',
+          description: 'Failed to load company information',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCompany();
+  }, [companyDetails, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-4 w-1/4" />
+      </div>
+    );
+  }
+
+  if (error || !company) {
+    return (
+      <div className="p-4 border rounded-md bg-red-50 text-red-800">
+        <p className="font-medium">Company Information Not Available</p>
+        <p className="text-sm mt-1">{error || 'Please add your company details in settings.'}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-gray-50 p-4 rounded-md">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <p className="text-sm font-medium text-gray-500">Name</p>
-          <p className="font-semibold">{displayCompany.name}</p>
-        </div>
-        <div>
-          <p className="text-sm font-medium text-gray-500">Email</p>
-          <p>{displayCompany.email}</p>
-        </div>
-        <div>
-          <p className="text-sm font-medium text-gray-500">Address</p>
-          <p style={{ whiteSpace: 'pre-line' }}>{displayCompany.address}</p>
-        </div>
-        <div>
-          <p className="text-sm font-medium text-gray-500">Phone</p>
-          <p>{displayCompany.phone}</p>
-        </div>
-        
-        {displayCompany.vatNumber && (
-          <div>
-            <p className="text-sm font-medium text-gray-500">VAT Number</p>
-            <p>{displayCompany.vatNumber}</p>
-          </div>
-        )}
-        
-        {displayCompany.registrationNumber && (
-          <div>
-            <p className="text-sm font-medium text-gray-500">Registration Number</p>
-            <p>{displayCompany.registrationNumber}</p>
-          </div>
-        )}
-        
-        {displayCompany.website && (
-          <div>
-            <p className="text-sm font-medium text-gray-500">Website</p>
-            <p>{displayCompany.website}</p>
-          </div>
-        )}
-        
-        {displayCompany.directorFirstName && displayCompany.directorLastName && (
-          <div>
-            <p className="text-sm font-medium text-gray-500">Director</p>
-            <p>{displayCompany.directorFirstName} {displayCompany.directorLastName}</p>
-          </div>
-        )}
-      </div>
+    <div className="space-y-1">
+      <h3 className="font-semibold text-lg">{company.name}</h3>
+      {company.address && (
+        <p className="text-sm text-gray-600">{company.address}</p>
+      )}
+      {company.addressLine2 && (
+        <p className="text-sm text-gray-600">{company.addressLine2}</p>
+      )}
+      {company.city && company.province && company.postalCode && (
+        <p className="text-sm text-gray-600">
+          {company.city}, {company.province}, {company.postalCode}
+        </p>
+      )}
+      {company.contactEmail && (
+        <p className="text-sm text-gray-600">Email: {company.contactEmail}</p>
+      )}
+      {company.contactPhone && (
+        <p className="text-sm text-gray-600">Phone: {company.contactPhone}</p>
+      )}
+      {company.registrationNumber && (
+        <p className="text-sm text-gray-600">Reg: {company.registrationNumber}</p>
+      )}
+      {company.vatNumber && (
+        <p className="text-sm text-gray-600">VAT: {company.vatNumber}</p>
+      )}
     </div>
   );
 };

@@ -1,93 +1,107 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, CreditCard, Mail, Phone } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Mail, Phone, Edit, Trash2, FileText, MoreHorizontal } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Client } from '@/types/client';
 
 interface ClientCardButtonsProps {
   client: Client;
   onEdit?: (client: Client) => void;
-  onDelete?: (id: string) => void;
-  onSendEmail?: (email: string) => void;
-  onCall?: (phone: string) => void;
-  onPayment?: (client: Client) => void;
-  className?: string;
+  onDelete?: (client: Client) => void;
+  onCreateInvoice?: (client: Client) => void;
+  onCreateQuote?: (client: Client) => void;
 }
 
-/**
- * Reusable button group component for client cards
- * Used across different client views to provide consistent actions
- */
-export const ClientCardButtons: React.FC<ClientCardButtonsProps> = ({
+const ClientCardButtons: React.FC<ClientCardButtonsProps> = ({
   client,
   onEdit,
   onDelete,
-  onSendEmail,
-  onCall,
-  onPayment,
-  className = ''
+  onCreateInvoice,
+  onCreateQuote,
 }) => {
   return (
-    <div className={`flex flex-wrap gap-2 ${className}`}>
+    <div className="flex flex-wrap gap-2">
+      {/* Quick contact buttons */}
+      {client.email && (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => window.location.href = `mailto:${client.email}`}
+          title="Send Email"
+        >
+          <Mail className="h-4 w-4" />
+        </Button>
+      )}
+      
+      {client.phone && (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => window.location.href = `tel:${client.phone}`}
+          title="Call Client"
+        >
+          <Phone className="h-4 w-4" />
+        </Button>
+      )}
+      
+      {/* Edit button */}
       {onEdit && (
         <Button 
           variant="outline" 
-          size="sm" 
+          size="sm"
           onClick={() => onEdit(client)}
-          className="flex items-center gap-1"
+          title="Edit Client"
         >
-          <Pencil className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Edit</span>
+          <Edit className="h-4 w-4" />
         </Button>
       )}
-
-      {onDelete && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => onDelete(client.id)}
-          className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Delete</span>
-        </Button>
-      )}
-
-      {onPayment && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => onPayment(client)}
-          className="flex items-center gap-1"
-        >
-          <CreditCard className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Payment</span>
-        </Button>
-      )}
-
-      {onSendEmail && client.email && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => onSendEmail(client.email)}
-          className="flex items-center gap-1"
-        >
-          <Mail className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Email</span>
-        </Button>
-      )}
-
-      {onCall && client.phone && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => onCall(client.phone)}
-          className="flex items-center gap-1"
-        >
-          <Phone className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Call</span>
-        </Button>
-      )}
+      
+      {/* More actions dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          
+          {onCreateInvoice && (
+            <DropdownMenuItem onClick={() => onCreateInvoice(client)}>
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Create Invoice</span>
+            </DropdownMenuItem>
+          )}
+          
+          {onCreateQuote && (
+            <DropdownMenuItem onClick={() => onCreateQuote(client)}>
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Create Quote</span>
+            </DropdownMenuItem>
+          )}
+          
+          <DropdownMenuSeparator />
+          
+          {onDelete && (
+            <DropdownMenuItem 
+              className="text-red-600" 
+              onClick={() => onDelete(client)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete Client</span>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };

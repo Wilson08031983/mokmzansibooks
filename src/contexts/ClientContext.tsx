@@ -210,7 +210,13 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       updatedClients.companies = updatedClients.companies.map(client => {
         if (client.id === id) {
           clientFound = true;
-          return { ...client, ...updatedClientData, updatedAt: new Date().toISOString() } as CompanyClient;
+          return { 
+            ...client, 
+            ...updatedClientData, 
+            updatedAt: new Date().toISOString(),
+            // Ensure type is maintained
+            type: 'company'
+          } as CompanyClient;
         }
         return client;
       });
@@ -219,7 +225,13 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       updatedClients.individuals = updatedClients.individuals.map(client => {
         if (client.id === id) {
           clientFound = true;
-          return { ...client, ...updatedClientData, updatedAt: new Date().toISOString() } as IndividualClient;
+          return { 
+            ...client, 
+            ...updatedClientData, 
+            updatedAt: new Date().toISOString(),
+            // Ensure type is maintained
+            type: 'individual'
+          } as IndividualClient;
         }
         return client;
       });
@@ -228,7 +240,13 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       updatedClients.vendors = updatedClients.vendors.map(client => {
         if (client.id === id) {
           clientFound = true;
-          return { ...client, ...updatedClientData, updatedAt: new Date().toISOString() } as VendorClient;
+          return { 
+            ...client, 
+            ...updatedClientData, 
+            updatedAt: new Date().toISOString(),
+            // Ensure type is maintained
+            type: 'vendor'
+          } as VendorClient;
         }
         return client;
       });

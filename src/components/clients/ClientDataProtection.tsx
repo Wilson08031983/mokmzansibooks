@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Shield, RotateCcw, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { clientStorageAdapter } from "@/utils/clientDataPersistence";
-import { useClient } from "@/contexts/ClientContext";
+import { createClientDataBackup, restoreClientDataFromBackup } from "@/utils/clientDataPersistence";
 
 /**
  * Component for client data protection features
@@ -14,18 +13,25 @@ const ClientDataProtection: React.FC = () => {
   const [isBackupInProgress, setIsBackupInProgress] = useState(false);
   const [isRestoreInProgress, setIsRestoreInProgress] = useState(false);
   const { toast } = useToast();
-  const { clients } = useClient();
 
   const handleBackup = async () => {
     setIsBackupInProgress(true);
     try {
-      // Create backup in localStorage
-      localStorage.setItem('client-data-backup', JSON.stringify(clients));
+      // Create backup
+      const success = createClientDataBackup();
       
-      toast({
-        title: "Backup successful",
-        description: "Client data has been backed up successfully.",
-      });
+      if (success) {
+        toast({
+          title: "Backup successful",
+          description: "Client data has been backed up successfully.",
+        });
+      } else {
+        toast({
+          title: "Backup failed",
+          description: "There was an error backing up client data.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error backing up client data:", error);
       toast({
@@ -41,10 +47,10 @@ const ClientDataProtection: React.FC = () => {
   const handleRestore = async () => {
     setIsRestoreInProgress(true);
     try {
-      // Attempt to restore from adapter
-      const restored = clientStorageAdapter.restoreClientDataFromBackup();
+      // Attempt to restore
+      const success = restoreClientDataFromBackup();
       
-      if (restored) {
+      if (success) {
         toast({
           title: "Restore successful",
           description: "Client data has been restored. Please refresh the page to see the changes.",

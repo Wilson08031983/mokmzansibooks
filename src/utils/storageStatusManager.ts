@@ -1,81 +1,70 @@
 
 /**
- * Utility for checking and managing storage status
- * This provides information about available storage mechanisms and their status
+ * Storage Status Manager
+ * Monitors the availability and health of browser storage mechanisms
  */
 
-const storageStatusManager = {
-  initialized: false,
-  
-  // Storage status information
-  status: {
+// Types for the status
+export interface StorageStatus {
+  localStorage: boolean;
+  sessionStorage: boolean;
+  indexedDB: boolean;
+  degradedMode: boolean;
+}
+
+// Singleton class to manage storage status
+class StorageStatusManager {
+  initialized: boolean = false;
+  status: StorageStatus = {
     localStorage: true,
     sessionStorage: true,
-    indexedDB: false,
+    indexedDB: true,
     degradedMode: false
-  },
-  
-  /**
-   * Initializes the storage status manager
-   * @returns Promise that resolves when initialization is complete
-   */
-  initialize: async (): Promise<boolean> => {
-    if (storageStatusManager.initialized) {
-      return true;
-    }
+  };
+
+  // Initialize and check storage
+  async initialize(): Promise<boolean> {
+    if (this.initialized) return true;
     
     try {
-      console.log('Initializing storage status manager...');
+      // Check localStorage
+      this.status.localStorage = this.isStorageAvailable('localStorage');
       
-      // Check localStorage availability
-      try {
-        localStorage.setItem('storage-test', 'test');
-        localStorage.removeItem('storage-test');
-        storageStatusManager.status.localStorage = true;
-      } catch (e) {
-        console.warn('localStorage not available');
-        storageStatusManager.status.localStorage = false;
-        storageStatusManager.status.degradedMode = true;
-      }
+      // Check sessionStorage
+      this.status.sessionStorage = this.isStorageAvailable('sessionStorage');
       
-      // Check sessionStorage availability
-      try {
-        sessionStorage.setItem('storage-test', 'test');
-        sessionStorage.removeItem('storage-test');
-        storageStatusManager.status.sessionStorage = true;
-      } catch (e) {
-        console.warn('sessionStorage not available');
-        storageStatusManager.status.sessionStorage = false;
-        storageStatusManager.status.degradedMode = true;
-      }
+      // Check indexedDB
+      this.status.indexedDB = 'indexedDB' in window;
       
-      // Check IndexedDB availability
-      try {
-        if ('indexedDB' in window) {
-          storageStatusManager.status.indexedDB = true;
-        } else {
-          console.warn('IndexedDB not available');
-          storageStatusManager.status.indexedDB = false;
-          storageStatusManager.status.degradedMode = true;
-        }
-      } catch (e) {
-        console.warn('Error checking IndexedDB availability:', e);
-        storageStatusManager.status.indexedDB = false;
-        storageStatusManager.status.degradedMode = true;
-      }
+      // Set degraded mode flag if critical storage is unavailable
+      this.status.degradedMode = !this.status.localStorage || !this.status.indexedDB;
       
-      // Set global variable for access in other places
-      if (typeof window !== 'undefined') {
-        (window as any).__STORAGE_STATUS__ = storageStatusManager.status;
-      }
-      
-      storageStatusManager.initialized = true;
+      this.initialized = true;
       return true;
     } catch (error) {
-      console.error('Failed to initialize storage status manager:', error);
+      console.error('Error initializing storage status manager:', error);
+      this.status.degradedMode = true;
+      this.initialized = true;
       return false;
     }
   }
-};
 
+  // Helper to check if storage type is available
+  private isStorageAvailable(type: string): boolean {
+    try {
+      const storage = window[type as keyof Window] as Storage;
+      if (!storage) return false;
+      
+      const x = '__storage_test__';
+      storage.setItem(x, x);
+      storage.removeItem(x);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+}
+
+// Create and export a singleton instance
+const storageStatusManager = new StorageStatusManager();
 export default storageStatusManager;
