@@ -45,15 +45,17 @@ export async function saveCompanyData(companyDetails: CompanyDetails): Promise<b
       return false;
     }
 
+    const updatedData = {
+      ...companyDetails,
+      updatedAt: new Date().toISOString()
+    };
+
     if (existingData && existingData.length > 0) {
       // Update existing company
       const { error: updateError } = await supabase
         .from('company_data')
         .update({
-          data: {
-            ...companyDetails,
-            updatedAt: new Date().toISOString()
-          }
+          data: updatedData
         })
         .eq('id', existingData[0].id);
 
@@ -67,7 +69,7 @@ export async function saveCompanyData(companyDetails: CompanyDetails): Promise<b
         .from('company_data')
         .insert([{
           type: 'company',
-          data: companyDetails
+          data: updatedData
         }]);
 
       if (insertError) {

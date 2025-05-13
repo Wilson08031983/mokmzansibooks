@@ -1,32 +1,35 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 /**
- * Utility to initialize Supabase for all pages
+ * Setup Supabase for all pages by initializing any needed configuration
+ * This ensures consistent Supabase behavior across the application
  */
-
-import { supabase } from '@/integrations/supabase/client';
-
-export const initializeSupabaseForAllPages = async (): Promise<boolean> => {
+const setupSupabaseForAllPages = async (): Promise<boolean> => {
   try {
-    // Initialize any required session handling or global Supabase setup
-    const { data, error } = await supabase.auth.getSession();
+    // Check if Supabase is accessible
+    const { error } = await supabase.from('company_data').select('id').limit(1);
     
-    if (error) {
-      console.error('Error initializing Supabase session:', error);
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found" which is fine
+      console.error('Supabase initialization failed:', error);
       return false;
     }
     
-    // Set up authentication listeners or other global Supabase configs
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event);
-      // Handle authentication state changes
+    // Setup auth state change listener
+    supabase.auth.onAuthStateChange((event, session) => {
+      // Handle auth state changes globally
+      if (event === 'SIGNED_IN') {
+        console.log('User signed in');
+      } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
+      }
     });
     
-    // Successful initialization
     return true;
   } catch (error) {
-    console.error('Failed to initialize Supabase for all pages:', error);
+    console.error('Error during Supabase setup:', error);
     return false;
   }
 };
 
-export default initializeSupabaseForAllPages;
+export default setupSupabaseForAllPages;

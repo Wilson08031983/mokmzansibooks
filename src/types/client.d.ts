@@ -43,3 +43,10 @@ export interface ClientsState {
   individuals: IndividualClient[];
   vendors: VendorClient[];
 }
+
+export type ClientFilter = {
+  type: 'all' | 'company' | 'individual' | 'vendor';
+  search: string;
+  sortBy: 'name' | 'balance' | 'lastInteraction' | 'createdAt';
+  sortDirection: 'asc' | 'desc';
+};
