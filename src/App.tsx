@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import robustStorageMigrator from '@/utils/robustStorageMigrator';
 // Import persistence test for data retention verification
@@ -8,10 +7,9 @@ import storageStatusManager from '@/utils/storageStatusManager';
 // Initialize storage status manager as early as possible
 const storageStatusPromise = storageStatusManager.initialize();
 // Initialize data recovery as early as possible
-const dataRecoveryPromise = robustStorageMigrator.ensureInitialized();
+const dataRecoveryPromise = robustStorageMigrator.migrateData({ sourceKey: 'oldStorage', targetKey: 'newStorage' });
 import { SyncProvider } from '@/contexts/SyncContext';
-import SyncIndicator from '@/components/shared/SyncIndicator';
-import { SyncStatus } from '@/components/shared/SyncIndicator';
+import SyncIndicator, { SyncStatus } from '@/components/shared/SyncIndicator';
 import { initializeApp, debugHelpers } from '@/utils/initApp';
 import { initializeSupabaseForAllPages } from '@/utils/setupSupabaseForAllPages';
 import { GlobalAppProvider } from '@/contexts/GlobalAppContext';

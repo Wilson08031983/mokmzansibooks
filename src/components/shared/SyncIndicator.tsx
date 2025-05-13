@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Cloud, CloudOff, CloudSync, CheckCircle, AlertCircle } from 'lucide-react';
+import { Cloud, CloudOff, CloudCog, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export enum SyncStatus {
@@ -25,7 +25,7 @@ const SyncIndicator: React.FC<SyncIndicatorProps> = ({
   const getIcon = () => {
     switch (status) {
       case SyncStatus.SYNCING:
-        return <CloudSync className="animate-spin" />;
+        return <CloudCog className="animate-spin" />;
       case SyncStatus.SUCCESS:
         return <CheckCircle className="text-green-500" />;
       case SyncStatus.ERROR:

@@ -115,7 +115,6 @@ export async function backupCompanyData(companyDetails: CompanyDetails): Promise
       .insert([{
         type: 'company_backup',
         data: companyDetails,
-        data_id: backupId
       }]);
 
     if (error) {

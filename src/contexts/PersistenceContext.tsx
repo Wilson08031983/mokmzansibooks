@@ -1,21 +1,14 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
+import storageStatusManager from '@/utils/storageStatusManager';
 
-// Define the type for the persistence context
-export interface PersistenceContextType {
-  initialized: boolean;
-  status: {
-    localStorage: boolean;
-    sessionStorage: boolean;
-    indexedDB: boolean;
-    degradedMode: boolean;
-  };
-  initialize: () => Promise<boolean>;
+interface PersistenceContextType {
   isReady: boolean;
-  getItem: <T>(key: string, defaultValue: T | null) => Promise<T | null>;
-  saveItem: <T>(key: string, value: T) => Promise<boolean>;
-  removeItem: (key: string) => Promise<boolean>;
-  getStatus: () => {
+  getItem: <T>(key: string, defaultValue?: T) => T | null;
+  saveItem: <T>(key: string, value: T) => boolean;
+  removeItem: (key: string) => boolean;
+  clearAll: () => boolean;
+  status: {
     localStorage: boolean;
     sessionStorage: boolean;
     indexedDB: boolean;
@@ -24,95 +17,67 @@ export interface PersistenceContextType {
 }
 
 const PersistenceContext = createContext<PersistenceContextType>({
-  initialized: false,
+  isReady: false,
+  getItem: () => null,
+  saveItem: () => false,
+  removeItem: () => false,
+  clearAll: () => false,
   status: {
     localStorage: false,
     sessionStorage: false,
     indexedDB: false,
-    degradedMode: false,
-  },
-  initialize: async () => false,
-  isReady: false,
-  getItem: async () => null,
-  saveItem: async () => false,
-  removeItem: async () => false,
-  getStatus: () => ({
-    localStorage: false,
-    sessionStorage: false,
-    indexedDB: false,
-    degradedMode: false,
-  }),
+    degradedMode: true
+  }
 });
-
-export const usePersistence = () => useContext(PersistenceContext);
 
 interface PersistenceProviderProps {
   children: React.ReactNode;
 }
 
 export const PersistenceProvider: React.FC<PersistenceProviderProps> = ({ children }) => {
-  const [initialized, setInitialized] = useState(false);
-  const [status, setStatus] = useState({
-    localStorage: false,
-    sessionStorage: false,
-    indexedDB: false,
-    degradedMode: false,
-  });
-
-  const checkStorage = (type: 'localStorage' | 'sessionStorage'): boolean => {
-    try {
-      const storage = window[type];
-      const testKey = `test-${Math.random()}`;
-      storage.setItem(testKey, 'test');
-      storage.removeItem(testKey);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
-
-  const checkIndexedDB = async (): Promise<boolean> => {
-    if (!window.indexedDB) return false;
-    
-    try {
-      const request = window.indexedDB.open('test-db', 1);
-      return new Promise((resolve) => {
-        request.onerror = () => resolve(false);
-        request.onsuccess = () => {
-          const db = request.result;
-          db.close();
-          window.indexedDB.deleteDatabase('test-db');
-          resolve(true);
-        };
-      });
-    } catch (e) {
-      return false;
-    }
-  };
-
-  const initialize = async (): Promise<boolean> => {
-    const localStorageAvailable = checkStorage('localStorage');
-    const sessionStorageAvailable = checkStorage('sessionStorage');
-    const indexedDBAvailable = await checkIndexedDB();
-    
-    const newStatus = {
-      localStorage: localStorageAvailable,
-      sessionStorage: sessionStorageAvailable,
-      indexedDB: indexedDBAvailable,
-      degradedMode: !localStorageAvailable || !indexedDBAvailable,
+  const [isReady, setIsReady] = useState(false);
+  const [status, setStatus] = useState(storageStatusManager.getStorageStatus());
+  
+  // Initialize persistence layer
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        // Get the current storage status
+        const currentStatus = await storageStatusManager.initialize();
+        setStatus(currentStatus);
+        setIsReady(true);
+      } catch (error) {
+        console.error('Failed to initialize persistence layer:', error);
+        // Still mark as ready, but with degraded capabilities
+        setIsReady(true);
+      }
     };
     
-    setStatus(newStatus);
-    setInitialized(true);
-    return !newStatus.degradedMode;
-  };
-
-  useEffect(() => {
     initialize();
+    
+    // Start periodic monitoring of storage status
+    const stopMonitoring = storageStatusManager.startStorageMonitoring(30000);
+    
+    return () => {
+      stopMonitoring();
+    };
   }, []);
-
-  // Implementation of persistence functions
-  const getItem = async <T,>(key: string, defaultValue: T | null = null): Promise<T | null> => {
+  
+  // Update status when storage status changes
+  useEffect(() => {
+    const handleStorageStatusChange = () => {
+      setStatus(storageStatusManager.getStorageStatus());
+    };
+    
+    window.addEventListener('storage:status:change', handleStorageStatusChange);
+    
+    return () => {
+      window.removeEventListener('storage:status:change', handleStorageStatusChange);
+    };
+  }, []);
+  
+  // Main persistence methods
+  const getItem = <T,>(key: string, defaultValue?: T): T | null => {
     try {
       if (status.localStorage) {
         const item = localStorage.getItem(key);
@@ -120,57 +85,137 @@ export const PersistenceProvider: React.FC<PersistenceProviderProps> = ({ childr
           return JSON.parse(item) as T;
         }
       }
-      return defaultValue;
-    } catch (e) {
-      console.error('Error getting item:', e);
-      return defaultValue;
-    }
-  };
-
-  const saveItem = async <T,>(key: string, value: T): Promise<boolean> => {
-    try {
-      if (status.localStorage) {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
+      
+      // Fallback to sessionStorage if localStorage is not available
+      if (status.sessionStorage) {
+        const item = sessionStorage.getItem(key);
+        if (item) {
+          return JSON.parse(item) as T;
+        }
       }
-      return false;
-    } catch (e) {
-      console.error('Error saving item:', e);
-      return false;
+      
+      // Return default value or null if not found
+      return defaultValue !== undefined ? defaultValue : null;
+    } catch (error) {
+      console.error(`Error getting item with key "${key}":`, error);
+      return defaultValue !== undefined ? defaultValue : null;
     }
   };
-
-  const removeItem = async (key: string): Promise<boolean> => {
+  
+  const saveItem = <T,>(key: string, value: T): boolean => {
     try {
+      const serialized = JSON.stringify(value);
+      
+      // Try localStorage first
       if (status.localStorage) {
-        localStorage.removeItem(key);
-        return true;
+        try {
+          localStorage.setItem(key, serialized);
+          return true;
+        } catch (error) {
+          console.warn(`Failed to save to localStorage, trying sessionStorage:`, error);
+        }
       }
+      
+      // Fallback to sessionStorage
+      if (status.sessionStorage) {
+        try {
+          sessionStorage.setItem(key, serialized);
+          return true;
+        } catch (error) {
+          console.error(`Failed to save to sessionStorage:`, error);
+        }
+      }
+      
       return false;
-    } catch (e) {
-      console.error('Error removing item:', e);
+    } catch (error) {
+      console.error(`Error saving item with key "${key}":`, error);
       return false;
     }
   };
-
-  const getStatus = () => status;
-
-  const value: PersistenceContextType = {
-    initialized,
-    status,
-    initialize,
-    isReady: initialized && !status.degradedMode,
+  
+  const removeItem = (key: string): boolean => {
+    try {
+      // Try to remove from both storage types
+      let success = false;
+      
+      if (status.localStorage) {
+        try {
+          localStorage.removeItem(key);
+          success = true;
+        } catch (error) {
+          console.warn(`Failed to remove from localStorage:`, error);
+        }
+      }
+      
+      if (status.sessionStorage) {
+        try {
+          sessionStorage.removeItem(key);
+          success = true;
+        } catch (error) {
+          console.warn(`Failed to remove from sessionStorage:`, error);
+        }
+      }
+      
+      return success;
+    } catch (error) {
+      console.error(`Error removing item with key "${key}":`, error);
+      return false;
+    }
+  };
+  
+  const clearAll = (): boolean => {
+    try {
+      let success = false;
+      
+      if (status.localStorage) {
+        try {
+          localStorage.clear();
+          success = true;
+        } catch (error) {
+          console.warn(`Failed to clear localStorage:`, error);
+        }
+      }
+      
+      if (status.sessionStorage) {
+        try {
+          sessionStorage.clear();
+          success = true;
+        } catch (error) {
+          console.warn(`Failed to clear sessionStorage:`, error);
+        }
+      }
+      
+      return success;
+    } catch (error) {
+      console.error(`Error clearing storage:`, error);
+      return false;
+    }
+  };
+  
+  const contextValue = useMemo(() => ({
+    isReady,
     getItem,
     saveItem,
     removeItem,
-    getStatus,
-  };
-
+    clearAll,
+    status
+  }), [isReady, status]);
+  
   return (
-    <PersistenceContext.Provider value={value}>
+    <PersistenceContext.Provider value={contextValue}>
       {children}
     </PersistenceContext.Provider>
   );
 };
 
-export default PersistenceProvider;
+export const usePersistence = (): PersistenceContextType => {
+  const context = useContext(PersistenceContext);
+  
+  if (!context) {
+    throw new Error('usePersistence must be used within a PersistenceProvider');
+  }
+  
+  return context;
+};
+
+export default PersistenceContext;
