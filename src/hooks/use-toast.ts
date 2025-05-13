@@ -1,23 +1,23 @@
 
-import * as React from "react"
-import { toast as sonnerToast, Toaster as Sonner } from "sonner"
+import * as React from "react";
+import { toast as sonnerToast, Toaster as Sonner } from "sonner";
 
-const TOAST_LIMIT = 5
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 5;
+const TOAST_REMOVE_DELAY = 1000000;
 
-type ToastActionElement = React.ReactElement<any, string | React.JSXElementConstructor<any>>
+type ToastActionElement = React.ReactElement<any, string | React.JSXElementConstructor<any>>;
 
-type ToastProps = React.ComponentPropsWithoutRef<typeof Sonner>
+type ToastProps = React.ComponentPropsWithoutRef<typeof Sonner>;
 
 type ToastActionProps = {
-  altText: string
-  onClick: () => void
-  children?: React.ReactNode
-}
+  altText: string;
+  onClick: () => void;
+  children?: React.ReactNode;
+};
 
-type ToastVariants = "default" | "destructive" | "outline" | "secondary" | "client" | "credit" | "overdue" | "outstanding" | "bank" | "success"
+type ToastVariants = "default" | "destructive" | "outline" | "secondary" | "client" | "credit" | "overdue" | "outstanding" | "bank" | "success";
 
-const actionClassName = "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive"
+const actionClassName = "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive";
 
 const toastVariants = {
   default: {
@@ -70,23 +70,20 @@ const toastVariants = {
     description: "text-green-700",
     container: "bg-green-50 border-green-200 border",
   },
-}
+};
 
-export type ToastActionType = React.FC<ToastActionProps>
+export type ToastActionType = React.FC<ToastActionProps>;
 
-export type ToastT = Sonner
+export type ToastT = Sonner;
 
 type ToastOptions = {
-  title?: string
-  description?: React.ReactNode
-  variant?: ToastVariants
-  action?: ToastActionElement
-}
+  title?: string;
+  description?: React.ReactNode;
+  variant?: ToastVariants;
+  action?: ToastActionElement;
+};
 
-const Toast: React.FC<ToastProps> = ({
-  className,
-  ...props
-}) => {
+const Toast: React.FC<ToastProps> = ({ className, ...props }) => {
   return (
     <Sonner
       className={className}
@@ -101,17 +98,17 @@ const Toast: React.FC<ToastProps> = ({
       }}
       {...props}
     />
-  )
-}
+  );
+};
 
 export const useToast = () => {
-  const [toasts, setToasts] = React.useState<ToastOptions[]>([])
+  const [toasts, setToasts] = React.useState<ToastOptions[]>([]);
 
   const toast = (options: ToastOptions) => {
-    const { title, description, variant = "default", action } = options
-    const titleClass = toastVariants[variant]?.title
-    const descriptionClass = toastVariants[variant]?.description
-    const containerClass = toastVariants[variant]?.container
+    const { title, description, variant = "default", action } = options;
+    const titleClass = toastVariants[variant]?.title;
+    const descriptionClass = toastVariants[variant]?.description;
+    const containerClass = toastVariants[variant]?.container;
 
     sonnerToast(title, {
       description,
@@ -121,21 +118,21 @@ export const useToast = () => {
         title: titleClass,
         description: descriptionClass,
       },
-    })
+    });
 
-    setToasts((prevToasts) => [...prevToasts, options])
-  }
+    setToasts((prevToasts) => [...prevToasts, options]);
+  };
 
-  return { toast, toasts, setToasts, dismiss: sonnerToast.dismiss }
-}
+  return { toast, toasts, setToasts, dismiss: sonnerToast.dismiss };
+};
 
-export { Toast, toast as sonnerToast }
+export { Toast, toast as sonnerToast };
 
 export const toast = (options: ToastOptions) => {
-  const { title, description, variant = "default", action } = options
-  const titleClass = toastVariants[variant]?.title
-  const descriptionClass = toastVariants[variant]?.description
-  const containerClass = toastVariants[variant]?.container
+  const { title, description, variant = "default", action } = options;
+  const titleClass = toastVariants[variant]?.title;
+  const descriptionClass = toastVariants[variant]?.description;
+  const containerClass = toastVariants[variant]?.container;
 
   sonnerToast(title, {
     description,
@@ -145,5 +142,5 @@ export const toast = (options: ToastOptions) => {
       title: titleClass,
       description: descriptionClass,
     },
-  })
-}
+  });
+};
