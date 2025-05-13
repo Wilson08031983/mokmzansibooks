@@ -16,7 +16,6 @@ export interface Client {
   lastInteraction?: string | null;
   createdAt: string;
   updatedAt: string;
-  contactPerson?: string;
 }
 
 export interface CompanyClient extends Client {

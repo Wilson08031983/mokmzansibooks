@@ -84,34 +84,10 @@ export async function saveCompanyData(companyDetails: CompanyDetails): Promise<b
 }
 
 /**
- * Delete company data from Supabase
- */
-export async function deleteCompanyData(): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('company_data')
-      .delete()
-      .eq('type', 'company');
-
-    if (error) {
-      console.error('Error deleting company data:', error);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Error in deleteCompanyData:', error);
-    return false;
-  }
-}
-
-/**
  * Backup company data to Supabase
  */
 export async function backupCompanyData(companyDetails: CompanyDetails): Promise<boolean> {
   try {
-    const backupId = `backup-${Date.now()}`;
-    
     const { error } = await supabase
       .from('company_data')
       .insert([{

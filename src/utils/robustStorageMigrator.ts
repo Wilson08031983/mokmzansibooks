@@ -114,6 +114,63 @@ const robustStorageMigrator = {
       console.error('Error during storage consolidation:', e);
       return { success: false, data: null };
     }
+  },
+
+  /**
+   * Ensure all storage is properly initialized
+   */
+  ensureInitialized: async (): Promise<boolean> => {
+    try {
+      // Check for legacy data formats that need migration
+      const legacyKeys = [
+        'clients',
+        'mokClients',
+        'mok-mzansi-books-clients',
+        'companyDetails',
+        'publicCompanyDetails'
+      ];
+
+      const modernKeys = [
+        'mok-app-data',
+        'mok-client-data',
+        'mok-company-data'
+      ];
+
+      // Check if any migrations needed and perform them
+      for (const sourceKey of legacyKeys) {
+        for (const targetKey of modernKeys) {
+          if (robustStorageMigrator.needsMigration(sourceKey, targetKey)) {
+            console.log(`Migrating data from ${sourceKey} to ${targetKey}`);
+            await robustStorageMigrator.migrateData({
+              sourceKey,
+              targetKey,
+              deleteSource: false // Keep source as backup
+            });
+          }
+        }
+      }
+
+      // Consolidate any fragmented data
+      const clientDataSources = [
+        'clients',
+        'mokClients',
+        'mok-mzansi-books-clients'
+      ];
+
+      if (clientDataSources.some(key => localStorage.getItem(key))) {
+        console.log('Consolidating client data sources');
+        await robustStorageMigrator.consolidateStorage(
+          clientDataSources,
+          'mok-client-data-consolidated',
+          false
+        );
+      }
+
+      return true;
+    } catch (e) {
+      console.error('Error initializing storage:', e);
+      return false;
+    }
   }
 };
 
