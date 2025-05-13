@@ -1,38 +1,56 @@
 
 /**
- * Type definitions for application settings
+ * Type definitions for application settings and user preferences
  */
 
 export interface UserPreference {
   theme: 'light' | 'dark' | 'system';
-  fontSize: 'small' | 'medium' | 'large';
-  compactMode: boolean;
+  language: string;
   notifications: {
     email: boolean;
     push: boolean;
     sms: boolean;
+    inApp: boolean;
   };
-  defaultCurrency: string;
+  dashboard: {
+    showWelcome: boolean;
+    defaultView: 'summary' | 'detailed';
+    widgets: string[];
+  };
   dateFormat: string;
-  language: string;
+  timeFormat: string;
+  numberFormat: string;
+  currencyFormat: string;
+  timezone: string;
 }
 
 export interface AppSettings {
   version: string;
-  apiEndpoint?: string;
-  features: {
-    enableInventory: boolean;
-    enableHR: boolean;
-    enableClients: boolean;
-    enableQuotes: boolean;
-    enableInvoices: boolean;
-    enableReports: boolean;
-    enablePayments: boolean;
+  buildNumber: string;
+  environment: 'development' | 'staging' | 'production';
+  features: Record<string, boolean>;
+  apiEndpoints: Record<string, string>;
+  analytics: {
+    enabled: boolean;
+    anonymizeData: boolean;
   };
-  maintenance?: {
+  maintenance: {
     scheduled: boolean;
-    startTime?: string;
-    endTime?: string;
-    message?: string;
+    scheduledTime: string | null;
+    message: string | null;
+  };
+  storage: {
+    localStorageEnabled: boolean;
+    indexedDBEnabled: boolean;
+  };
+  security: {
+    sessionTimeout: number;
+    requirePasswordChange: boolean;
+    passwordPolicy: {
+      minLength: number;
+      requireSpecialChars: boolean;
+      requireNumbers: boolean;
+      requireUppercase: boolean;
+    };
   };
 }

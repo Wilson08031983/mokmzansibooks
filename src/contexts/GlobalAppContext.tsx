@@ -36,7 +36,7 @@ import {
 import robustStorageMigrator from '@/utils/robustStorageMigrator';
 
 // Define app state interfaces
-interface AppState {
+interface GlobalAppState {
   // Company information
   companyDetails: CompanyDetails | null;
   updateCompanyDetails: (details: CompanyDetails) => Promise<boolean>;
@@ -89,93 +89,54 @@ interface AppState {
   refreshAllData: () => Promise<void>;
 }
 
-// Define context interface
-interface GlobalAppContextProps {
+// Use GlobalAppState as the context type
+const GlobalAppContext = createContext<GlobalAppState>({
   // Company information
-  companyDetails: CompanyDetails | null;
-  updateCompanyDetails: (details: CompanyDetails) => Promise<boolean>;
-  
-  // Clients information
-  clients: Client[];
-  clientCount: number;
-  activeClientCount: number;
-  updateClients: (clients: Client[]) => Promise<boolean>;
-  
-  // Accounting summary
-  accountingSummary: {
-    totalRevenue: number;
-    totalExpenses: number;
-    balance: number;
-    recentTransactions: any[];
-  };
-  
-  // HR & Payroll summary
-  hrSummary: {
-    employeeCount: number;
-    onLeaveCount: number;
-    upcomingPayroll: any[];
-    recentPayments: any[];
-  };
-  
-  // Inventory summary 
-  inventorySummary: {
-    totalItems: number;
-    lowStockItems: number;
-    totalValue: number;
-    recentMovements: any[];
-  };
-  
-  // Reports summary
-  reportsSummary: {
-    savedReports: number;
-    recentReports: any[];
-  };
-  
-  // User settings
-  userPreferences: UserPreference | null;
-  appSettings: AppSettings | null;
-  updateUserPreferences: (preferences: Partial<UserPreference>) => Promise<boolean>;
-  
-  // Global app state
-  isLoading: boolean;
-  isInitialized: boolean;
-  lastUpdated: Date | null;
-  refreshAllData: () => Promise<void>;
-}
-
-// Create the context with default values
-const GlobalAppContext = createContext<GlobalAppContextProps>({
   companyDetails: null,
   updateCompanyDetails: async () => false,
+  
+  // Clients information
   clients: [],
   clientCount: 0,
   activeClientCount: 0,
   updateClients: async () => false,
+  
+  // Accounting summary
   accountingSummary: {
     totalRevenue: 0,
     totalExpenses: 0,
     balance: 0,
     recentTransactions: [],
   },
+  
+  // HR & Payroll summary
   hrSummary: {
     employeeCount: 0,
     onLeaveCount: 0,
     upcomingPayroll: [],
     recentPayments: [],
   },
+  
+  // Inventory summary 
   inventorySummary: {
     totalItems: 0,
     lowStockItems: 0,
     totalValue: 0,
     recentMovements: [],
   },
+  
+  // Reports summary
   reportsSummary: {
     savedReports: 0,
     recentReports: [],
   },
+  
+  // User settings
   userPreferences: null,
   appSettings: null,
   updateUserPreferences: async () => false,
+  
+  // Global app state
   isLoading: true,
   isInitialized: false,
   lastUpdated: null,

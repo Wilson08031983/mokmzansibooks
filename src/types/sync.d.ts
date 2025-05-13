@@ -1,98 +1,70 @@
 
 /**
- * Type definitions for synchronization functionality
+ * Types for sync functionality
  */
 
-export interface SyncAdapter {
-  isReady: boolean;
-  isPending: boolean;
-  lastSync?: Date;
-  syncErrors?: Error[];
-}
+// Sync status types
+export type SyncStatus = 'idle' | 'syncing' | 'error' | 'success';
 
-export interface AccountingAdapter extends SyncAdapter {
-  loadAccountingData: () => Promise<any>;
-  saveAccountingData: (data: any) => Promise<boolean>;
-}
-
-export interface HRAdapter extends SyncAdapter {
-  loadHRData: () => Promise<any>;
-  saveHRData: (data: any) => Promise<boolean>;
-}
-
-export interface InventoryAdapter extends SyncAdapter {
-  loadInventoryData: () => Promise<any>;
-  saveInventoryData: (data: any) => Promise<boolean>;
-}
-
-export interface ReportsAdapter extends SyncAdapter {
-  loadReportsData: () => Promise<any>;
-  saveReportsData: (data: any) => Promise<boolean>;
-}
-
-export interface SettingsAdapter extends SyncAdapter {
-  loadSettings: () => Promise<any>;
-  updateUserPreferences: (preferences: Partial<UserPreference>) => Promise<boolean>;
-}
-
-// Stub functions for the adapters
-export function useAccountingWithSync(): AccountingAdapter {
-  return {
-    isReady: true,
-    isPending: false,
-    loadAccountingData: async () => Promise.resolve({}),
-    saveAccountingData: async () => Promise.resolve(true)
-  };
-}
-
-export function useHRWithSync(): HRAdapter {
-  return {
-    isReady: true,
-    isPending: false,
-    loadHRData: async () => Promise.resolve({}),
-    saveHRData: async () => Promise.resolve(true)
-  };
-}
-
-export function useInventoryWithSync(): InventoryAdapter {
-  return {
-    isReady: true,
-    isPending: false,
-    loadInventoryData: async () => Promise.resolve({}),
-    saveInventoryData: async () => Promise.resolve(true)
-  };
-}
-
-export function useReportsWithSync(): ReportsAdapter {
-  return {
-    isReady: true,
-    isPending: false,
-    loadReportsData: async () => Promise.resolve({}),
-    saveReportsData: async () => Promise.resolve(true)
-  };
-}
-
-export function useSettingsWithSync(): SettingsAdapter {
-  return {
-    isReady: true,
-    isPending: false,
-    loadSettings: async () => Promise.resolve({}),
-    updateUserPreferences: async () => Promise.resolve(true)
-  };
-}
-
-export interface SyncStatusManager {
+// Sync hook types
+export interface UseSyncStatus {
+  status: SyncStatus;
+  message: string;
   showSyncing: (message?: string) => void;
   showSuccess: (message?: string) => void;
   showError: (message?: string) => void;
-  clearStatus: () => void;
+  showIdle: () => void;
 }
 
-export function useSyncStatus(): SyncStatusManager {
-  return {
-    showSyncing: () => {},
-    showSuccess: () => {},
-    showError: () => {},
-    clearStatus: () => {}
-  };
+// Storage adapter types with sync capabilities
+export interface StorageAdapterWithSync<T> {
+  syncStatus: SyncStatus;
+  lastSynced: Date | null;
+  load: () => Promise<T | null>;
+  save: (data: T) => Promise<boolean>;
+  sync: () => Promise<boolean>;
 }
+
+// Type for accounting adapter with sync
+export interface AccountingAdapter extends StorageAdapterWithSync<any> {
+  loadAccountingData: () => Promise<any>;
+  saveAccountingData: (data: any) => Promise<boolean>;
+  syncAccountingData: () => Promise<boolean>;
+}
+
+// Type for HR adapter with sync
+export interface HRAdapter extends StorageAdapterWithSync<any> {
+  loadHRData: () => Promise<any>;
+  saveHRData: (data: any) => Promise<boolean>;
+  syncHRData: () => Promise<boolean>;
+}
+
+// Type for inventory adapter with sync
+export interface InventoryAdapter extends StorageAdapterWithSync<any> {
+  loadInventoryData: () => Promise<any>;
+  saveInventoryData: (data: any) => Promise<boolean>;
+  syncInventoryData: () => Promise<boolean>;
+}
+
+// Type for reports adapter with sync
+export interface ReportsAdapter extends StorageAdapterWithSync<any> {
+  loadReportsData: () => Promise<any>;
+  saveReportsData: (data: any) => Promise<boolean>;
+  syncReportsData: () => Promise<boolean>;
+}
+
+// Type for settings adapter with sync
+export interface SettingsAdapter extends StorageAdapterWithSync<any> {
+  loadSettings: () => Promise<any>;
+  saveSettings: (data: any) => Promise<boolean>;
+  syncSettings: () => Promise<boolean>;
+  updateUserPreferences: (preferences: Partial<import('./settings').UserPreference>) => Promise<boolean>;
+}
+
+// Hook factories
+export function useAccountingWithSync(): AccountingAdapter;
+export function useHRWithSync(): HRAdapter;
+export function useInventoryWithSync(): InventoryAdapter;
+export function useReportsWithSync(): ReportsAdapter;
+export function useSettingsWithSync(): SettingsAdapter;
+export function useSyncStatus(): UseSyncStatus;

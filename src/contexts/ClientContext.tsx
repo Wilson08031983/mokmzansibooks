@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useToast } from "@/hooks/use-toast";
@@ -106,6 +105,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         ...baseClient,
         type: 'company' as const,
         contactPerson: (partialClient as Partial<CompanyClient>).contactPerson || "",
+        // Update to use properties from our fixed CompanyClient type
         vatNumber: (partialClient as Partial<CompanyClient>).vatNumber || "",
         registrationNumber: (partialClient as Partial<CompanyClient>).registrationNumber || "",
       } as CompanyClient;
@@ -114,6 +114,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return {
         ...baseClient,
         type: 'individual' as const,
+        // Update to use properties from our fixed IndividualClient type
         firstName: (partialClient as Partial<IndividualClient>).firstName || "",
         lastName: (partialClient as Partial<IndividualClient>).lastName || "",
       } as IndividualClient;
@@ -123,6 +124,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         ...baseClient,
         type: 'vendor' as const,
         contactPerson: (partialClient as Partial<VendorClient>).contactPerson || "",
+        // Update to use properties from our fixed VendorClient type
         vendorCategory: (partialClient as Partial<VendorClient>).vendorCategory || "",
         vendorCode: (partialClient as Partial<VendorClient>).vendorCode || null,
       } as VendorClient;

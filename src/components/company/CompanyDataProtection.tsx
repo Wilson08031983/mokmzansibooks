@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Shield, AlertTriangle, Save, CheckCircle } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -28,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { CompanyDetails as TypedCompanyDetails } from '@/types/company';
 
 /**
  * Component that provides data protection controls for company information
@@ -49,9 +51,31 @@ const CompanyDataProtection: React.FC = () => {
     setIsBackingUp(true);
     
     try {
+      if (!companyDetails) {
+        throw new Error("No company details to backup");
+      }
+
+      // Convert from CompanyContext type to company.d.ts type
+      const typedCompanyDetails: TypedCompanyDetails = {
+        name: companyDetails.name,
+        address: companyDetails.address || '',
+        city: companyDetails.city || '',
+        province: companyDetails.province || '',
+        postalCode: companyDetails.postalCode || '',
+        phone: companyDetails.contactPhone || '', // Map contactPhone to phone
+        email: companyDetails.contactEmail || '', // Map contactEmail to email
+        website: companyDetails.website || '',
+        registrationNumber: companyDetails.registrationNumber || '',
+        vatNumber: companyDetails.vatNumber || '',
+        logo: companyDetails.logo,
+        primaryColor: companyDetails.primaryColor,
+        secondaryColor: companyDetails.secondaryColor,
+        industry: companyDetails.industry
+      };
+      
       // Create both types of backups
-      const backupCreated = backupCompanyDetails(companyDetails);
-      const encryptedBackupCreated = createEncryptedBackup(companyDetails);
+      const backupCreated = backupCompanyDetails(typedCompanyDetails);
+      const encryptedBackupCreated = createEncryptedBackup(typedCompanyDetails);
       
       if (backupCreated && encryptedBackupCreated) {
         toast({
@@ -81,10 +105,27 @@ const CompanyDataProtection: React.FC = () => {
   // Recover company data from backups
   const handleRecoverData = async () => {
     try {
-      const recoveredData = recoverCompanyDetails();
+      const typedCompanyDetails = await recoverCompanyDetails();
       
-      if (recoveredData) {
-        setCompanyDetails(recoveredData);
+      if (typedCompanyDetails) {
+        // Convert back from company.d.ts type to CompanyContext type
+        setCompanyDetails({
+          name: typedCompanyDetails.name,
+          address: typedCompanyDetails.address,
+          city: typedCompanyDetails.city,
+          province: typedCompanyDetails.province,
+          postalCode: typedCompanyDetails.postalCode,
+          contactPhone: typedCompanyDetails.phone, // Map phone to contactPhone
+          contactEmail: typedCompanyDetails.email, // Map email to contactEmail
+          website: typedCompanyDetails.website,
+          registrationNumber: typedCompanyDetails.registrationNumber,
+          vatNumber: typedCompanyDetails.vatNumber,
+          logo: typedCompanyDetails.logo,
+          primaryColor: typedCompanyDetails.primaryColor,
+          secondaryColor: typedCompanyDetails.secondaryColor,
+          industry: typedCompanyDetails.industry
+        });
+        
         toast({
           title: "Data Recovered",
           description: "Your company information has been recovered from backup",

@@ -11,6 +11,8 @@ export interface CompanyDetails {
   postalCode: string;
   phone: string;
   email: string;
+  contactEmail?: string;
+  contactPhone?: string;
   website: string;
   registrationNumber: string;
   vatNumber: string;
