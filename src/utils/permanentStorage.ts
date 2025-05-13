@@ -1,162 +1,331 @@
 
 /**
- * Enhanced storage management with fallback mechanisms and error handling
+ * Enhanced permanent storage service
+ * Provides redundant, fault-tolerant storage mechanisms
  */
 
-// Define storage namespaces to organize data
 export enum StorageNamespace {
-  APP_DATA = 'app_data',
-  USER_PREFERENCES = 'user_preferences',
-  COMPANY_DATA = 'company_data',
-  CLIENT_DATA = 'client_data',
-  TEMPORARY_DATA = 'temporary_data',
+  APP_DATA = 'app-data',
+  USER_PREFS = 'user-preferences',
+  COMPANY = 'company',
+  CLIENTS = 'clients',
+  INVOICES = 'invoices',
+  QUOTES = 'quotes',
 }
 
-// Interface to track storage readiness
-interface StorageReadinessState {
-  isReady: boolean;
-  error: Error | null;
+interface StorageStatus {
+  initialized: boolean;
+  indexedDBAvailable: boolean;
+  localStorageAvailable: boolean;
 }
 
 class PermanentStorage {
-  private readinessState: StorageReadinessState = { isReady: false, error: null };
-  private storageCheckPromise: Promise<boolean> | null = null;
-
+  private status: StorageStatus = {
+    initialized: false,
+    indexedDBAvailable: false,
+    localStorageAvailable: false,
+  };
+  
+  private dbName: string = 'mok-permanent-storage';
+  private dbVersion: number = 1;
+  private db: IDBDatabase | null = null;
+  
   constructor() {
-    this.initializeStorage();
+    this.checkStorageAvailability();
   }
-
+  
   /**
-   * Initialize storage and check availability
+   * Check if storage mechanisms are available
    */
-  private initializeStorage(): void {
-    this.storageCheckPromise = new Promise((resolve) => {
-      try {
-        // Test localStorage
-        localStorage.setItem('__test__', 'test');
-        localStorage.removeItem('__test__');
-        this.readinessState.isReady = true;
-        resolve(true);
-      } catch (error) {
-        console.error('localStorage not available:', error);
-        this.readinessState.error = error instanceof Error 
-          ? error 
-          : new Error('Unknown storage error');
-        this.readinessState.isReady = false;
-        resolve(false);
-      }
-    });
-  }
-
-  /**
-   * Wait until storage is ready before using it
-   * @param timeoutMs Timeout in milliseconds
-   * @returns Promise that resolves when storage is ready
-   */
-  async waitUntilReady(timeoutMs: number = 5000): Promise<boolean> {
-    if (this.readinessState.isReady) {
-      return true;
-    }
-
-    if (!this.storageCheckPromise) {
-      this.initializeStorage();
-    }
-
-    // Create a timeout promise
-    const timeoutPromise = new Promise<boolean>((resolve) => {
-      setTimeout(() => {
-        resolve(false);
-      }, timeoutMs);
-    });
-
-    // Race the storage check against the timeout
-    const isReady = await Promise.race([
-      this.storageCheckPromise as Promise<boolean>,
-      timeoutPromise,
-    ]);
-
-    if (!isReady && !this.readinessState.error) {
-      this.readinessState.error = new Error(`Storage initialization timed out after ${timeoutMs}ms`);
-    }
-
-    return isReady;
-  }
-
-  /**
-   * Get current storage readiness state
-   */
-  getReadinessState(): StorageReadinessState {
-    return { ...this.readinessState };
-  }
-
-  /**
-   * Save data to persistent storage with namespace
-   * @param namespace Storage namespace
-   * @param data Data to save
-   * @returns True if save was successful
-   */
-  async saveData(namespace: StorageNamespace, data: Record<string, any>): Promise<boolean> {
+  private checkStorageAvailability(): void {
+    // Check localStorage
     try {
-      if (!this.readinessState.isReady) {
-        await this.waitUntilReady();
+      localStorage.setItem('storage-test', 'test');
+      localStorage.removeItem('storage-test');
+      this.status.localStorageAvailable = true;
+    } catch (e) {
+      this.status.localStorageAvailable = false;
+      console.warn('localStorage is not available');
+    }
+    
+    // Check IndexedDB
+    try {
+      if (window.indexedDB) {
+        this.status.indexedDBAvailable = true;
+      } else {
+        this.status.indexedDBAvailable = false;
+        console.warn('IndexedDB is not available');
       }
-
-      const key = `mok-mzansi-books-${namespace}`;
-      const dataString = JSON.stringify(data);
-      localStorage.setItem(key, dataString);
+    } catch (e) {
+      this.status.indexedDBAvailable = false;
+      console.warn('Error checking IndexedDB availability:', e);
+    }
+  }
+  
+  /**
+   * Initialize the IndexedDB database
+   */
+  private async initIndexedDB(): Promise<boolean> {
+    if (!this.status.indexedDBAvailable) {
+      return false;
+    }
+    
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open(this.dbName, this.dbVersion);
+        
+        request.onerror = (event) => {
+          console.error('Failed to open IndexedDB:', event);
+          this.status.indexedDBAvailable = false;
+          resolve(false);
+        };
+        
+        request.onsuccess = (event) => {
+          this.db = (event.target as IDBOpenDBRequest).result;
+          this.status.initialized = true;
+          resolve(true);
+        };
+        
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          
+          // Create object stores for each namespace
+          for (const namespace of Object.values(StorageNamespace)) {
+            if (!db.objectStoreNames.contains(namespace)) {
+              db.createObjectStore(namespace);
+            }
+          }
+        };
+      } catch (error) {
+        console.error('Error initializing IndexedDB:', error);
+        this.status.indexedDBAvailable = false;
+        resolve(false);
+      }
+    });
+  }
+  
+  /**
+   * Wait until storage is ready
+   */
+  public async waitUntilReady(timeoutMs: number = 5000): Promise<boolean> {
+    if (this.status.initialized) {
       return true;
+    }
+    
+    const startTime = Date.now();
+    let initialized = false;
+    
+    while (Date.now() - startTime < timeoutMs && !initialized) {
+      initialized = await this.initIndexedDB();
+      
+      if (!initialized && !this.status.indexedDBAvailable) {
+        // If IndexedDB isn't available, fallback to localStorage
+        if (this.status.localStorageAvailable) {
+          this.status.initialized = true;
+          initialized = true;
+        } else {
+          break; // No storage available
+        }
+      }
+      
+      // Small delay to prevent tight loop
+      if (!initialized) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    if (!initialized) {
+      console.warn(`Storage initialization timed out after ${timeoutMs}ms`);
+    }
+    
+    return initialized;
+  }
+  
+  /**
+   * Check if storage is ready
+   */
+  public isReady(): boolean {
+    return this.status.initialized;
+  }
+  
+  /**
+   * Save data to storage with namespace
+   */
+  public async saveData<T>(namespace: StorageNamespace, data: T): Promise<boolean> {
+    try {
+      // Ensure initialized
+      if (!this.status.initialized) {
+        await this.waitUntilReady(2000);
+      }
+      
+      // Try IndexedDB first
+      if (this.status.indexedDBAvailable && this.db) {
+        return new Promise((resolve) => {
+          try {
+            const transaction = this.db!.transaction(namespace, 'readwrite');
+            const store = transaction.objectStore(namespace);
+            
+            // Save under a generic key
+            const request = store.put(data, 'data');
+            
+            request.onsuccess = () => {
+              resolve(true);
+            };
+            
+            request.onerror = (event) => {
+              console.error(`Error saving to IndexedDB (${namespace}):`, event);
+              
+              // Try localStorage as fallback
+              if (this.status.localStorageAvailable) {
+                try {
+                  localStorage.setItem(`${this.dbName}-${namespace}`, JSON.stringify(data));
+                  resolve(true);
+                } catch (e) {
+                  console.error(`Error saving to localStorage (${namespace}):`, e);
+                  resolve(false);
+                }
+              } else {
+                resolve(false);
+              }
+            };
+          } catch (error) {
+            console.error(`Transaction error saving to IndexedDB (${namespace}):`, error);
+            
+            // Try localStorage as fallback
+            if (this.status.localStorageAvailable) {
+              try {
+                localStorage.setItem(`${this.dbName}-${namespace}`, JSON.stringify(data));
+                resolve(true);
+              } catch (e) {
+                console.error(`Error saving to localStorage (${namespace}):`, e);
+                resolve(false);
+              }
+            } else {
+              resolve(false);
+            }
+          }
+        });
+      }
+      
+      // Fallback to localStorage
+      if (this.status.localStorageAvailable) {
+        localStorage.setItem(`${this.dbName}-${namespace}`, JSON.stringify(data));
+        return true;
+      }
+      
+      return false;
     } catch (error) {
-      console.error(`Error saving data to namespace ${namespace}:`, error);
+      console.error(`Error saving data (${namespace}):`, error);
       return false;
     }
   }
-
+  
   /**
-   * Load data from persistent storage by namespace
-   * @param namespace Storage namespace
-   * @returns Data object or null if not found/error
+   * Load data from storage with namespace
    */
-  async loadData(namespace: StorageNamespace): Promise<Record<string, any> | null> {
+  public async loadData<T>(namespace: StorageNamespace): Promise<T | null> {
     try {
-      if (!this.readinessState.isReady) {
-        await this.waitUntilReady();
+      // Ensure initialized
+      if (!this.status.initialized) {
+        await this.waitUntilReady(2000);
       }
-
-      const key = `mok-mzansi-books-${namespace}`;
-      const dataString = localStorage.getItem(key);
       
-      if (!dataString) {
-        return {};
+      // Try IndexedDB first
+      if (this.status.indexedDBAvailable && this.db) {
+        return new Promise((resolve) => {
+          try {
+            const transaction = this.db!.transaction(namespace, 'readonly');
+            const store = transaction.objectStore(namespace);
+            
+            // Load from generic key
+            const request = store.get('data');
+            
+            request.onsuccess = (event) => {
+              const data = (event.target as IDBRequest).result;
+              if (data) {
+                resolve(data as T);
+              } else {
+                // Try localStorage as fallback
+                this.loadFromLocalStorage<T>(namespace).then(resolve);
+              }
+            };
+            
+            request.onerror = () => {
+              console.error(`Error loading from IndexedDB (${namespace})`);
+              
+              // Try localStorage as fallback
+              this.loadFromLocalStorage<T>(namespace).then(resolve);
+            };
+          } catch (error) {
+            console.error(`Transaction error loading from IndexedDB (${namespace}):`, error);
+            
+            // Try localStorage as fallback
+            this.loadFromLocalStorage<T>(namespace).then(resolve);
+          }
+        });
       }
-
-      return JSON.parse(dataString);
+      
+      // Fallback to localStorage
+      return this.loadFromLocalStorage<T>(namespace);
     } catch (error) {
-      console.error(`Error loading data from namespace ${namespace}:`, error);
+      console.error(`Error loading data (${namespace}):`, error);
       return null;
     }
   }
-
+  
   /**
-   * Clear all data in a namespace
-   * @param namespace Storage namespace
-   * @returns True if clear was successful
+   * Load data from localStorage
    */
-  async clearNamespace(namespace: StorageNamespace): Promise<boolean> {
-    try {
-      if (!this.readinessState.isReady) {
-        await this.waitUntilReady();
+  private async loadFromLocalStorage<T>(namespace: StorageNamespace): Promise<T | null> {
+    if (this.status.localStorageAvailable) {
+      try {
+        const data = localStorage.getItem(`${this.dbName}-${namespace}`);
+        if (data) {
+          return JSON.parse(data) as T;
+        }
+      } catch (e) {
+        console.error(`Error parsing localStorage data (${namespace}):`, e);
       }
-
-      const key = `mok-mzansi-books-${namespace}`;
-      localStorage.removeItem(key);
-      return true;
+    }
+    return null;
+  }
+  
+  /**
+   * Clear all data from a namespace
+   */
+  public async clearNamespace(namespace: StorageNamespace): Promise<boolean> {
+    try {
+      let success = false;
+      
+      // Clear from IndexedDB
+      if (this.status.indexedDBAvailable && this.db) {
+        try {
+          const transaction = this.db.transaction(namespace, 'readwrite');
+          const store = transaction.objectStore(namespace);
+          store.clear();
+          success = true;
+        } catch (e) {
+          console.error(`Error clearing IndexedDB namespace (${namespace}):`, e);
+        }
+      }
+      
+      // Clear from localStorage
+      if (this.status.localStorageAvailable) {
+        try {
+          localStorage.removeItem(`${this.dbName}-${namespace}`);
+          success = true;
+        } catch (e) {
+          console.error(`Error clearing localStorage namespace (${namespace}):`, e);
+        }
+      }
+      
+      return success;
     } catch (error) {
-      console.error(`Error clearing namespace ${namespace}:`, error);
+      console.error(`Error clearing namespace (${namespace}):`, error);
       return false;
     }
   }
 }
 
-// Export a singleton instance
 const permanentStorage = new PermanentStorage();
 export default permanentStorage;

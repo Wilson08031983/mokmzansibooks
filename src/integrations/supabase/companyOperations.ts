@@ -1,6 +1,7 @@
 
 import { supabase } from "./client";
 import { CompanyDetails } from "@/types/company";
+import { Json } from "./types";
 
 /**
  * Fetch company data from Supabase
@@ -19,8 +20,8 @@ export async function fetchCompanyData(): Promise<CompanyDetails[] | null> {
 
     // Transform the data to match our CompanyDetails type
     return data.map((item) => {
-      // Assuming the company details are stored in a 'data' JSON field
-      return item.data as CompanyDetails;
+      // Need to cast the JSON data to CompanyDetails
+      return item.data as unknown as CompanyDetails;
     });
   } catch (error) {
     console.error('Error in fetchCompanyData:', error);
@@ -55,7 +56,7 @@ export async function saveCompanyData(companyDetails: CompanyDetails): Promise<b
       const { error: updateError } = await supabase
         .from('company_data')
         .update({
-          data: updatedData
+          data: updatedData as unknown as Json
         })
         .eq('id', existingData[0].id);
 
@@ -67,10 +68,10 @@ export async function saveCompanyData(companyDetails: CompanyDetails): Promise<b
       // Insert new company
       const { error: insertError } = await supabase
         .from('company_data')
-        .insert([{
+        .insert({
           type: 'company',
-          data: updatedData
-        }]);
+          data: updatedData as unknown as Json
+        });
 
       if (insertError) {
         console.error('Error inserting company data:', insertError);
@@ -112,14 +113,12 @@ export async function deleteCompanyData(): Promise<boolean> {
  */
 export async function backupCompanyData(companyDetails: CompanyDetails): Promise<boolean> {
   try {
-    const backupId = `backup-${Date.now()}`;
-    
     const { error } = await supabase
       .from('company_data')
-      .insert([{
+      .insert({
         type: 'company_backup',
-        data: companyDetails,
-      }]);
+        data: companyDetails as unknown as Json
+      });
 
     if (error) {
       console.error('Error backing up company data:', error);
@@ -149,7 +148,11 @@ export async function fetchCompanyDataBackups(): Promise<{id: string, data: Comp
       return null;
     }
 
-    return data as {id: string, data: CompanyDetails, created_at: string}[];
+    return data.map(item => ({
+      id: item.id,
+      data: item.data as unknown as CompanyDetails,
+      created_at: item.created_at
+    }));
   } catch (error) {
     console.error('Error in fetchCompanyDataBackups:', error);
     return null;

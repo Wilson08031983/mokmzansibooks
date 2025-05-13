@@ -32,5 +32,5 @@ export async function initializeSupabaseForAllPages(): Promise<boolean> {
   }
 }
 
-// Default export for convenience
+// Make sure to export the function as default as well
 export default initializeSupabaseForAllPages;

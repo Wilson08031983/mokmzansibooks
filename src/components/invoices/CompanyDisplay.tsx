@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CompanyDetails } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
@@ -43,13 +42,13 @@ const CompanyDisplay: React.FC<CompanyDisplayProps> = ({
         }
         
         // Try to load from localStorage with fallbacks
-        const { success, data } = robustStorageMigrator.consolidateStorage(
+        const result = robustStorageMigrator.consolidateStorage(
           ['companyDetails', 'company', 'businessDetails', 'organization'],
           'companyDetails'
         );
         
-        if (success && data) {
-          setCompany(data);
+        if (result.success && result.result) {
+          setCompany(result.result);
         } else {
           setError('No company details found');
         }

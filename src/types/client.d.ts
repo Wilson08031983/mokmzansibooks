@@ -46,6 +46,14 @@ export interface VendorClient extends Client {
   vendorCode: string | null;
 }
 
+// Filter/sort type for clients
+export type ClientFilter = {
+  type: 'all' | 'company' | 'individual' | 'vendor';
+  search: string;
+  sortBy: 'name' | 'balance' | 'lastInteraction' | 'createdAt';
+  sortDirection: 'asc' | 'desc';
+};
+
 // State structure for clients
 export interface ClientsState {
   companies: CompanyClient[];
