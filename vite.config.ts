@@ -11,7 +11,8 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
-    allowedHosts: ["8846c003-0f31-4c54-b71d-8e34adea6a37.lovableproject.com"]
+    strictPort: true,
+    allowedHosts: ['8846c003-0f31-4c54-b71d-8e34adea6a37.lovableproject.com']
   },
   plugins: [
     react(),
